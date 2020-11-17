@@ -1,6 +1,7 @@
 # Open Source Project Criticality Score
 
-This project maintained by members of the [Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects)
+This project is maintained by members of the
+[Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects).
 
 ## Goals
 1. Generate a **criticality score** for every open source project.
@@ -87,3 +88,11 @@ These can be obtained from the GitHub [developer settings](https://github.com/se
 There are three formats currently: `default`, `json`, and `csv`. Others may be added in the future.
 
 These may be specified with the `--format` flag.
+
+## Contributing
+
+If you want to get involved or have ideas you'd like to chat about, we discuss this project in the [OSSF Best Practices Working Group](https://github.com/ossf/wg-securing-critical-projects) meetings.
+
+See the [Community Calendar](https://calendar.google.com/calendar?cid=czYzdm9lZmhwNWk5cGZsdGI1cTY3bmdwZXNAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ) for the schedule and meeting invitations.
+
+See the [Contributing](CONTRIBUTING.md) documentation for guidance on how to contribute.
