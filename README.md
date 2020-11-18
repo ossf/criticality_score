@@ -70,20 +70,6 @@ export GITHUB_AUTH_TOKEN=<your access token>
 # For windows:
 set GITHUB_AUTH_TOKEN=<your access token>
 ```
-
-As an alternative to personal access tokens, we also support GitHub App Installations
-for higher rate-limit quotas.
-If you have an installed GitHub App and key file, you can use these three environment
-variables, following the commands shown above for your platform.
-
-```
-GITHUB_APP_KEY_PATH=<path to the key file on disk>
-GITHUB_APP_INSTALLATION_ID=<installation id>
-GITHUB_APP_ID=<app id>
-```
-
-These can be obtained from the GitHub [developer settings](https://github.com/settings/apps) page.
-
 ### Formatting Results
 
 There are three formats currently: `default`, `json`, and `csv`. Others may be added in the future.
