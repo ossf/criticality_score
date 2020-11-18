@@ -40,8 +40,8 @@ the following algorithm:
 
 It is derived using the following parameters:
 
-| Parameter(Si)  | Weight (ai) | Max threshold(Ti) | Description |
-|---|---|---|---|
+| Parameter (Si)  | Weight (ai) | Max threshold (Ti) | Description |
+|---|---:|---:|---|
 | created_since | 1 | 120 | Time since the project was created (in months) |
 | updated_since  | -1 | 120 | Time since the project was last updated (in months) |
 | contributor_count | 2 | 5000 | Count of project contributors (with commits) |
