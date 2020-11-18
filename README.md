@@ -16,6 +16,7 @@ The program only requires one argument to run, the name of the repo:
 
 ```shell
 $ pip3 install .
+
 $ criticality_score --repo github.com/kubernetes/kubernetes
 name: kubernetes
 url: https://github.com/kubernetes/kubernetes
@@ -40,7 +41,7 @@ the following algorithm:
 
 It is derived using the following parameters:
 
-| Parameter (Si)  | Weight (ai) | Max threshold (Ti) | Description |
+| Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description |
 |---|---:|---:|---|
 | created_since | 1 | 120 | Time since the project was created (in months) |
 | updated_since  | -1 | 120 | Time since the project was last updated (in months) |
