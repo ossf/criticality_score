@@ -76,6 +76,22 @@ There are three formats currently: `default`, `json`, and `csv`. Others may be a
 
 These may be specified with the `--format` flag.
 
+## Public Data
+
+If you're only interested in seeing a list of critical projects with their
+criticality score, we publish them in `csv` format.
+
+This data is available on Google Cloud Storage and can be downloaded via the
+[`gsutil`](https://cloud.google.com/storage/docs/gsutil_install)
+command-line tool.
+
+```shell
+$ gsutil ls gs://ossf-criticality-score/
+gs://ossf-criticality-score/c_top_200.csv
+gs://ossf-criticality-score/cplusplus_top_200.csv
+...
+```
+
 ## Contributing
 
 If you want to get involved or have ideas you'd like to chat about, we discuss this project in the [Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects) meetings.
