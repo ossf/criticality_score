@@ -10,6 +10,28 @@ This project is maintained by members of the
 
 1. Use this data to proactively improve the security posture of these critical projects.
 
+## Criticality Score
+
+A project's criticality score is a number between 0 and 1. It is based on
+the following algorithm:
+
+<img src="images/formula.png" width="359" height="96">
+
+It is derived using the following parameters:
+
+| Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description |
+|---|---:|---:|---|
+| created_since | 1 | 120 | Time since the project was created (in months) |
+| updated_since  | -1 | 120 | Time since the project was last updated (in months) |
+| contributor_count | 2 | 5000 | Count of project contributors (with commits) |
+| org_count | 1 | 10 | Count of distinct organizations that contributors belong to |
+| commit_frequency | 1 | 1000 | Average number of commits per week in the last year |
+| recent_releases_count | 0.5 | 26 | Number of releases in the last year |
+| closed_issues_count | 0.5 | 5000 | Number of issues closed in the last 90 days |
+| updated_issues_count | 0.5 | 5000 | Number of issues updated in the last 90 days |
+| comment_frequency | 1 | 15 | Average number of comments per issue in the last 90 days |
+| dependents_count | 2 | 500000 | Number of project mentions in the commit messages |
+
 ## Usage
 
 The program only requires one argument to run, the name of the repo:
@@ -33,26 +55,6 @@ comment_frequency: 5.4
 dependents_count: 403529
 criticality_score: 0.98514
 ```
-
-A project's criticality score is a number between 0 and 1. It is based on
-the following algorithm:
-
-<img src="images/formula.png" width="359" height="96">
-
-It is derived using the following parameters:
-
-| Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description |
-|---|---:|---:|---|
-| created_since | 1 | 120 | Time since the project was created (in months) |
-| updated_since  | -1 | 120 | Time since the project was last updated (in months) |
-| contributor_count | 2 | 5000 | Count of project contributors (with commits) |
-| org_count | 1 | 10 | Count of distinct organizations that contributors belong to |
-| commit_frequency | 1 | 1000 | Average number of commits per week in the last year |
-| recent_releases_count | 0.5 | 26 | Number of releases in the last year |
-| closed_issues_count | 0.5 | 5000 | Number of issues closed in the last 90 days |
-| updated_issues_count | 0.5 | 5000 | Number of issues updated in the last 90 days |
-| comment_frequency | 1 | 15 | Average number of comments per issue in the last 90 days |
-| dependents_count | 2 | 500000 | Number of project mentions in the commit messages |
 
 ### Authentication
 
