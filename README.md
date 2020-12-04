@@ -56,6 +56,12 @@ dependents_count: 403529
 criticality_score: 0.98514
 ```
 
+You can add your own parameters to the criticality score calculation. For
+example, you can add internal project usage data to re-adjust the project's
+criticality score for your prioritization needs. This can be done by adding
+`--params <param1_value>:<param1_weight>:<param1_max_threshold> ...` argument
+on the command line.
+
 ### Authentication
 
 Before running criticality score, you need to
