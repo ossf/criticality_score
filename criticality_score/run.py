@@ -144,7 +144,7 @@ class GitHubRepository(Repository):
         dependents_url = (
             'https://github.com/search?q="{search}"&type=commits'.format(
                 search=repo_name))
-        content = ''
+        content = b''
         for _ in range(3):
             result = requests.get(dependents_url)
             if result.status_code == 200:
@@ -167,8 +167,23 @@ def get_param_score(param, max_value, weight=1):
     return (math.log(1 + param) / math.log(1 + max(param, max_value))) * weight
 
 
-def get_repository_stats(repo):
+def get_repository_stats(repo, additional_params):
     """Return repository stats, including criticality score."""
+    # Validate and compute additional params first.
+    additional_params_total_weight = 0
+    additional_params_score = 0
+    for additional_param in additional_params:
+        try:
+            value, weight, max_threshold = [
+                int(i) for i in additional_param.split(':')
+            ]
+        except ValueError:
+            print('Parameter value in bad format: ' + additional_param)
+            sys.exit(1)
+        additional_params_total_weight += weight
+        additional_params_score += get_param_score(value, max_threshold,
+                                                   weight)
+
     created_since = repo.created_since
     updated_since = repo.updated_since
     contributor_count = repo.contributors
@@ -184,7 +199,8 @@ def get_repository_stats(repo):
                     CONTRIBUTOR_COUNT_WEIGHT + ORG_COUNT_WEIGHT +
                     COMMIT_FREQUENCY_WEIGHT + RECENT_RELEASES_WEIGHT +
                     CLOSED_ISSUES_WEIGHT + UPDATED_ISSUES_WEIGHT +
-                    COMMENT_FREQUENCY_WEIGHT + DEPENDENTS_COUNT_WEIGHT)
+                    COMMENT_FREQUENCY_WEIGHT + DEPENDENTS_COUNT_WEIGHT +
+                    additional_params_total_weight)
 
     criticality_score = round(
         (get_param_score(created_since, CREATED_SINCE_THRESHOLD,
@@ -205,7 +221,8 @@ def get_repository_stats(repo):
          get_param_score(comment_frequency, COMMENT_FREQUENCY_THRESHOLD,
                          COMMENT_FREQUENCY_WEIGHT) +
          get_param_score(dependents_count, DEPENDENTS_COUNT_THRESHOLD,
-                         DEPENDENTS_COUNT_WEIGHT)) / total_weight, 5)
+                         DEPENDENTS_COUNT_WEIGHT) + additional_params_score) /
+        total_weight, 5)
 
     return {
         'name': repo.name,
@@ -252,10 +269,16 @@ def main():
         default='default',
         choices=['default', 'csv', 'json'],
         help="output format. allowed values are [default, csv, json]")
+    parser.add_argument(
+        '--params',
+        nargs='+',
+        default=[],
+        help='Additional parameters in form <value>:<weight>:<max_threshold>',
+        required=False)
 
     args = parser.parse_args()
     r = get_repository(args.repo)
-    output = get_repository_stats(r)
+    output = get_repository_stats(r, args.params)
     if args.format == 'default':
         for key, value in output.items():
             print(f'{key}: {value}')
