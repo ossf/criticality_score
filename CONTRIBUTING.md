@@ -28,10 +28,10 @@ You must install these tools:
 1. Make any code changes to the criticality score algorithm
 [here](https://github.com/ossf/criticality_score/tree/main/criticality_score).
 
-1. Run the criticality score script using:
+1. Run the criticality score code using:
 
 ```shell
-python3 criticality_score/run.py --repo=<repo_url>
+python3 -m criticality_score.run --repo=<repo_url>
 ```
 
 
