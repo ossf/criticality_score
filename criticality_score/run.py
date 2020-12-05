@@ -157,13 +157,18 @@ class GitHubRepository(Repository):
         return int(match.group(1).replace(b',', b''))
 
 
-def pause_if_rate_limit_exceeded(github_api):
+def pause_if_github_rate_limit_exceeded(github_api):
+    """Pause for an hour if reaching api rate limit."""
     rate_limit = github_api.get_rate_limit()
-    if rate_limit.core.remaining < 100:  # Conservative to avoid exceptions.
+    if rate_limit.core.remaining < 100:
+        print('Rate limit exceeded, sleeping for an hour before retry.',
+              file=sys.stderr)
         time.sleep(60 * 60)
 
 
 def get_param_score(param, max_value, weight=1):
+    """Return paramater score given its current value, max value and
+    parameter weight."""
     return (math.log(1 + param) / math.log(1 + max(param, max_value))) * weight
 
 
@@ -246,13 +251,16 @@ def get_repository(url):
     """Return repository object, given a url."""
     if not '://' in url:
         url = 'https://' + url
+
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.netloc.endswith('github.com'):
         auth_token = os.getenv('GITHUB_AUTH_TOKEN')
         g = github.Github(auth_token)
+        pause_if_github_rate_limit_exceeded(g)
         repo_url = parsed_url.path.strip('/')
         repo = GitHubRepository(g.get_repo(repo_url))
         return repo
+
     raise Exception('Unsupported url!')
 
 
