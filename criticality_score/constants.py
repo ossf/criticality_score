@@ -45,5 +45,3 @@ RELEASE_LOOKBACK_DAYS = 365
 
 # Regex to match dependents count.
 DEPENDENTS_REGEX = re.compile(b'.*[^0-9,]([0-9,]+).*commit results', re.DOTALL)
-
-# Regex to strip url scheme.

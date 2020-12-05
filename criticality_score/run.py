@@ -19,12 +19,12 @@ import datetime
 import json
 import math
 import os
-import requests
 import sys
 import time
 import urllib
 
 import github
+import requests
 
 from .constants import *
 
@@ -160,7 +160,7 @@ class GitHubRepository(Repository):
 def pause_if_github_rate_limit_exceeded(github_api):
     """Pause for an hour if reaching api rate limit."""
     rate_limit = github_api.get_rate_limit()
-    if rate_limit.core.remaining < 100:
+    if rate_limit.core.remaining < 50:
         print('Rate limit exceeded, sleeping for an hour before retry.',
               file=sys.stderr)
         time.sleep(60 * 60)
