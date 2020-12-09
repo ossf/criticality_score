@@ -17,7 +17,7 @@ the following
 [algorithm](https://github.com/ossf/criticality_score/blob/main/Quantifying_criticality_algorithm.pdf)
 by [Rob Pike](https://github.com/robpike):
 
-<img src="https://github.com/ossf/criticality_score/blob/main/images/formula.png" width="359" height="96">
+<img src="https://raw.githubusercontent.com/ossf/criticality_score/main/images/formula.png" width="359" height="96">
 
 We use the following parameters to derive the criticality score for an
 open source project:
