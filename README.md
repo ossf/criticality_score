@@ -14,10 +14,10 @@ This project is maintained by members of the
 
 A project's criticality score is a number between 0 and 1. It is based on
 the following
-[algorithm](Quantifying_criticality_algorithm.pdf)
+[algorithm](https://github.com/ossf/criticality_score/blob/main/Quantifying_criticality_algorithm.pdf)
 by [Rob Pike](https://github.com/robpike):
 
-<img src="images/formula.png" width="359" height="96">
+<img src="https://github.com/ossf/criticality_score/blob/main/images/formula.png" width="359" height="96">
 
 We use the following parameters to derive the criticality score for an
 open source project:
