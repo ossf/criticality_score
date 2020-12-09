@@ -17,7 +17,11 @@ the following algorithm proposed by [Rob Pike](https://github.com/robpike):
 
 <img src="images/formula.png" width="359" height="96">
 
-We use the following parameters to derive criticality score for an open source project:
+Read more about how we quantify a project's criticality
+[here](Quantifying_criticality.pdf).
+
+We use the following parameters to derive the criticality score for an
+open source project:
 
 | Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description |
 |---|---:|---:|---|
@@ -59,8 +63,8 @@ criticality_score: 0.98514
 You can add your own parameters to the criticality score calculation. For
 example, you can add internal project usage data to re-adjust the project's
 criticality score for your prioritization needs. This can be done by adding
-`--params <param1_value>:<param1_weight>:<param1_max_threshold> ...` argument
-on the command line.
+the `--params <param1_value>:<param1_weight>:<param1_max_threshold> ...`
+argument on the command line.
 
 ### Authentication
 
