@@ -13,12 +13,11 @@ This project is maintained by members of the
 ## Criticality Score
 
 A project's criticality score is a number between 0 and 1. It is based on
-the following algorithm by [Rob Pike](https://github.com/robpike):
+the following
+[algorithm](Quantifying_criticality_algorithm.pdf)
+by [Rob Pike](https://github.com/robpike):
 
 <img src="images/formula.png" width="359" height="96">
-
-Read more about how we quantify a project's criticality
-[here](Quantifying_criticality_algorithm.pdf).
 
 We use the following parameters to derive the criticality score for an
 open source project:
