@@ -18,7 +18,7 @@ the following algorithm by [Rob Pike](https://github.com/robpike):
 <img src="images/formula.png" width="359" height="96">
 
 Read more about how we quantify a project's criticality
-[here](Quantifying_criticality.pdf).
+[here](Quantifying_criticality_algorithm.pdf).
 
 We use the following parameters to derive the criticality score for an
 open source project:
