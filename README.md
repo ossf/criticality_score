@@ -40,23 +40,23 @@ open source project:
 The program only requires one argument to run, the name of the repo:
 
 ```shell
-$ pip3 install .
+$ pip3 install criticality-score
 
 $ criticality_score --repo github.com/kubernetes/kubernetes
 name: kubernetes
 url: https://github.com/kubernetes/kubernetes
 language: Go
-created_since: 78
+created_since: 79
 updated_since: 0
-contributor_count: 3649
+contributor_count: 3664
 org_count: 5
-commit_frequency: 105.9
-recent_releases_count: 77
-closed_issues_count: 3333
-updated_issues_count: 5489
-comment_frequency: 5.4
-dependents_count: 403529
-criticality_score: 0.98514
+commit_frequency: 102.7
+recent_releases_count: 76
+closed_issues_count: 2906
+updated_issues_count: 5136
+comment_frequency: 5.7
+dependents_count: 407254
+criticality_score: 0.9862
 ```
 
 You can add your own parameters to the criticality score calculation. For
