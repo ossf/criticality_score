@@ -98,6 +98,10 @@ This data is available on Google Cloud Storage and can be downloaded via the
 command-line tool or the web browser
 [here](https://commondatastorage.googleapis.com/ossf-criticality-score/index.html).
 
+**NOTE**: Currently, these lists are derived from **projects hosted on GitHub ONLY**.
+We do plan to expand them in near future to account for projects hosted on other
+source control systems.
+
 ```shell
 $ gsutil ls gs://ossf-criticality-score/
 gs://ossf-criticality-score/c_top_200.csv
