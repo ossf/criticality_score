@@ -13,7 +13,7 @@ This project is maintained by members of the
 ## Criticality Score
 
 A project's criticality score is a number between
-0 (least-critical) and 1 (most-critical). It is based on the following
+**0 (least-critical)** and **1 (most-critical)**. It is based on the following
 [algorithm](https://github.com/ossf/criticality_score/blob/main/Quantifying_criticality_algorithm.pdf)
 by [Rob Pike](https://github.com/robpike):
 
