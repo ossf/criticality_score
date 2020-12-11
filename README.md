@@ -95,7 +95,7 @@ criticality score, we publish them in `csv` format.
 This data is available on Google Cloud Storage and can be downloaded via the
 [`gsutil`](https://cloud.google.com/storage/docs/gsutil_install)
 command-line tool or the web browser
-[here](https://storage.cloud.google.com/ossf-criticality-score).
+[here](http://commondatastorage.googleapis.com/ossf-criticality-score/index.html).
 
 ```shell
 $ gsutil ls gs://ossf-criticality-score/
