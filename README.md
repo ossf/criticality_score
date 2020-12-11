@@ -1,4 +1,4 @@
-# Open Source Project Criticality Score
+# Open Source Project Criticality Score (Beta)
 
 This project is maintained by members of the
 [Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects).
