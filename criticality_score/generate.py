@@ -77,7 +77,7 @@ def main():
                         continue
                     parsed_urls.append(repo_url)
                     time.sleep(0.05)
-                    print(f'Found {github_lang.} repository({s}): {repo_url}')
+                    print(f'Found {github_lang} repository({s}): {repo_url}')
                     s += 1
                     if s > args.sample_size:
                         break
