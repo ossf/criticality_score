@@ -61,7 +61,7 @@ def main():
             s = 1
             last_stars_processed = None
             while s <= args.sample_size:
-                query = f'language:{github_lang}'
+                query = f'language:{github_lang} archived:false'
                 if last_stars_processed:
                     query += f' stars:<{last_stars_processed+1}'
                 print(f'Running query: {query}')
