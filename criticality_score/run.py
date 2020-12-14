@@ -142,8 +142,7 @@ class GitHubRepository(Repository):
     def get_dependents(self):
         repo_name = self.url.replace('https://github.com/', '')
         dependents_url = (
-            'https://github.com/search?q="{search}"&type=commits'.format(
-                search=repo_name))
+            f'https://github.com/search?q="{repo_name}"&type=commits')
         content = b''
         for _ in range(3):
             result = requests.get(dependents_url)
@@ -161,9 +160,12 @@ def pause_if_github_rate_limit_exceeded(github_api):
     """Pause for an hour if reaching api rate limit."""
     rate_limit = github_api.get_rate_limit()
     if rate_limit.core.remaining < 50:
-        print('Rate limit exceeded, sleeping for an hour before retry.',
-              file=sys.stderr)
-        time.sleep(60 * 60)
+        wait_time = (rate_limit.core.reset -
+                     datetime.datetime.utcnow()).seconds
+        print(
+            f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
+            file=sys.stderr)
+        time.sleep(wait_time)
 
 
 def get_param_score(param, max_value, weight=1):
