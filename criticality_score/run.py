@@ -165,7 +165,7 @@ def pause_if_github_rate_limit_exceeded(github_api):
         print(
             f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
             file=sys.stderr)
-        time.sleep(60 * 60)
+        time.sleep(wait_time)
 
 
 def get_param_score(param, max_value, weight=1):
