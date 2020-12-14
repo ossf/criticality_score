@@ -113,6 +113,16 @@ gs://ossf-criticality-score/python_top_200.csv
 gs://ossf-criticality-score/rust_top_200.cs
 ```
 
+This data is generated using this
+[generator script](https://github.com/ossf/criticality_score/blob/main/criticality_score/run.py).
+For example, to generate a list of top 200 C language projects, run:
+
+```shell
+$ python3 -u -m criticality_score.generate \
+    --language c --count 200 --sample-size 1000
+```
+
+
 ## Contributing
 
 If you want to get involved or have ideas you'd like to chat about, we discuss this project in the [Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects) meetings.

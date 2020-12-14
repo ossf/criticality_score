@@ -156,25 +156,13 @@ class GitHubRepository(Repository):
         return int(match.group(1).replace(b',', b''))
 
 
-def pause_if_github_rate_limit_exceeded(github_api):
-    """Pause for an hour if reaching api rate limit."""
-    rate_limit = github_api.get_rate_limit()
-    if rate_limit.core.remaining < 50:
-        wait_time = (rate_limit.core.reset -
-                     datetime.datetime.utcnow()).seconds
-        print(
-            f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
-            file=sys.stderr)
-        time.sleep(wait_time)
-
-
 def get_param_score(param, max_value, weight=1):
     """Return paramater score given its current value, max value and
     parameter weight."""
     return (math.log(1 + param) / math.log(1 + max(param, max_value))) * weight
 
 
-def get_repository_stats(repo, additional_params):
+def get_repository_stats(repo, additional_params=[]):
     """Return repository stats, including criticality score."""
     # Validate and compute additional params first.
     additional_params_total_weight = 0
@@ -185,7 +173,8 @@ def get_repository_stats(repo, additional_params):
                 int(i) for i in additional_param.split(':')
             ]
         except ValueError:
-            print('Parameter value in bad format: ' + additional_param)
+            print('Parameter value in bad format: ' + additional_param,
+                  file=sys.stderr)
             sys.exit(1)
         additional_params_total_weight += weight
         additional_params_score += get_param_score(value, max_threshold,
@@ -249,6 +238,31 @@ def get_repository_stats(repo, additional_params):
     }
 
 
+def get_github_token_info(g):
+    rate_limit = g.get_rate_limit()
+    near_expiry = rate_limit.core.remaining < 50
+    wait_time = (rate_limit.core.reset - datetime.datetime.utcnow()).seconds
+    return near_expiry, wait_time
+
+
+def get_github_auth_token():
+    """Return an un-expired github token if possible from a list of tokens."""
+    github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
+    assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
+    tokens = github_auth_token.split(',')
+    wait_time = None
+    g = None
+    for i, token in enumerate(tokens):
+        g = github.Github(token)
+        near_expiry, wait_time = get_github_token_info(g)
+        if not near_expiry:
+            return g
+    print(f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
+          file=sys.stderr)
+    time.sleep(wait_time)
+    return g
+
+
 def get_repository(url):
     """Return repository object, given a url."""
     if not '://' in url:
@@ -256,9 +270,7 @@ def get_repository(url):
 
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.netloc.endswith('github.com'):
-        auth_token = os.getenv('GITHUB_AUTH_TOKEN')
-        g = github.Github(auth_token)
-        pause_if_github_rate_limit_exceeded(g)
+        g = get_github_auth_token()
         repo_url = parsed_url.path.strip('/')
         repo = GitHubRepository(g.get_repo(repo_url))
         return repo
