@@ -48,7 +48,7 @@ def main():
     parser.add_argument(
         "--sample-size",
         type=int,
-        default=1000,
+        default=5000,
         help="Number of projects to analyze (in descending order of stars).")
 
     args = parser.parse_args()
@@ -56,26 +56,32 @@ def main():
     parsed_urls = []
     g = run.get_github_auth_token()
     for lang in args.language:
-        assert lang in LANGUAGE_SEARCH_MAP, f'{lang} is not supported.'
-        for github_lang in LANGUAGE_SEARCH_MAP[lang]:
+        lang = lang.lower()
+        for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
             s = 1
-            for repo in g.search_repositories(query=f'language:{github_lang}',
-                                              sort='stars',
-                                              order='desc'):
-                repo_url = repo.html_url
-                if repo_url in parsed_urls:
-                    # Github search can return duplicates, so skip if analyzed.
-                    continue
-                if any(k in repo_url.lower() for k in IGNORED_KEYWORDS):
-                    # Ignore uninteresting repositories.
-                    continue
-                parsed_urls.append(repo_url)
-                time.sleep(0.05)
-                print(
-                    f'Found {github_lang.lower()} repository({s}): {repo_url}')
-                s += 1
-                if s > args.sample_size:
-                    break
+            last_stars_processed = None
+            while s <= args.sample_size:
+                query = f'language:{github_lang} archived:false'
+                if last_stars_processed:
+                    query += f' stars:<{last_stars_processed+1}'
+                print(f'Running query: {query}')
+                for repo in g.search_repositories(query=query,
+                                                  sort='stars',
+                                                  order='desc'):
+                    repo_url = repo.html_url
+                    if repo_url in parsed_urls:
+                        # Github search can return duplicates, so skip if analyzed.
+                        continue
+                    if any(k in repo_url.lower() for k in IGNORED_KEYWORDS):
+                        # Ignore uninteresting repositories.
+                        continue
+                    parsed_urls.append(repo_url)
+                    time.sleep(0.05)
+                    print(f'Found {github_lang} repository({s}): {repo_url}')
+                    s += 1
+                    if s > args.sample_size:
+                        break
+                last_stars_processed = repo.stargazers_count
 
     csv_writer = csv.writer(sys.stdout)
     header = None
