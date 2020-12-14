@@ -103,22 +103,14 @@ We do plan to expand them in near future to account for projects hosted on other
 source control systems.
 
 ```shell
-$ gsutil ls gs://ossf-criticality-score/
+$ gsutil ls gs://ossf-criticality-score/*.csv
 gs://ossf-criticality-score/c_top_200.csv
 gs://ossf-criticality-score/cplusplus_top_200.csv
+gs://ossf-criticality-score/go_top_200.csv
 gs://ossf-criticality-score/java_top_200.csv
 gs://ossf-criticality-score/js_top_200.csv
 gs://ossf-criticality-score/python_top_200.csv
-...
-
-$ gsutil cat gs://ossf-criticality-score/python_top_200.csv
-Project,URL,Language,Created since (months),Updated since (months),Contributors,Orgs for Top15 contributors,Commit freq/week (last yr),Releases (last yr),Closed issues (last 90d),Updated issues (last 90d),Comment freq/issue (last 90d),Commit mentions,Criticality Score
-salt,https://github.com/saltstack/salt,Python,119,0,3631,7,65.3,18,861,1713,1.2,20953,0.87988
-core,https://github.com/home-assistant/core,Python,87,0,2487,9,168.9,202,4289,5780,3.7,341,0.87196
-pandas,https://github.com/pandas-dev/pandas,Python,125,0,2509,7,77.9,13,2341,3454,2.4,3572,0.86588
-scikit-learn,https://github.com/scikit-learn/scikit-learn,Python,125,0,2090,8,27.5,6,708,1260,2.4,30453,0.86011
-numpy,https://github.com/numpy/numpy,Python,124,0,1211,9,38.4,16,712,1032,3.3,8543,0.8574
-...
+gs://ossf-criticality-score/rust_top_200.cs
 ```
 
 ## Contributing
