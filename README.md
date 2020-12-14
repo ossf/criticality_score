@@ -115,8 +115,7 @@ gs://ossf-criticality-score/rust_top_200.cs
 
 This data is generated using this
 [generator script](https://github.com/ossf/criticality_score/blob/main/criticality_score/run.py).
-You can run this by providing a list of languages (c,c++,go,js,java,python,rust),
-:
+For example, to generate a list of top 200 C language projects, run:
 
 ```shell
 $ python3 -u -m criticality_score.generate \
