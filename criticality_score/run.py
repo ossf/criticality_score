@@ -239,14 +239,24 @@ def get_repository_stats(repo, additional_params=[]):
 
 
 def get_github_token_info(g):
+    """Return expiry information given a github token."""
     rate_limit = g.get_rate_limit()
     near_expiry = rate_limit.core.remaining < 50
     wait_time = (rate_limit.core.reset - datetime.datetime.utcnow()).seconds
     return near_expiry, wait_time
 
 
+_cached_github_token = None
+
+
 def get_github_auth_token():
     """Return an un-expired github token if possible from a list of tokens."""
+    global _cached_github_token
+    if _cached_github_token:
+        near_expiry, _ = get_github_token_info(_cached_github_token)
+        if not near_expiry:
+            return _cached_github_token
+
     github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
     assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
     tokens = github_auth_token.split(',')
@@ -256,6 +266,7 @@ def get_github_auth_token():
         g = github.Github(token)
         near_expiry, wait_time = get_github_token_info(g)
         if not near_expiry:
+            _cached_github_token = g
             return g
     print(f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
           file=sys.stderr)
