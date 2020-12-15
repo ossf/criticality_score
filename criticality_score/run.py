@@ -13,14 +13,14 @@
 # limitations under the License.
 """Main python script for calculating OSS Criticality Score."""
 
-import re
-import ssl
 import argparse
 import csv
 import datetime
 import json
 import math
 import os
+import re
+import ssl
 import sys
 import time
 import urllib
