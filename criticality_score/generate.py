@@ -67,13 +67,16 @@ def main():
             while s <= args.sample_size:
                 query = f'language:{github_lang} archived:false'
                 if last_stars_processed:
-                    # +1000 to avoid any races with star updates.
-                    query += f' stars:<{last_stars_processed+1000}'
+                    # +100 to avoid any races with star updates.
+                    query += f' stars:<{last_stars_processed+100}'
                 print(f'Running query: {query}')
                 g = run.get_github_auth_token()
+                new_result = False
                 for repo in g.search_repositories(query=query,
                                                   sort='stars',
                                                   order='desc'):
+                    # Forced sleep to avoid hitting rate limit.
+                    time.sleep(0.05)
                     repo_url = repo.html_url
                     if repo_url in parsed_urls:
                         # Github search can return duplicates, so skip if analyzed.
@@ -82,11 +85,13 @@ def main():
                         # Ignore uninteresting repositories.
                         continue
                     parsed_urls.append(repo_url)
-                    time.sleep(0.1)
+                    new_result = True
                     print(f'Found {github_lang} repository({s}): {repo_url}')
                     s += 1
                     if s > args.sample_size:
                         break
+                if not new_result:
+                    break
                 last_stars_processed = repo.stargazers_count
 
     csv_writer = csv.writer(sys.stdout)
