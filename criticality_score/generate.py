@@ -21,10 +21,15 @@ import time
 from . import run
 
 LANGUAGE_SEARCH_MAP = {
-    'js': ['Javascript', 'Typescript'],
-    'java': ['Java', 'Groovy'],
+    'c': ['C'],
+    'c#': ['C#'],
+    'c++': ['C++'],
     'go': ['Go'],
+    'java': ['Java', 'Groovy'],
+    'js': ['Javascript', 'Typescript', 'CoffeeScript'],
+    'php': ['PHP'],
     'python': ['Python'],
+    'ruby': ['Ruby'],
     'rust': ['Rust'],
 }
 IGNORED_KEYWORDS = ['book', 'course', 'docs', 'interview', 'tutorial']
@@ -39,7 +44,7 @@ def main():
         nargs='+',
         default=[],
         required=True,
-        choices=['c', 'c++', 'go', 'js', 'java', 'rust', 'python'],
+        choices=LANGUAGE_SEARCH_MAP.keys(),
         help="List of languages to use.")
     parser.add_argument("--count",
                         type=int,
