@@ -77,7 +77,7 @@ def main():
                         # Ignore uninteresting repositories.
                         continue
                     parsed_urls.append(repo_url)
-                    time.sleep(0.05)
+                    time.sleep(0.1)
                     print(f'Found {github_lang} repository({s}): {repo_url}')
                     s += 1
                     if s > args.sample_size:
