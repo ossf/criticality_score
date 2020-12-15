@@ -63,7 +63,8 @@ def main():
             while s <= args.sample_size:
                 query = f'language:{github_lang} archived:false'
                 if last_stars_processed:
-                    query += f' stars:<{last_stars_processed+1}'
+                    # +1000 to avoid any races with star updates.
+                    query += f' stars:<{last_stars_processed+1000}'
                 print(f'Running query: {query}')
                 for repo in g.search_repositories(query=query,
                                                   sort='stars',
