@@ -260,8 +260,8 @@ def get_github_auth_token():
         if not near_expiry:
             return _cached_github_token
 
-    github_auth_token = os.getenv('GITHUB_API_TOKEN')
-    assert github_auth_token, 'GITHUB_API_TOKEN needs to be set.'
+    github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
+    assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
     tokens = github_auth_token.split(',')
     wait_time = None
     g = None
