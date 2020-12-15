@@ -54,7 +54,6 @@ def main():
     args = parser.parse_args()
 
     parsed_urls = []
-    g = run.get_github_auth_token()
     for lang in args.language:
         lang = lang.lower()
         for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
@@ -66,6 +65,7 @@ def main():
                     # +1000 to avoid any races with star updates.
                     query += f' stars:<{last_stars_processed+1000}'
                 print(f'Running query: {query}')
+                g = run.get_github_auth_token()
                 for repo in g.search_repositories(query=query,
                                                   sort='stars',
                                                   order='desc'):
