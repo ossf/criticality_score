@@ -110,7 +110,7 @@ gs://ossf-criticality-score/go_top_200.csv
 gs://ossf-criticality-score/java_top_200.csv
 gs://ossf-criticality-score/js_top_200.csv
 gs://ossf-criticality-score/python_top_200.csv
-gs://ossf-criticality-score/rust_top_200.cs
+gs://ossf-criticality-score/rust_top_200.csv
 ```
 
 This data is generated using this
