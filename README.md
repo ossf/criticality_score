@@ -43,7 +43,7 @@ The program only requires one argument to run, the name of the repo:
 ```shell
 $ pip3 install criticality-score
 
-$ criticality_score --repo github.com/kubernetes/kubernetes
+$ cd 
 name: kubernetes
 url: https://github.com/kubernetes/kubernetes
 language: Go

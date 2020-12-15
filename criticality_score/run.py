@@ -13,6 +13,8 @@
 # limitations under the License.
 """Main python script for calculating OSS Criticality Score."""
 
+import re
+import ssl
 import argparse
 import csv
 import datetime
@@ -26,7 +28,43 @@ import urllib
 import github
 import requests
 
-from .constants import *
+requests.packages.urllib3.disable_warnings()
+
+ssl._create_default_https_context = ssl._create_unverified_context
+
+# from PythonDemo.src.github_criticality2_score.constants import *
+# from .constants import *
+# Weights for various parameters.
+CREATED_SINCE_WEIGHT = 1
+UPDATED_SINCE_WEIGHT = -1
+CONTRIBUTOR_COUNT_WEIGHT = 2
+ORG_COUNT_WEIGHT = 1
+COMMIT_FREQUENCY_WEIGHT = 1
+RECENT_RELEASES_WEIGHT = 0.5
+CLOSED_ISSUES_WEIGHT = 0.5
+UPDATED_ISSUES_WEIGHT = 0.5
+COMMENT_FREQUENCY_WEIGHT = 1
+DEPENDENTS_COUNT_WEIGHT = 2
+
+# Max thresholds for various parameters.
+CREATED_SINCE_THRESHOLD = 120
+UPDATED_SINCE_THRESHOLD = 120
+CONTRIBUTOR_COUNT_THRESHOLD = 5000
+ORG_COUNT_THRESHOLD = 10
+COMMIT_FREQUENCY_THRESHOLD = 1000
+RECENT_RELEASES_THRESHOLD = 26
+CLOSED_ISSUES_THRESHOLD = 5000
+UPDATED_ISSUES_THRESHOLD = 5000
+COMMENT_FREQUENCY_THRESHOLD = 15
+DEPENDENTS_COUNT_THRESHOLD = 500000
+
+# Others.
+TOP_CONTRIBUTOR_COUNT = 15
+ISSUE_LOOKBACK_DAYS = 90
+RELEASE_LOOKBACK_DAYS = 365
+
+# Regex to match dependents count.
+DEPENDENTS_REGEX = re.compile(b'.*[^0-9,]([0-9,]+).*commit results', re.DOTALL)
 
 
 class Repository:
@@ -145,7 +183,7 @@ class GitHubRepository(Repository):
             f'https://github.com/search?q="{repo_name}"&type=commits')
         content = b''
         for _ in range(3):
-            result = requests.get(dependents_url)
+            result = requests.get(dependents_url, verify=False)
             if result.status_code == 200:
                 content = result.content
                 break
@@ -257,13 +295,13 @@ def get_github_auth_token():
         if not near_expiry:
             return _cached_github_token
 
-    github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
-    assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
+    github_auth_token = os.getenv('GITHUB_API_TOKEN')
+    assert github_auth_token, 'GITHUB_API_TOKEN needs to be set.'
     tokens = github_auth_token.split(',')
     wait_time = None
     g = None
     for i, token in enumerate(tokens):
-        g = github.Github(token)
+        g = github.Github(token, verify=False)
         near_expiry, wait_time = get_github_token_info(g)
         if not near_expiry:
             _cached_github_token = g
