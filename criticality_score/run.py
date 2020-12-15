@@ -19,8 +19,6 @@ import datetime
 import json
 import math
 import os
-import re
-import ssl
 import sys
 import time
 import urllib
