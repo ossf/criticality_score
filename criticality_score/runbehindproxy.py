@@ -13,6 +13,7 @@
 # limitations under the License.
 """Main python script for calculating OSS Criticality Score."""
 
+from .constants import *
 import re
 import ssl
 import argparse
@@ -28,7 +29,7 @@ import urllib
 import github
 import requests
 
-from .constants import *
+requests.packages.urllib3.disable_warnings()
 
 
 class Repository:
@@ -147,7 +148,7 @@ class GitHubRepository(Repository):
             f'https://github.com/search?q="{repo_name}"&type=commits')
         content = b''
         for _ in range(3):
-            result = requests.get(dependents_url)
+            result = requests.get(dependents_url, verify=False)
             if result.status_code == 200:
                 content = result.content
                 break
@@ -265,7 +266,7 @@ def get_github_auth_token():
     wait_time = None
     g = None
     for i, token in enumerate(tokens):
-        g = github.Github(token)
+        g = github.Github(token, verify=False)
         near_expiry, wait_time = get_github_token_info(g)
         if not near_expiry:
             _cached_github_token = g
