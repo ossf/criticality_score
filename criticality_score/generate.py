@@ -39,13 +39,12 @@ def main():
     parser = argparse.ArgumentParser(
         description=
         'Generate a sorted criticality score list for particular language(s).')
-    parser.add_argument(
-        "--language",
-        nargs='+',
-        default=[],
-        required=True,
-        choices=LANGUAGE_SEARCH_MAP.keys(),
-        help="List of languages to use.")
+    parser.add_argument("--language",
+                        nargs='+',
+                        default=[],
+                        required=True,
+                        choices=LANGUAGE_SEARCH_MAP.keys(),
+                        help="List of languages to use.")
     parser.add_argument("--count",
                         type=int,
                         default=200,
@@ -76,7 +75,7 @@ def main():
                                                   sort='stars',
                                                   order='desc'):
                     # Forced sleep to avoid hitting rate limit.
-                    time.sleep(0.05)
+                    time.sleep(0.1)
                     repo_url = repo.html_url
                     if repo_url in parsed_urls:
                         # Github search can return duplicates, so skip if analyzed.
@@ -98,8 +97,14 @@ def main():
     header = None
     stats = []
     for i, repo_url in enumerate(parsed_urls):
-        repo = run.get_repository(repo_url)
-        output = run.get_repository_stats(repo)
+        output = None
+        for _ in range(3):
+            try:
+                repo = run.get_repository(repo_url)
+                output = run.get_repository_stats(repo)
+                break
+            except Exception:
+                print(f'Exception occurred when reading repo: {repo_url}')
         if not output:
             continue
         if not header:
