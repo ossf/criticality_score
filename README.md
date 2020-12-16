@@ -109,6 +109,7 @@ gs://ossf-criticality-score/cplusplus_top_200.csv
 gs://ossf-criticality-score/go_top_200.csv
 gs://ossf-criticality-score/java_top_200.csv
 gs://ossf-criticality-score/js_top_200.csv
+gs://ossf-criticality-score/php_top_200.csv
 gs://ossf-criticality-score/python_top_200.csv
 gs://ossf-criticality-score/rust_top_200.csv
 ```
@@ -119,7 +120,7 @@ For example, to generate a list of top 200 C language projects, run:
 
 ```shell
 $ python3 -u -m criticality_score.generate \
-    --language c --count 200 --sample-size 1000
+    --language c --count 200 --sample-size 5000
 ```
 
 
