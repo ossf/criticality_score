@@ -15,6 +15,7 @@
 
 import argparse
 import csv
+import os
 import sys
 import time
 
@@ -45,6 +46,10 @@ def main():
                         required=True,
                         choices=LANGUAGE_SEARCH_MAP.keys(),
                         help="List of languages to use.")
+    parser.add_argument("--output-dir",
+                        type=str,
+                        required=True,
+                        help="Directory to place the output in.")
     parser.add_argument("--count",
                         type=int,
                         default=200,
@@ -113,11 +118,17 @@ def main():
         csv_writer.writerow(output.values())
         stats.append(output)
 
-    print('Result:')
-    csv_writer.writerow(header)
-    for i in sorted(stats, key=lambda i: i['criticality_score'],
-                    reverse=True)[:args.count]:
-        csv_writer.writerow(i.values())
+    languages = '_'.join(args.language)
+    output_filename = os.path.join(args.output_dir,
+                                   f'{languages}_top_{args.count}.csv')
+    with open(output_filename, 'w') as file_handle:
+        csv_writer = csv.writer(file_handle)
+        csv_writer.writerow(header)
+        for i in sorted(stats,
+                        key=lambda i: i['criticality_score'],
+                        reverse=True)[:args.count]:
+            csv_writer.writerow(i.values())
+    print(f'Wrote results: {output_filename}')
 
 
 if __name__ == "__main__":
