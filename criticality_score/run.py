@@ -144,12 +144,12 @@ class GitHubRepository(Repository):
         dependents_url = (
             f'https://github.com/search?q="{repo_name}"&type=commits')
         content = b''
-        for _ in range(3):
+        for i in range(10):
             result = requests.get(dependents_url)
             if result.status_code == 200:
                 content = result.content
                 break
-            time.sleep(10)
+            time.sleep(2**i)
         match = DEPENDENTS_REGEX.match(content)
         if not match:
             return 0

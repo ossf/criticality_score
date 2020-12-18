@@ -119,6 +119,7 @@ def main():
         stats.append(output)
 
     languages = '_'.join(args.language)
+    languages = languages.replace('+', 'plus').replace('#', 'hash')
     output_filename = os.path.join(args.output_dir,
                                    f'{languages}_top_{args.count}.csv')
     with open(output_filename, 'w') as file_handle:
