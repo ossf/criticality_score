@@ -23,18 +23,23 @@ by [Rob Pike](https://github.com/robpike):
 We use the following parameters to derive the criticality score for an
 open source project:
 
-| Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description |
-|---|---:|---:|---|
-| created_since | 1 | 120 | Time since the project was created (in months) |
-| updated_since  | -1 | 120 | Time since the project was last updated (in months) |
-| contributor_count | 2 | 5000 | Count of project contributors (with commits) |
-| org_count | 1 | 10 | Count of distinct organizations that contributors belong to |
-| commit_frequency | 1 | 1000 | Average number of commits per week in the last year |
-| recent_releases_count | 0.5 | 26 | Number of releases in the last year |
-| closed_issues_count | 0.5 | 5000 | Number of issues closed in the last 90 days |
-| updated_issues_count | 0.5 | 5000 | Number of issues updated in the last 90 days |
-| comment_frequency | 1 | 15 | Average number of comments per issue in the last 90 days |
-| dependents_count | 2 | 500000 | Number of project mentions in the commit messages |
+| Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description | Reasoning |
+|---|---:|---:|---|---|
+| created_since | 1 | 120 | Time since the project was created (in months) | Older project has higher chance of being widely used or being dependent upon. |
+| updated_since  | -1 | 120 | Time since the project was last updated (in months) | Unmaintained projects with no recent commits have higher chance of being less relied upon. |
+| **contributor_count** | **2** | 5000 | Count of project contributors (with commits) | Different contributors involvement indicates project's importance. |
+| org_count | 1 | 10 | Count of distinct organizations that contributors belong to | Indicates cross-organization dependency. |
+| commit_frequency | 1 | 1000 | Average number of commits per week in the last year | Higher code churn has slight indication of project's importance. Also, higher susceptibility to vulnerabilities.
+| recent_releases_count | 0.5 | 26 | Number of releases in the last year | Frequent releases indicates user dependency. Lower weight since this is not always used. |
+| closed_issues_count | 0.5 | 5000 | Number of issues closed in the last 90 days | Indicates high contributor involvement and focus on closing user issues. Lower weight since it is dependent on project contributors. |
+| updated_issues_count | 0.5 | 5000 | Number of issues updated in the last 90 days | Indicates high contributor involvement. Lower weight since it is dependent on project contributors. |
+| comment_frequency | 1 | 15 | Average number of comments per issue in the last 90 days | Indicates high user activity and dependence. |
+| **dependents_count** | **2** | 500000 | Number of project mentions in the commit messages | Indicates repository use, usually in version rolls. This parameter works across all languages, including C/C++ that don't have package dependency graphs (though hack-ish). Plan to add package dependency trees in the near future. |
+
+**NOTE**:
+
+- We are looking for community ideas to improve upon these parameters.
+- There will always be exceptions to the individual reasoning rules.
 
 ## Usage
 
