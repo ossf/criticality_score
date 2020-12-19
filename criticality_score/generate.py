@@ -28,10 +28,16 @@ LANGUAGE_SEARCH_MAP = {
     'go': ['Go'],
     'java': ['Java', 'Groovy'],
     'js': ['Javascript', 'Typescript', 'CoffeeScript'],
+    'julia': ['Julia'],
+    'matlab': ['Matlab'],
+    'nelson': ['Nelson'],
+    'octave': ['Octave'],
+    'openmatrix': ['OpenMatrix'],
     'php': ['PHP'],
     'python': ['Python'],
     'ruby': ['Ruby'],
     'rust': ['Rust'],
+    'scilab': ['Scilab'],
     'shell': ['Shell'],
 }
 IGNORED_KEYWORDS = ['book', 'course', 'docs', 'interview', 'tutorial']
