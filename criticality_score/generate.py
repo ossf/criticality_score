@@ -26,7 +26,7 @@ LANGUAGE_SEARCH_MAP = {
     'c#': ['C#'],
     'c++': ['C++'],
     'go': ['Go'],
-    'java': ['Java', 'Groovy'],
+    'java': ['Java', 'Groovy', 'Kotlin', 'Scala'],
     'js': ['Javascript', 'Typescript', 'CoffeeScript'],
     'php': ['PHP'],
     'python': ['Python'],

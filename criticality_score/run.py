@@ -28,10 +28,14 @@ import requests
 
 from .constants import *
 
+_cached_github_token = None
+_cached_github_token_obj = None
+
 
 class Repository:
     def __init__(self, repo):
         self._repo = repo
+        self._created_since = None
 
 
 class GitHubRepository(Repository):
@@ -48,11 +52,56 @@ class GitHubRepository(Repository):
     def language(self):
         return self._repo.language
 
+    def get_first_commit_time(self):
+        def _parse_links(response):
+            link_string = response.headers.get('Link')
+            if not link_string:
+                return None
+
+            links = {}
+            for part in link_string.split(','):
+                match = re.match(r'<(.*)>; rel="(.*)"', part.strip())
+                if match:
+                    links[match.group(2)] = match.group(1)
+            return links
+
+        headers = {'Authorization': f'token {_cached_github_token}'}
+        for i in range(FAIL_RETRIES):
+            result = requests.get(f'{self._repo.url}/commits', headers=headers)
+            links = _parse_links(result)
+            if links and links.get('last'):
+                result = requests.get(links['last'], headers=headers)
+                if result.status_code == 200:
+                    commits = json.loads(result.content)
+                    if commits:
+                        last_commit_time_string = (
+                            commits[-1]['commit']['committer']['date'])
+                        return datetime.datetime.strptime(
+                            last_commit_time_string, "%Y-%m-%dT%H:%M:%SZ")
+            time.sleep(2**i)
+
+        return None
+
     # Criteria important for ranking.
     @property
     def created_since(self):
-        difference = datetime.datetime.utcnow() - self._repo.created_at
-        return round(difference.days / 30)
+        if self._created_since:
+            return self._created_since
+
+        creation_time = self._repo.created_at
+
+        # See if there are exist any commits before this repository creation
+        # time on GitHub. If yes, then the repository creation time is not
+        # correct, and it was residing somewhere else before. So, use the first
+        # commit date.
+        if self._repo.get_commits(until=creation_time).totalCount:
+            first_commit_time = self.get_first_commit_time()
+            if first_commit_time:
+                creation_time = min(creation_time, first_commit_time)
+
+        difference = datetime.datetime.utcnow() - creation_time
+        self._created_since = round(difference.days / 30)
+        return self._created_since
 
     @property
     def updated_since(self):
@@ -104,8 +153,7 @@ class GitHubRepository(Repository):
             # Make rough estimation of tags used in last year from overall
             # project history. This query is extremely expensive, so instead
             # do the rough calculation.
-            days_since_creation = (datetime.datetime.utcnow() -
-                                   self._repo.created_at).days
+            days_since_creation = self.created_since * 30
             if not days_since_creation:
                 return 0
             total_tags = self._repo.get_tags().totalCount
@@ -144,7 +192,7 @@ class GitHubRepository(Repository):
         dependents_url = (
             f'https://github.com/search?q="{repo_name}"&type=commits')
         content = b''
-        for i in range(8):
+        for i in range(FAIL_RETRIES):
             result = requests.get(dependents_url)
             if result.status_code == 200:
                 content = result.content
@@ -246,27 +294,26 @@ def get_github_token_info(g):
     return near_expiry, wait_time
 
 
-_cached_github_token = None
-
-
 def get_github_auth_token():
     """Return an un-expired github token if possible from a list of tokens."""
     global _cached_github_token
-    if _cached_github_token:
-        near_expiry, _ = get_github_token_info(_cached_github_token)
+    global _cached_github_token_obj
+    if _cached_github_token_obj:
+        near_expiry, _ = get_github_token_info(_cached_github_token_obj)
         if not near_expiry:
-            return _cached_github_token
+            return _cached_github_token_obj
 
     github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
     assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
     tokens = github_auth_token.split(',')
     wait_time = None
     g = None
-    for i, token in enumerate(tokens):
+    for token in tokens:
         g = github.Github(token)
         near_expiry, wait_time = get_github_token_info(g)
         if not near_expiry:
-            _cached_github_token = g
+            _cached_github_token = token
+            _cached_github_token_obj = g
             return g
     print(f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
           file=sys.stderr)
@@ -310,8 +357,8 @@ def main():
         required=False)
 
     args = parser.parse_args()
-    r = get_repository(args.repo)
-    output = get_repository_stats(r, args.params)
+    repo = get_repository(args.repo)
+    output = get_repository_stats(repo, args.params)
     if args.format == 'default':
         for key, value in output.items():
             print(f'{key}: {value}')
