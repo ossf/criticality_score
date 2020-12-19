@@ -117,10 +117,11 @@ gs://ossf-criticality-score/js_top_200.csv
 gs://ossf-criticality-score/php_top_200.csv
 gs://ossf-criticality-score/python_top_200.csv
 gs://ossf-criticality-score/rust_top_200.csv
+gs://ossf-criticality-score/shell_top_200.csv
 ```
 
 This data is generated using this
-[generator script](https://github.com/ossf/criticality_score/blob/main/criticality_score/run.py).
+[generator script](https://github.com/ossf/criticality_score/blob/main/criticality_score/generate.py).
 For example, to generate a list of top 200 C language projects, run:
 
 ```shell
