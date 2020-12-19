@@ -109,8 +109,8 @@ def main():
                 repo = run.get_repository(repo_url)
                 output = run.get_repository_stats(repo)
                 break
-            except Exception:
-                print(f'Exception occurred when reading repo: {repo_url}')
+            except Exception as e:
+                print(f'Exception occurred when reading repo: {repo_url}\n{e}')
         if not output:
             continue
         if not header:
