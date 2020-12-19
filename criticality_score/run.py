@@ -144,7 +144,7 @@ class GitHubRepository(Repository):
         dependents_url = (
             f'https://github.com/search?q="{repo_name}"&type=commits')
         content = b''
-        for i in range(10):
+        for i in range(8):
             result = requests.get(dependents_url)
             if result.status_code == 200:
                 content = result.content

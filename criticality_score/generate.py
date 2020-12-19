@@ -32,6 +32,7 @@ LANGUAGE_SEARCH_MAP = {
     'python': ['Python'],
     'ruby': ['Ruby'],
     'rust': ['Rust'],
+    'shell': ['Shell'],
 }
 IGNORED_KEYWORDS = ['book', 'course', 'docs', 'interview', 'tutorial']
 
