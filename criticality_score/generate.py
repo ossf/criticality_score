@@ -63,46 +63,54 @@ def main():
 
     args = parser.parse_args()
 
-    parsed_urls = []
-    for lang in args.language:
-        lang = lang.lower()
-        for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
-            s = 1
-            last_stars_processed = None
-            while s <= args.sample_size:
-                query = f'language:{github_lang} archived:false'
-                if last_stars_processed:
-                    # +100 to avoid any races with star updates.
-                    query += f' stars:<{last_stars_processed+100}'
-                print(f'Running query: {query}')
-                g = run.get_github_auth_token()
-                new_result = False
-                for repo in g.search_repositories(query=query,
-                                                  sort='stars',
-                                                  order='desc'):
-                    # Forced sleep to avoid hitting rate limit.
-                    time.sleep(0.1)
-                    repo_url = repo.html_url
-                    if repo_url in parsed_urls:
-                        # Github search can return duplicates, so skip if analyzed.
-                        continue
-                    if any(k in repo_url.lower() for k in IGNORED_KEYWORDS):
-                        # Ignore uninteresting repositories.
-                        continue
-                    parsed_urls.append(repo_url)
-                    new_result = True
-                    print(f'Found {github_lang} repository({s}): {repo_url}')
-                    s += 1
-                    if s > args.sample_size:
+    # GitHub search can return incomplete results in a query, so try it multiple
+    # times to avoid missing urls.
+    repo_urls = set()
+    for round in range(1, 4):
+        print(f'Finding repos (round {round})')
+        parsed_urls = []
+        for lang in args.language:
+            lang = lang.lower()
+            for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
+                s = 1
+                last_stars_processed = None
+                while s <= args.sample_size:
+                    query = f'language:{github_lang} archived:false'
+                    if last_stars_processed:
+                        # +100 to avoid any races with star updates.
+                        query += f' stars:<{last_stars_processed+100}'
+                    print(f'Running query: {query}')
+                    g = run.get_github_auth_token()
+                    new_result = False
+                    for repo in g.search_repositories(query=query,
+                                                      sort='stars',
+                                                      order='desc'):
+                        # Forced sleep to avoid hitting rate limit.
+                        time.sleep(0.1)
+                        repo_url = repo.html_url
+                        if repo_url in parsed_urls:
+                            # Github search can return duplicates, so skip if analyzed.
+                            continue
+                        if any(k in repo_url.lower()
+                               for k in IGNORED_KEYWORDS):
+                            # Ignore uninteresting repositories.
+                            continue
+                        parsed_urls.append(repo_url)
+                        new_result = True
+                        print(
+                            f'Found {github_lang} repository({s}): {repo_url}')
+                        s += 1
+                        if s > args.sample_size:
+                            break
+                    if not new_result:
                         break
-                if not new_result:
-                    break
-                last_stars_processed = repo.stargazers_count
+                    last_stars_processed = repo.stargazers_count
+        repo_urls.update(parsed_urls)
 
     csv_writer = csv.writer(sys.stdout)
     header = None
     stats = []
-    for i, repo_url in enumerate(parsed_urls):
+    for repo_url in repo_urls:
         output = None
         for _ in range(3):
             try:
