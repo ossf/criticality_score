@@ -20,25 +20,86 @@ import json
 import math
 import os
 import sys
+import threading
 import time
 import urllib
 
 import github
 import requests
 
-from .constants import *
+from .constants import *  # pylint: disable=wildcard-import
 
-_cached_github_token = None
-_cached_github_token_obj = None
+_CACHED_GITHUB_TOKEN = None
+_CACHED_GITHUB_TOKEN_OBJ = None
+
+PARAMS = [
+    'created_since', 'updated_since', 'contributor_count', 'org_count',
+    'commit_frequency', 'recent_releases_count', 'updated_issues_count',
+    'closed_issues_count', 'comment_frequency', 'dependents_count'
+]
 
 
 class Repository:
+    """General source repository."""
     def __init__(self, repo):
         self._repo = repo
         self._created_since = None
 
+    @property
+    def name(self):
+        raise NotImplementedError
+
+    @property
+    def url(self):
+        raise NotImplementedError
+
+    @property
+    def language(self):
+        raise NotImplementedError
+
+    @property
+    def created_since(self):
+        raise NotImplementedError
+
+    @property
+    def updated_since(self):
+        raise NotImplementedError
+
+    @property
+    def contributor_count(self):
+        raise NotImplementedError
+
+    @property
+    def org_count(self):
+        raise NotImplementedError
+
+    @property
+    def commit_frequency(self):
+        raise NotImplementedError
+
+    @property
+    def recent_releases_count(self):
+        raise NotImplementedError
+
+    @property
+    def updated_issues_count(self):
+        raise NotImplementedError
+
+    @property
+    def closed_issues_count(self):
+        raise NotImplementedError
+
+    @property
+    def comment_frequency(self):
+        raise NotImplementedError
+
+    @property
+    def dependents_count(self):
+        raise NotImplementedError
+
 
 class GitHubRepository(Repository):
+    """Source repository hosted on GitHub."""
     # General metadata attributes.
     @property
     def name(self):
@@ -65,7 +126,7 @@ class GitHubRepository(Repository):
                     links[match.group(2)] = match.group(1)
             return links
 
-        headers = {'Authorization': f'token {_cached_github_token}'}
+        headers = {'Authorization': f'token {_CACHED_GITHUB_TOKEN}'}
         for i in range(FAIL_RETRIES):
             result = requests.get(f'{self._repo.url}/commits', headers=headers)
             links = _parse_links(result)
@@ -111,14 +172,15 @@ class GitHubRepository(Repository):
         return round(difference.days / 30)
 
     @property
-    def contributors(self):
+    def contributor_count(self):
         try:
             return self._repo.get_contributors(anon='true').totalCount
         except Exception:
             # Very large number of contributors, i.e. 5000+. Cap at 5,000.
             return 5000
 
-    def get_contributor_orgs(self):
+    @property
+    def org_count(self):
         def _filter_name(org_name):
             return org_name.lower().replace('inc.', '').replace(
                 'llc', '').replace('@', '').replace(' ', '').rstrip(',')
@@ -131,8 +193,8 @@ class GitHubRepository(Repository):
                     orgs.add(_filter_name(contributor.company))
         except Exception:
             # Very large number of contributors, i.e. 5000+. Cap at 10.
-            return [None] * 10
-        return sorted(orgs)
+            return 10
+        return len(orgs)
 
     @property
     def commit_frequency(self):
@@ -142,7 +204,7 @@ class GitHubRepository(Repository):
         return round(total / 52, 1)
 
     @property
-    def recent_releases(self):
+    def recent_releases_count(self):
         total = 0
         for release in self._repo.get_releases():
             if (datetime.datetime.utcnow() -
@@ -162,14 +224,14 @@ class GitHubRepository(Repository):
         return total
 
     @property
-    def updated_issues(self):
+    def updated_issues_count(self):
         issues_since_time = datetime.datetime.utcnow() - datetime.timedelta(
             days=ISSUE_LOOKBACK_DAYS)
         return self._repo.get_issues(state='all',
                                      since=issues_since_time).totalCount
 
     @property
-    def closed_issues(self):
+    def closed_issues_count(self):
         issues_since_time = datetime.datetime.utcnow() - datetime.timedelta(
             days=ISSUE_LOOKBACK_DAYS)
         return self._repo.get_issues(state='closed',
@@ -187,7 +249,8 @@ class GitHubRepository(Repository):
             since=issues_since_time).totalCount
         return round(comment_count / issue_count, 1)
 
-    def get_dependents(self):
+    @property
+    def dependents_count(self):
         repo_name = self.url.replace('https://github.com/', '')
         dependents_url = (
             f'https://github.com/search?q="{repo_name}"&type=commits')
@@ -210,9 +273,11 @@ def get_param_score(param, max_value, weight=1):
     return (math.log(1 + param) / math.log(1 + max(param, max_value))) * weight
 
 
-def get_repository_stats(repo, additional_params=[]):
+def get_repository_stats(repo, additional_params=None):
     """Return repository stats, including criticality score."""
     # Validate and compute additional params first.
+    if additional_params is None:
+        additional_params = []
     additional_params_total_weight = 0
     additional_params_score = 0
     for additional_param in additional_params:
@@ -228,16 +293,28 @@ def get_repository_stats(repo, additional_params=[]):
         additional_params_score += get_param_score(value, max_threshold,
                                                    weight)
 
-    created_since = repo.created_since
-    updated_since = repo.updated_since
-    contributor_count = repo.contributors
-    org_count = len(repo.get_contributor_orgs())
-    commit_frequency = repo.commit_frequency
-    recent_releases_count = repo.recent_releases
-    updated_issues_count = repo.updated_issues
-    closed_issues_count = repo.closed_issues
-    comment_frequency = repo.comment_frequency
-    dependents_count = repo.get_dependents()
+    def _worker(repo, param, return_dict):
+        """worker function"""
+        return_dict[param] = getattr(repo, param)
+
+    threads = []
+    return_dict = {}
+    for param in PARAMS:
+        thread = threading.Thread(target=_worker,
+                                  args=(repo, param, return_dict))
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
+
+    # Guarantee insertion order.
+    result_dict = {
+        'name': repo.name,
+        'url': repo.url,
+        'language': repo.language,
+    }
+    for param in PARAMS:
+        result_dict[param] = return_dict[param]
 
     total_weight = (CREATED_SINCE_WEIGHT + UPDATED_SINCE_WEIGHT +
                     CONTRIBUTOR_COUNT_WEIGHT + ORG_COUNT_WEIGHT +
@@ -247,48 +324,38 @@ def get_repository_stats(repo, additional_params=[]):
                     additional_params_total_weight)
 
     criticality_score = round(
-        (get_param_score(created_since, CREATED_SINCE_THRESHOLD,
-                         CREATED_SINCE_WEIGHT) +
-         get_param_score(updated_since, UPDATED_SINCE_THRESHOLD,
-                         UPDATED_SINCE_WEIGHT) +
-         get_param_score(contributor_count, CONTRIBUTOR_COUNT_THRESHOLD,
-                         CONTRIBUTOR_COUNT_WEIGHT) +
-         get_param_score(org_count, ORG_COUNT_THRESHOLD, ORG_COUNT_WEIGHT) +
-         get_param_score(commit_frequency, COMMIT_FREQUENCY_THRESHOLD,
-                         COMMIT_FREQUENCY_WEIGHT) +
-         get_param_score(recent_releases_count, RECENT_RELEASES_THRESHOLD,
-                         RECENT_RELEASES_WEIGHT) +
-         get_param_score(closed_issues_count, CLOSED_ISSUES_THRESHOLD,
-                         CLOSED_ISSUES_WEIGHT) +
-         get_param_score(updated_issues_count, UPDATED_ISSUES_THRESHOLD,
-                         UPDATED_ISSUES_WEIGHT) +
-         get_param_score(comment_frequency, COMMENT_FREQUENCY_THRESHOLD,
-                         COMMENT_FREQUENCY_WEIGHT) +
-         get_param_score(dependents_count, DEPENDENTS_COUNT_THRESHOLD,
-                         DEPENDENTS_COUNT_WEIGHT) + additional_params_score) /
+        ((get_param_score(result_dict['created_since'],
+                          CREATED_SINCE_THRESHOLD, CREATED_SINCE_WEIGHT)) +
+         (get_param_score(result_dict['updated_since'],
+                          UPDATED_SINCE_THRESHOLD, UPDATED_SINCE_WEIGHT)) +
+         (get_param_score(result_dict['contributor_count'],
+                          CONTRIBUTOR_COUNT_THRESHOLD,
+                          CONTRIBUTOR_COUNT_WEIGHT)) +
+         (get_param_score(result_dict['org_count'], ORG_COUNT_THRESHOLD,
+                          ORG_COUNT_WEIGHT)) +
+         (get_param_score(result_dict['commit_frequency'],
+                          COMMIT_FREQUENCY_THRESHOLD,
+                          COMMIT_FREQUENCY_WEIGHT)) +
+         (get_param_score(result_dict['recent_releases_count'],
+                          RECENT_RELEASES_THRESHOLD, RECENT_RELEASES_WEIGHT)) +
+         (get_param_score(result_dict['closed_issues_count'],
+                          CLOSED_ISSUES_THRESHOLD, CLOSED_ISSUES_WEIGHT)) +
+         (get_param_score(result_dict['updated_issues_count'],
+                          UPDATED_ISSUES_THRESHOLD, UPDATED_ISSUES_WEIGHT)) +
+         (get_param_score(
+             result_dict['comment_frequency'], COMMENT_FREQUENCY_THRESHOLD,
+             COMMENT_FREQUENCY_WEIGHT)) + (get_param_score(
+                 result_dict['dependents_count'], DEPENDENTS_COUNT_THRESHOLD,
+                 DEPENDENTS_COUNT_WEIGHT)) + additional_params_score) /
         total_weight, 5)
 
-    return {
-        'name': repo.name,
-        'url': repo.url,
-        'language': repo.language,
-        'created_since': created_since,
-        'updated_since': updated_since,
-        'contributor_count': contributor_count,
-        'org_count': org_count,
-        'commit_frequency': commit_frequency,
-        'recent_releases_count': recent_releases_count,
-        'closed_issues_count': closed_issues_count,
-        'updated_issues_count': updated_issues_count,
-        'comment_frequency': comment_frequency,
-        'dependents_count': dependents_count,
-        'criticality_score': criticality_score,
-    }
+    result_dict['criticality_score'] = criticality_score
+    return result_dict
 
 
-def get_github_token_info(g):
+def get_github_token_info(token_obj):
     """Return expiry information given a github token."""
-    rate_limit = g.get_rate_limit()
+    rate_limit = token_obj.get_rate_limit()
     near_expiry = rate_limit.core.remaining < 50
     wait_time = (rate_limit.core.reset - datetime.datetime.utcnow()).seconds
     return near_expiry, wait_time
@@ -296,29 +363,31 @@ def get_github_token_info(g):
 
 def get_github_auth_token():
     """Return an un-expired github token if possible from a list of tokens."""
-    global _cached_github_token
-    global _cached_github_token_obj
-    if _cached_github_token_obj:
-        near_expiry, _ = get_github_token_info(_cached_github_token_obj)
+    global _CACHED_GITHUB_TOKEN
+    global _CACHED_GITHUB_TOKEN_OBJ
+    if _CACHED_GITHUB_TOKEN_OBJ:
+        near_expiry, _ = get_github_token_info(_CACHED_GITHUB_TOKEN_OBJ)
         if not near_expiry:
-            return _cached_github_token_obj
+            return _CACHED_GITHUB_TOKEN_OBJ
 
     github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
     assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
     tokens = github_auth_token.split(',')
+
     wait_time = None
-    g = None
+    token_obj = None
     for token in tokens:
-        g = github.Github(token)
-        near_expiry, wait_time = get_github_token_info(g)
+        token_obj = github.Github(token)
+        near_expiry, wait_time = get_github_token_info(token_obj)
         if not near_expiry:
-            _cached_github_token = token
-            _cached_github_token_obj = g
-            return g
+            _CACHED_GITHUB_TOKEN = token
+            _CACHED_GITHUB_TOKEN_OBJ = token_obj
+            return token_obj
+
     print(f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
           file=sys.stderr)
     time.sleep(wait_time)
-    return g
+    return token_obj
 
 
 def get_repository(url):
@@ -328,9 +397,8 @@ def get_repository(url):
 
     parsed_url = urllib.parse.urlparse(url)
     if parsed_url.netloc.endswith('github.com'):
-        g = get_github_auth_token()
         repo_url = parsed_url.path.strip('/')
-        repo = GitHubRepository(g.get_repo(repo_url))
+        repo = GitHubRepository(get_github_auth_token().get_repo(repo_url))
         return repo
 
     raise Exception('Unsupported url!')
