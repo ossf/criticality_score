@@ -73,7 +73,9 @@ argument on the command line.
 
 ### Authentication
 
-Before running criticality score, you need to
+Before running criticality score, you need to:
+
+- For GitHub repos, you need to
 [create a GitHub access token](https://docs.github.com/en/free-pro-team@latest/developers/apps/about-apps#personal-access-tokens)
 and set it in environment variable `GITHUB_AUTH_TOKEN`.
 This helps to avoid the GitHub's
@@ -87,6 +89,20 @@ export GITHUB_AUTH_TOKEN=<your access token>
 # For windows:
 set GITHUB_AUTH_TOKEN=<your access token>
 ```
+
+- For GitLab repos, you need to
+[create a GitLab access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html)
+and set it in environment variable `GITLAB_AUTH_TOKEN`.
+This helps to avoid the GitLab's api limitations for unauthenticated users.
+
+```shell
+# For posix platforms, e.g. linux, mac:
+export GITLAB_AUTH_TOKEN=<your access token>
+
+# For windows:
+set GITLAB_AUTH_TOKEN=<your access token>
+```
+
 ### Formatting Results
 
 There are three formats currently: `default`, `json`, and `csv`. Others may be added in the future.
