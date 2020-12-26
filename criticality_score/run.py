@@ -25,6 +25,7 @@ import time
 import urllib
 
 import github
+import gitlab
 import requests
 
 from .constants import *  # pylint: disable=wildcard-import
@@ -267,6 +268,120 @@ class GitHubRepository(Repository):
         return int(match.group(1).replace(b',', b''))
 
 
+class GitLabRepository(Repository):
+    """Source repository hosted on GitLab."""
+    @staticmethod
+    def _date_from_string(date_string):
+        return datetime.datetime.strptime(date_string,
+                                          "%Y-%m-%dT%H:%M:%S.%f%z")
+
+    @property
+    def name(self):
+        return self._repo.namespace['name']
+
+    @property
+    def url(self):
+        return self._repo.namespace['web_url']
+
+    @property
+    def language(self):
+        languages = self._repo.languages()
+        return (max(languages, key=languages.get)).lower()
+
+    @property
+    def created_since(self):
+        creation_time = self._date_from_string(self._repo.created_at)
+        commit = None
+        for commit in self._repo.commits.list(until=creation_time,
+                                              as_list=False):
+            pass
+        if commit:
+            creation_time = self._date_from_string(commit.created_at)
+        difference = datetime.datetime.now(
+            datetime.timezone.utc) - creation_time
+        return round(difference.days / 30)
+
+    @property
+    def updated_since(self):
+        last_commit = self._repo.commits.list()[0]
+        difference = datetime.datetime.now(
+            datetime.timezone.utc) - self._date_from_string(
+                last_commit.created_at)
+        return round(difference.days / 30)
+
+    @property
+    def contributor_count(self):
+        return len(self._repo.repository_contributors(all=True))
+
+    @property
+    def org_count(self):
+        # Not possible to calculate as this feature restricted to admins only.
+        # https://docs.gitlab.com/ee/api/users.html#user-memberships-admin-only
+        return 0
+
+    @property
+    def commit_frequency(self):
+        commits_since_time = datetime.datetime.utcnow() - datetime.timedelta(
+            days=365)
+        iterator = self._repo.commits.list(since=commits_since_time,
+                                           as_list=False)
+        commits_count = sum(1 for _ in iterator)
+        return round(commits_count / 52, 1)
+
+    @property
+    def recent_releases_count(self):
+        count = 0
+        for release in self._repo.releases.list():
+            release_time = self._date_from_string(release.released_at)
+            if (datetime.datetime.now(datetime.timezone.utc) -
+                    release_time).days > RELEASE_LOOKBACK_DAYS:
+                break
+            count += 1
+        count = 0
+        if not count:
+            for tag in self._repo.tags.list():
+                tag_time = self._date_from_string(tag.commit['created_at'])
+                if (datetime.datetime.now(datetime.timezone.utc) -
+                        tag_time).days > RELEASE_LOOKBACK_DAYS:
+                    break
+                count += 1
+        return count
+
+    @property
+    def updated_issues_count(self):
+        issues_since_time = datetime.datetime.utcnow() - datetime.timedelta(
+            days=ISSUE_LOOKBACK_DAYS)
+        return self._repo.issuesstatistics.get(
+            updated_after=issues_since_time).statistics['counts']['all']
+
+    @property
+    def closed_issues_count(self):
+        issues_since_time = datetime.datetime.utcnow() - datetime.timedelta(
+            days=ISSUE_LOOKBACK_DAYS)
+        return self._repo.issuesstatistics.get(
+            updated_after=issues_since_time).statistics['counts']['closed']
+
+    @property
+    def comment_frequency(self):
+        comments_count = 0
+        issues_since_time = datetime.datetime.utcnow() - datetime.timedelta(
+            days=ISSUE_LOOKBACK_DAYS)
+        for issue in self._repo.issues.list(updated_after=issues_since_time,
+                                            as_list=False):
+            try:
+                comments_count += issue.notes.list(as_list=False).total
+            except Exception:
+                pass
+        return round(comments_count / self.updated_issues_count, 1)
+
+    @property
+    def dependents_count(self):
+        # TODO: Implement this once this feature is stable and available to
+        # general users.
+        # https://docs.gitlab.com/ee/api/dependencies.html
+        return 0
+
+
 def get_param_score(param, max_value, weight=1):
     """Return paramater score given its current value, max value and
     parameter weight."""
@@ -390,15 +505,34 @@ def get_github_auth_token():
     return token_obj
 
 
+def get_gitlab_auth_token(host):
+    """Return a gitlab token object."""
+    gitlab_auth_token = os.getenv('GITLAB_AUTH_TOKEN')
+    try:
+        token_obj = gitlab.Gitlab(host, gitlab_auth_token)
+        token_obj.auth()
+    except gitlab.exceptions.GitlabAuthenticationError:
+        print("Auth token didn't work, trying un-authenticated. "
+              "Some params like comment_frequency will not work.")
+        token_obj = gitlab.Gitlab(host)
+    return token_obj
+
+
 def get_repository(url):
     """Return repository object, given a url."""
     if not '://' in url:
         url = 'https://' + url
 
     parsed_url = urllib.parse.urlparse(url)
+    repo_url = parsed_url.path.strip('/')
     if parsed_url.netloc.endswith('github.com'):
-        repo_url = parsed_url.path.strip('/')
         repo = GitHubRepository(get_github_auth_token().get_repo(repo_url))
+        return repo
+    if 'gitlab' in parsed_url.netloc:
+        host = parsed_url.scheme + '://' + parsed_url.netloc
+        token_obj = get_gitlab_auth_token(host)
+        repo_url_encoded = urllib.parse.quote_plus(repo_url)
+        repo = GitLabRepository(token_obj.projects.get(repo_url_encoded))
         return repo
 
     raise Exception('Unsupported url!')

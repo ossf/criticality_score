@@ -6,3 +6,8 @@ disable=
   missing-function-docstring,
   too-many-locals,
 
+[MISCELLANEOUS]
+
+# List of note tags to take in consideration, separated by a comma.
+notes=
+
