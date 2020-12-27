@@ -133,6 +133,7 @@ gs://ossf-criticality-score/java_top_200.csv
 gs://ossf-criticality-score/js_top_200.csv
 gs://ossf-criticality-score/php_top_200.csv
 gs://ossf-criticality-score/python_top_200.csv
+gs://ossf-criticality-score/ruby_top_200.csv
 gs://ossf-criticality-score/rust_top_200.csv
 gs://ossf-criticality-score/shell_top_200.csv
 ```
