@@ -19,7 +19,7 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='criticality_score',
-    version='1.0.6',
+    version='1.0.7',
     author='Abhishek Arya',
     author_email='',
     description='Gives criticality score for an open source project',

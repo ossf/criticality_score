@@ -96,7 +96,23 @@ class Repository:
 
     @property
     def dependents_count(self):
-        raise NotImplementedError
+        # TODO: Take package manager dependency trees into account. If we decide
+        # to replace this, then find a solution for C/C++ as well.
+        parsed_url = urllib.parse.urlparse(self.url)
+        repo_name = parsed_url.path.strip('/')
+        dependents_url = (
+            f'https://github.com/search?q="{repo_name}"&type=commits')
+        content = b''
+        for i in range(FAIL_RETRIES):
+            result = requests.get(dependents_url)
+            if result.status_code == 200:
+                content = result.content
+                break
+            time.sleep(2**i)
+        match = DEPENDENTS_REGEX.match(content)
+        if not match:
+            return 0
+        return int(match.group(1).replace(b',', b''))
 
 
 class GitHubRepository(Repository):
@@ -250,23 +266,6 @@ class GitHubRepository(Repository):
             since=issues_since_time).totalCount
         return round(comment_count / issue_count, 1)
 
-    @property
-    def dependents_count(self):
-        repo_name = self.url.replace('https://github.com/', '')
-        dependents_url = (
-            f'https://github.com/search?q="{repo_name}"&type=commits')
-        content = b''
-        for i in range(FAIL_RETRIES):
-            result = requests.get(dependents_url)
-            if result.status_code == 200:
-                content = result.content
-                break
-            time.sleep(2**i)
-        match = DEPENDENTS_REGEX.match(content)
-        if not match:
-            return 0
-        return int(match.group(1).replace(b',', b''))
-
 
 class GitLabRepository(Repository):
     """Source repository hosted on GitLab."""
@@ -277,11 +276,11 @@ class GitLabRepository(Repository):
 
     @property
     def name(self):
-        return self._repo.namespace['name']
+        return self._repo.name
 
     @property
     def url(self):
-        return self._repo.namespace['web_url']
+        return self._repo.web_url
 
     @property
     def language(self):
@@ -317,7 +316,7 @@ class GitLabRepository(Repository):
     def org_count(self):
         # Not possible to calculate as this feature restricted to admins only.
         # https://docs.gitlab.com/ee/api/users.html#user-memberships-admin-only
-        return 0
+        return 1
 
     @property
     def commit_frequency(self):
@@ -373,13 +372,6 @@ class GitLabRepository(Repository):
             except Exception:
                 pass
         return round(comments_count / self.updated_issues_count, 1)
-
-    @property
-    def dependents_count(self):
-        # TODO: Implement this once this feature is stable and available to
-        # general users.
-        # https://docs.gitlab.com/ee/api/dependencies.html
-        return 0
 
 
 def get_param_score(param, max_value, weight=1):
