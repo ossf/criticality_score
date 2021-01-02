@@ -23,7 +23,7 @@ You must install these tools:
 
 1.  [`python`](https://www.python.org/downloads/): For running code.
  
-1.  `python-gitlab` and `PyGithub` pip packages.
+1.  [`python-gitlab`](https://pypi.org/project/python-gitlab/) and [`PyGithub`](https://pypi.org/project/PyGithub/) pip packages.
 
 ```shell
 pip3 install python-gitlab PyGithub
