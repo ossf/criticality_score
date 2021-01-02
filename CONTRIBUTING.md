@@ -22,6 +22,12 @@ You must install these tools:
 1.  [`git`](https://help.github.com/articles/set-up-git/): For source control.
 
 1.  [`python`](https://www.python.org/downloads/): For running code.
+ 
+1.  [`python-gitlab`] and [`PyGithub`] pip packages.
+
+```shell
+pip3 install python-gitlab PyGithub
+```
 
 ## Iterating
 
