@@ -36,7 +36,19 @@ LANGUAGE_SEARCH_MAP = {
 }
 IGNORED_KEYWORDS = ['book', 'course', 'docs', 'interview', 'tutorial']
 
-def get_repo_urls(urls, sample_size, github_lang = ''):
+def get_github_repo_urls(sample_size, languages):
+    urls = []
+    if (languages):
+        for lang in languages:
+            lang = lang.lower()
+            for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
+                urls = get_github_repo_urls_for_language(urls, sample_size, github_lang)
+    else:
+        urls = get_github_repo_urls_for_language(urls, sample_size)
+
+    return urls
+
+def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
     """Return repository urls given a language list and sample size."""
     samples_processed = 1
     last_stars_processed = None
@@ -110,16 +122,7 @@ def main():
     repo_urls = set()
     for rnd in range(1, 4):
         print(f'Finding repos (round {rnd}):')
-        urls = []
-        if (args.language):
-            for lang in args.language:
-                lang = lang.lower()
-                for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
-                    urls = get_repo_urls(urls, args.sample_size, github_lang)
-        else:
-            urls = get_repo_urls(urls, args.sample_size)
-
-        repo_urls.update(urls)
+        repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
     csv_writer = csv.writer(sys.stdout)
     header = None
