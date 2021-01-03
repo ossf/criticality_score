@@ -145,7 +145,7 @@ For example, to generate a list of top 200 C language projects, run:
 ```shell
 $ pip3 install python-gitlab PyGithub
 $ python3 -u -m criticality_score.generate \
-    --language c --count 200 --sample-size 5000
+    --language c --count 200 --sample-size 5000 --output-dir output
 ```
 
 
