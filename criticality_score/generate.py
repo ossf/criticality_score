@@ -36,48 +36,59 @@ LANGUAGE_SEARCH_MAP = {
 }
 IGNORED_KEYWORDS = ['book', 'course', 'docs', 'interview', 'tutorial']
 
+def get_github_repo_urls(sample_size, languages):
+    urls = []
+    if (languages):
+        for lang in languages:
+            lang = lang.lower()
+            for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
+                urls = get_github_repo_urls_for_language(urls, sample_size, github_lang)
+    else:
+        urls = get_github_repo_urls_for_language(urls, sample_size)
 
-def get_repo_urls(languages, sample_size):
+    return urls
+
+def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
     """Return repository urls given a language list and sample size."""
-    repo_urls = []
-    for lang in languages:
-        lang = lang.lower()
-        for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
-            samples_processed = 1
-            last_stars_processed = None
-            while samples_processed <= sample_size:
-                query = f'language:{github_lang} archived:false'
-                if last_stars_processed:
-                    # +100 to avoid any races with star updates.
-                    query += f' stars:<{last_stars_processed+100}'
-                print(f'Running query: {query}')
-                token_obj = run.get_github_auth_token()
-                new_result = False
-                repo = None
-                for repo in token_obj.search_repositories(query=query,
-                                                          sort='stars',
-                                                          order='desc'):
-                    # Forced sleep to avoid hitting rate limit.
-                    time.sleep(0.1)
-                    repo_url = repo.html_url
-                    if repo_url in repo_urls:
-                        # Github search can return duplicates, so skip if analyzed.
-                        continue
-                    if any(k in repo_url.lower() for k in IGNORED_KEYWORDS):
-                        # Ignore uninteresting repositories.
-                        continue
-                    repo_urls.append(repo_url)
-                    new_result = True
-                    print(f'Found {github_lang} repository'
-                          f'({samples_processed}): {repo_url}')
-                    samples_processed += 1
-                    if samples_processed > sample_size:
-                        break
-                if not new_result:
-                    break
-                last_stars_processed = repo.stargazers_count
+    samples_processed = 1
+    last_stars_processed = None
+    while samples_processed <= sample_size:
 
-    return repo_urls
+        query = 'archived:false'
+        if github_lang:
+            query += f' language:{github_lang}'
+
+        if last_stars_processed:
+            # +100 to avoid any races with star updates.
+            query += f' stars:<{last_stars_processed+100}'
+        print(f'Running query: {query}')
+        token_obj = run.get_github_auth_token()
+        new_result = False
+        repo = None
+        for repo in token_obj.search_repositories(query=query,
+                                                    sort='stars',
+                                                    order='desc'):
+            # Forced sleep to avoid hitting rate limit.
+            time.sleep(0.1)
+            repo_url = repo.html_url
+            if repo_url in urls:
+                # Github search can return duplicates, so skip if analyzed.
+                continue
+            if any(k in repo_url.lower() for k in IGNORED_KEYWORDS):
+                # Ignore uninteresting repositories.
+                continue
+            urls.append(repo_url)
+            new_result = True
+            print(f'Found repository'
+                    f'({samples_processed}): {repo_url}')
+            samples_processed += 1
+            if samples_processed > sample_size:
+                break
+        if not new_result:
+            break
+        last_stars_processed = repo.stargazers_count
+
+    return urls
 
 
 def main():
@@ -87,7 +98,7 @@ def main():
     parser.add_argument("--language",
                         nargs='+',
                         default=[],
-                        required=True,
+                        required=False,
                         choices=LANGUAGE_SEARCH_MAP.keys(),
                         help="List of languages to use.")
     parser.add_argument("--output-dir",
@@ -111,7 +122,7 @@ def main():
     repo_urls = set()
     for rnd in range(1, 4):
         print(f'Finding repos (round {rnd}):')
-        repo_urls.update(get_repo_urls(args.language, args.sample_size))
+        repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
     csv_writer = csv.writer(sys.stdout)
     header = None
@@ -134,7 +145,7 @@ def main():
         csv_writer.writerow(output.values())
         stats.append(output)
 
-    languages = '_'.join(args.language)
+    languages = '_'.join(args.language) if args.language else 'all'
     languages = languages.replace('+', 'plus').replace('c#', 'csharp')
     output_filename = os.path.join(args.output_dir,
                                    f'{languages}_top_{args.count}.csv')
