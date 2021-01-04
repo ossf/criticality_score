@@ -130,6 +130,10 @@ class GitHubRepository(Repository):
     def language(self):
         return self._repo.language
 
+    @property
+    def stars(self):
+        return self._repo.stargazers_count
+
     def get_first_commit_time(self):
         def _parse_links(response):
             link_string = response.headers.get('Link')
@@ -288,6 +292,10 @@ class GitLabRepository(Repository):
         return (max(languages, key=languages.get)).lower()
 
     @property
+    def stars(self):
+        return self._repo.star_count
+
+    @property
     def created_since(self):
         creation_time = self._date_from_string(self._repo.created_at)
         commit = None
@@ -419,6 +427,7 @@ def get_repository_stats(repo, additional_params=None):
         'name': repo.name,
         'url': repo.url,
         'language': repo.language,
+        'stars': repo.stars
     }
     for param in PARAMS:
         result_dict[param] = return_dict[param]
