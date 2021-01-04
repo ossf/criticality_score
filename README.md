@@ -52,6 +52,7 @@ $ criticality_score --repo github.com/kubernetes/kubernetes
 name: kubernetes
 url: https://github.com/kubernetes/kubernetes
 language: Go
+stars: 73242
 created_since: 79
 updated_since: 0
 contributor_count: 3664
