@@ -34,7 +34,7 @@ LANGUAGE_SEARCH_MAP = {
     'rust': ['Rust'],
     'shell': ['Shell'],
 }
-IGNORED_KEYWORDS = ['book', 'course', 'docs', 'interview', 'tutorial']
+IGNORED_KEYWORDS = ['course', 'docs', 'interview', 'tutorial']
 
 def get_github_repo_urls(sample_size, languages):
     urls = []
