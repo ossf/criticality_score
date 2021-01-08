@@ -39,6 +39,6 @@ setuptools.setup(
     entry_points={
         'console_scripts': ['criticality_score=criticality_score.run:main'],
     },
-    python_requires='>=3',
+    python_requires='>=3.6',
     zip_safe=False,
 )
