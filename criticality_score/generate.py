@@ -18,6 +18,7 @@ import csv
 import os
 import sys
 import time
+import logging
 
 from . import run
 
@@ -117,6 +118,17 @@ def main():
 
     args = parser.parse_args()
 
+    # logging
+    log_filename = os.path.join(args.output_dir, 'generate.log')
+    logging.basicConfig(filename=log_filename, filemode="w", level=logging.WARNING)
+
+    # console handler
+    console = logging.StreamHandler()
+    console.setLevel(logging.ERROR)
+    logging.getLogger("").addHandler(console)
+
+    logger = logging.getLogger(__name__)
+
     # GitHub search can return incomplete results in a query, so try it multiple
     # times to avoid missing urls.
     repo_urls = set()
@@ -135,8 +147,9 @@ def main():
                 output = run.get_repository_stats(repo)
                 break
             except Exception as exp:
-                print(
-                    f'Exception occurred when reading repo: {repo_url}\n{exp}')
+                msg = f'Exception occurred when reading repo: {repo_url}\n{exp}'
+                print(msg)
+                logger.exception(msg)
         if not output:
             continue
         if not header:
