@@ -93,17 +93,15 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
 
     return urls
 
-
-def main():
-    # logging
-    log_filename = os.path.join('output', 'generate.log')
+def initialize_logging_handlers(output_dir):
+    log_filename = os.path.join(output_dir, 'output.log')
     logging.basicConfig(filename=log_filename, filemode='w', level=logging.INFO)
 
-    # console handler
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    logging.getLogger('').addHandler(console)
+    logging.getLogger('').addHandler(console)    
 
+def main():
     parser = argparse.ArgumentParser(
         description=
         'Generate a sorted criticality score list for particular language(s).')
@@ -128,6 +126,8 @@ def main():
         help="Number of projects to analyze (in descending order of stars).")
 
     args = parser.parse_args()
+
+    initialize_logging_handlers(args.output_dir)
 
     # GitHub search can return incomplete results in a query, so try it multiple
     # times to avoid missing urls.
