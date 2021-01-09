@@ -15,11 +15,14 @@
 
 import argparse
 import csv
+import logging
 import os
 import sys
 import time
 
 from . import run
+
+logger = logging.getLogger()
 
 LANGUAGE_SEARCH_MAP = {
     'c': ['C'],
@@ -61,7 +64,7 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
         if last_stars_processed:
             # +100 to avoid any races with star updates.
             query += f' stars:<{last_stars_processed+100}'
-        print(f'Running query: {query}')
+        logger.info(f'Running query: {query}')
         token_obj = run.get_github_auth_token()
         new_result = False
         repo = None
@@ -79,7 +82,7 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
                 continue
             urls.append(repo_url)
             new_result = True
-            print(f'Found repository'
+            logger.info(f'Found repository'
                     f'({samples_processed}): {repo_url}')
             samples_processed += 1
             if samples_processed > sample_size:
@@ -90,6 +93,13 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
 
     return urls
 
+def initialize_logging_handlers(output_dir):
+    log_filename = os.path.join(output_dir, 'output.log')
+    logging.basicConfig(filename=log_filename, filemode='w', level=logging.INFO)
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    logging.getLogger('').addHandler(console)    
 
 def main():
     parser = argparse.ArgumentParser(
@@ -117,11 +127,13 @@ def main():
 
     args = parser.parse_args()
 
+    initialize_logging_handlers(args.output_dir)
+
     # GitHub search can return incomplete results in a query, so try it multiple
     # times to avoid missing urls.
     repo_urls = set()
     for rnd in range(1, 4):
-        print(f'Finding repos (round {rnd}):')
+        logger.info(f'Finding repos (round {rnd}):')
         repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
     csv_writer = csv.writer(sys.stdout)
@@ -135,8 +147,7 @@ def main():
                 output = run.get_repository_stats(repo)
                 break
             except Exception as exp:
-                print(
-                    f'Exception occurred when reading repo: {repo_url}\n{exp}')
+                logger.exception(f'Exception occurred when reading repo: {repo_url}\n{exp}')
         if not output:
             continue
         if not header:
@@ -156,7 +167,7 @@ def main():
                         key=lambda i: i['criticality_score'],
                         reverse=True)[:args.count]:
             csv_writer.writerow(i.values())
-    print(f'Wrote results: {output_filename}')
+    logger.info(f'Wrote results: {output_filename}')
 
 
 if __name__ == "__main__":
