@@ -136,9 +136,8 @@ def main():
         logger.info(f'Finding repos (round {rnd}):')
         repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
-    csv_writer = csv.writer(sys.stdout)
-    header = None
     stats = []
+    index = 1
     for repo_url in repo_urls:
         output = None
         for _ in range(3):
@@ -150,11 +149,9 @@ def main():
                 logger.exception(f'Exception occurred when reading repo: {repo_url}\n{exp}')
         if not output:
             continue
-        if not header:
-            header = output.keys()
-            csv_writer.writerow(header)
-        csv_writer.writerow(output.values())
+        logger.info(f"{index} - {output['name']} - {output['url']} - {output['criticality_score']}")
         stats.append(output)
+        index += 1
 
     languages = '_'.join(args.language) if args.language else 'all'
     languages = languages.replace('+', 'plus').replace('c#', 'csharp')
@@ -162,6 +159,7 @@ def main():
                                    f'{languages}_top_{args.count}.csv')
     with open(output_filename, 'w') as file_handle:
         csv_writer = csv.writer(file_handle)
+        header = output.keys()
         csv_writer.writerow(header)
         for i in sorted(stats,
                         key=lambda i: i['criticality_score'],
