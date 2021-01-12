@@ -31,7 +31,7 @@ import requests
 from .constants import *  # pylint: disable=wildcard-import
 
 _CACHED_GITHUB_TOKEN = None
-_CACHED_GITHUB_TOKEN_OBJ = None
+_CACHED_GITHUB_TOKENS = []
 
 PARAMS = [
     'created_since', 'updated_since', 'contributor_count', 'org_count',
@@ -143,7 +143,8 @@ class GitHubRepository(Repository):
                     links[match.group(2)] = match.group(1)
             return links
 
-        headers = {'Authorization': f'token {_CACHED_GITHUB_TOKEN}'}
+        token = _CACHED_GITHUB_TOKEN['token']
+        headers = {'Authorization': f'token {token}'}
         for i in range(FAIL_RETRIES):
             result = requests.get(f'{self._repo.url}/commits', headers=headers)
             links = _parse_links(result)
@@ -460,41 +461,54 @@ def get_repository_stats(repo, additional_params=None):
     return result_dict
 
 
-def get_github_token_info(token_obj):
-    """Return expiry information given a github token."""
-    rate_limit = token_obj.get_rate_limit()
-    near_expiry = rate_limit.core.remaining < 50
-    wait_time = (rate_limit.core.reset - datetime.datetime.utcnow()).seconds
-    return near_expiry, wait_time
-
+def get_github_auth_token_info(auth_token):
+    """If near expiry, sets reset information given a github token."""
+    rate_limit = auth_token['token_obj'].get_rate_limit()
+    if rate_limit.core.remaining < 50:
+        auth_token['reset'] = rate_limit.core.reset
+        
 
 def get_github_auth_token():
     """Return an un-expired github token if possible from a list of tokens."""
     global _CACHED_GITHUB_TOKEN
-    global _CACHED_GITHUB_TOKEN_OBJ
-    if _CACHED_GITHUB_TOKEN_OBJ:
-        near_expiry, _ = get_github_token_info(_CACHED_GITHUB_TOKEN_OBJ)
-        if not near_expiry:
-            return _CACHED_GITHUB_TOKEN_OBJ
 
-    github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
-    assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
-    tokens = github_auth_token.split(',')
+    # Initialize _CACHED_GITHUB_TOKENS that stores token, token_obj and reset data as a list
+    if not _CACHED_GITHUB_TOKENS:
+        github_auth_token = os.getenv('GITHUB_AUTH_TOKEN')
+        assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.' # TODO Validate earlier?
+        for token in github_auth_token.split(','):
+            token_obj = github.Github(token)
+            _CACHED_GITHUB_TOKENS.append({ 'token': token, 'token_obj': token_obj, 'reset': None })
 
-    wait_time = None
-    token_obj = None
-    for token in tokens:
-        token_obj = github.Github(token)
-        near_expiry, wait_time = get_github_token_info(token_obj)
-        if not near_expiry:
-            _CACHED_GITHUB_TOKEN = token
-            _CACHED_GITHUB_TOKEN_OBJ = token_obj
-            return token_obj
+    while True:
+        # If there's an active token that's not near expiry, use that one
+        if _CACHED_GITHUB_TOKEN:
+            get_github_auth_token_info(_CACHED_GITHUB_TOKEN)
+            if not _CACHED_GITHUB_TOKEN['reset']:
+                return _CACHED_GITHUB_TOKEN
 
-    print(f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
-          file=sys.stderr)
-    time.sleep(wait_time)
-    return token_obj
+        # Else, search for the next token
+        for item in _CACHED_GITHUB_TOKENS:
+            if item['reset']: # Ignore already expired tokens
+                continue
+
+            get_github_auth_token_info(item)
+            if not item['reset']:
+                _CACHED_GITHUB_TOKEN = item
+                return item
+
+        # If all tokens are expired, find the minimum wait_time, clear the variables & sleep
+        wait_time = None
+        for item in _CACHED_GITHUB_TOKENS:
+            diff = (item['reset'] - datetime.datetime.utcnow()).seconds + 5
+            if not wait_time or diff < wait_time:
+                wait_time = diff
+            item['reset'] = None
+        _CACHED_GITHUB_TOKEN = None
+        
+        print(f'Rate limit exceeded. Sleeping till reset: {round((wait_time / 60), 1)} minutes.',
+            file=sys.stderr)
+        time.sleep(wait_time)
 
 
 def get_gitlab_auth_token(host):
@@ -518,7 +532,8 @@ def get_repository(url):
     parsed_url = urllib.parse.urlparse(url)
     repo_url = parsed_url.path.strip('/')
     if parsed_url.netloc.endswith('github.com'):
-        repo = GitHubRepository(get_github_auth_token().get_repo(repo_url))
+        token_obj = get_github_auth_token()['token_obj']
+        repo = GitHubRepository(token_obj.get_repo(repo_url))
         return repo
     if 'gitlab' in parsed_url.netloc:
         host = parsed_url.scheme + '://' + parsed_url.netloc
