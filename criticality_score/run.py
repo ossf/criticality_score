@@ -423,12 +423,14 @@ def get_repository_stats(repo, additional_params=None):
     for param in PARAMS:
         result_dict[param] = return_dict[param]
 
-    total_weight = (CREATED_SINCE_WEIGHT + UPDATED_SINCE_WEIGHT +
-                    CONTRIBUTOR_COUNT_WEIGHT + ORG_COUNT_WEIGHT +
-                    COMMIT_FREQUENCY_WEIGHT + RECENT_RELEASES_WEIGHT +
-                    CLOSED_ISSUES_WEIGHT + UPDATED_ISSUES_WEIGHT +
-                    COMMENT_FREQUENCY_WEIGHT + DEPENDENTS_COUNT_WEIGHT +
-                    additional_params_total_weight)
+    weights = (CREATED_SINCE_WEIGHT, UPDATED_SINCE_WEIGHT,
+    CONTRIBUTOR_COUNT_WEIGHT, ORG_COUNT_WEIGHT, COMMIT_FREQUENCY_WEIGHT,
+    RECENT_RELEASES_WEIGHT, CLOSED_ISSUES_WEIGHT, UPDATED_ISSUES_WEIGHT,
+    COMMENT_FREQUENCY_WEIGHT, DEPENDENTS_COUNT_WEIGHT,
+    additional_params_total_weight)
+
+    # Only summarize all positive weight
+    totol_weight = sum([w for w in weights if w > 0])
 
     criticality_score = round(
         ((get_param_score(result_dict['created_since'],
@@ -456,7 +458,8 @@ def get_repository_stats(repo, additional_params=None):
                  DEPENDENTS_COUNT_WEIGHT)) + additional_params_score) /
         total_weight, 5)
 
-    result_dict['criticality_score'] = criticality_score
+    # Make sure criticality_score >= 0
+    result_dict['criticality_score'] = max(criticality_score, 0)
     return result_dict
 
 
