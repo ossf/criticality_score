@@ -484,19 +484,21 @@ def get_github_auth_token():
     assert github_auth_token, 'GITHUB_AUTH_TOKEN needs to be set.'
     tokens = github_auth_token.split(',')
 
-    wait_time = None
+    min_wait_time = None
     token_obj = None
     for token in tokens:
         token_obj = github.Github(token)
         near_expiry, wait_time = get_github_token_info(token_obj)
+        if not min_wait_time or wait_time < min_wait_time:
+            min_wait_time = wait_time
         if not near_expiry:
             _CACHED_GITHUB_TOKEN = token
             _CACHED_GITHUB_TOKEN_OBJ = token_obj
             return token_obj
 
-    print(f'Rate limit exceeded, sleeping till reset: {wait_time} seconds.',
+    print(f'Rate limit exceeded, sleeping till reset: {round(min_wait_time / 60, 1)} minutes.',
           file=sys.stderr)
-    time.sleep(wait_time)
+    time.sleep(min_wait_time)
     return token_obj
 
 
