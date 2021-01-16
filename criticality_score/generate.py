@@ -65,7 +65,7 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
             # +100 to avoid any races with star updates.
             query += f' stars:<{last_stars_processed+100}'
         logger.info(f'Running query: {query}')
-        token_obj = run.get_github_auth_token()['token_obj']
+        token_obj = run.get_github_auth_token()
         new_result = False
         repo = None
         for repo in token_obj.search_repositories(query=query,
