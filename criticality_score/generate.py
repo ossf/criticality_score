@@ -78,9 +78,9 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
             samples_processed += 1
             if samples_processed > sample_size:
                 break
-        if not new_result:
-            break
-        upper_limit = repo.stargazers_count
+            if not new_result:
+                break
+            upper_limit = repo.stargazers_count
 
     return urls
 
@@ -141,7 +141,7 @@ def main():
     # GitHub search can return incomplete results in a query, so try it multiple
     # times to avoid missing urls.
     repo_urls = set()
-    logger.info('\r\nFinding repos...')
+    logger.info('Finding repos...')
     repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
     if len(repo_urls) == 0:
@@ -151,7 +151,7 @@ def main():
     stats = []
     index = 1
     output = None
-    logger.info('\r\nProcessing repos...')
+    logger.info('Processing repos...')
     for repo_url in repo_urls:
         for _ in range(3):
             try:
@@ -178,7 +178,7 @@ def main():
                         key=lambda i: i['criticality_score'],
                         reverse=True)[:args.count]:
             csv_writer.writerow(i.values())
-    logger.info(f'\r\nWrote results: {output_filename}')
+    logger.info(f'Wrote results: {output_filename}')
 
 
 if __name__ == "__main__":
