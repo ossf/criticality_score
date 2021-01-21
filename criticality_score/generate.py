@@ -17,10 +17,9 @@ import argparse
 import csv
 import logging
 import os
-import sys
 import time
 
-from .constants import *  # pylint: disable=wildcard-import
+from .constants import GITHUB_QUERY_LOWER_LIMIT
 from . import run
 
 logger = logging.getLogger()
@@ -42,7 +41,7 @@ IGNORED_KEYWORDS = ['docs', 'interview', 'tutorial']
 
 def get_github_repo_urls(sample_size, languages):
     urls = []
-    if (languages):
+    if languages:
         for lang in languages:
             lang = lang.lower()
             for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
@@ -89,7 +88,8 @@ def get_github_query(github_lang=None, upper_limit=None):
     query = 'archived:false'
     if github_lang:
         query += f' language:{github_lang}'
-    query += f' stars:>{GITHUB_QUERY_LOWER_LIMIT}' if not upper_limit else f' stars:{GITHUB_QUERY_LOWER_LIMIT}..{upper_limit}'
+    query += f' stars:>{GITHUB_QUERY_LOWER_LIMIT}' if not upper_limit \
+        else f' stars:{GITHUB_QUERY_LOWER_LIMIT}..{upper_limit}'
     logger.info(f'GitHub query: {query}')
     return query
 
@@ -109,7 +109,7 @@ def initialize_logging_handlers(output_dir):
 
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    logging.getLogger('').addHandler(console)    
+    logging.getLogger('').addHandler(console)
 
 def main():
     parser = argparse.ArgumentParser(
@@ -141,7 +141,7 @@ def main():
     # GitHub search can return incomplete results in a query, so try it multiple
     # times to avoid missing urls.
     repo_urls = set()
-    logger.info(f'\r\nFinding repos...')
+    logger.info('\r\nFinding repos...')
     repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
     if len(repo_urls) == 0:
@@ -151,7 +151,7 @@ def main():
     stats = []
     index = 1
     output = None
-    logger.info(f'\r\nProcessing repos...')
+    logger.info('\r\nProcessing repos...')
     for repo_url in repo_urls:
         for _ in range(3):
             try:
