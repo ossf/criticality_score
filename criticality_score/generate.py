@@ -60,6 +60,7 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
         query = get_github_query(github_lang, upper_limit)
         token_obj = run.get_github_auth_token()
         new_result = False
+        repo = None
         for repo in token_obj.search_repositories(query=query,
                                                     sort='stars',
                                                     order='desc'):
@@ -78,9 +79,9 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
             samples_processed += 1
             if samples_processed > sample_size:
                 break
-            if not new_result:
-                break
-            upper_limit = repo.stargazers_count
+        if not new_result:
+            break
+        upper_limit = repo.stargazers_count
 
     return urls
 
