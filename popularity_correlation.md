@@ -22,19 +22,19 @@ We used the Spearman's Rank Correlation Coefficient (ρ) to quantify the correla
 
 The correlation between the criticality score of a repository and its popularity is shown in the Table below.
 
-| Language   |     ρ    | Effect   |      p      | Significant |
-|------------|----------|----------|-------------|-------------|
-| Rust       | 0.417577 | Moderate |  7.6612E-10 |     Yes     |
-| Ruby       | 0.404109 | Moderate |  2.9531E-09 |     Yes     |
-| C#         | 0.382657 | Moderate |  2.2452E-08 |     Yes     |
-| JavaScript | 0.368158 | Moderate |  8.1631E-08 |     Yes     |
-| Java       | 0.337799 | Moderate |  9.9907E-07 |     Yes     |
-| C++        | 0.321293 | Moderate |  3.5030E-06 |     Yes     |
-| PHP        | 0.287965 | Weak     |  3.5521E-05 |     Yes     |
-| Go         | 0.284187 | Weak     |  4.5382E-05 |     Yes     |
-| C          | 0.255176 | Weak     |  2.6567E-04 |     Yes     |
-| Shell      | 0.222957 | Weak     |  1.5068E-03 |     Yes     |
-| Python     | 0.169501 | Weak     |  1.6419E-02 |     Yes     |
+| Language   |   ρ    | Effect   |     p      | Significant |
+| ---------- | -----: | -------- | ---------: | :---------: |
+| Rust       | 0.4176 | Moderate | 7.6612E-10 |     Yes     |
+| Ruby       | 0.4041 | Moderate | 2.9531E-09 |     Yes     |
+| C#         | 0.3827 | Moderate | 2.2452E-08 |     Yes     |
+| JavaScript | 0.3682 | Moderate | 8.1631E-08 |     Yes     |
+| Java       | 0.3378 | Moderate | 9.9907E-07 |     Yes     |
+| C++        | 0.3213 | Moderate | 3.5030E-06 |     Yes     |
+| PHP        | 0.2880 | Weak     | 3.5521E-05 |     Yes     |
+| Go         | 0.2842 | Weak     | 4.5382E-05 |     Yes     |
+| C          | 0.2552 | Weak     | 2.6567E-04 |     Yes     |
+| Shell      | 0.2230 | Weak     | 1.5068E-03 |     Yes     |
+| Python     | 0.1695 | Weak     | 1.6419E-02 |     Yes     |
 
 As can be inferred from the Spearman's ρ (and the corresponding interpretation of the effect), criticality score of a repository is positively correlated with its popularity but the effect is not as strong as some of the comments [1,2,3] from the Hacker News Discussion seem to suggest.
 
