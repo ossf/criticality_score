@@ -456,7 +456,7 @@ def get_repository_stats(repo, additional_params=None):
                  DEPENDENTS_COUNT_WEIGHT)) + additional_params_score) /
         total_weight, 5)
 
-    # Make sure score between 0 (least-critical) and 1 (most-critical). 
+    # Make sure score between 0 (least-critical) and 1 (most-critical).
     criticality_score = max(min(criticality_score, 1), 0)
 
     result_dict['criticality_score'] = criticality_score
