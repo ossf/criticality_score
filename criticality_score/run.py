@@ -580,7 +580,7 @@ def main():
     args = parser.parse_args()
     repo = get_repository(args.repo)
     if not repo:
-        print(f'Repo not found: {args.repo}', file=sys.stderr)
+        logger.error(f'Repo not found: {args.repo}')
         return
     output = get_repository_stats(repo, args.params)
     if args.format == 'default':
