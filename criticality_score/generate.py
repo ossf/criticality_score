@@ -17,7 +17,6 @@ import argparse
 import csv
 import logging
 import os
-import sys
 import time
 
 from . import run
@@ -41,7 +40,7 @@ IGNORED_KEYWORDS = ['docs', 'interview', 'tutorial']
 
 def get_github_repo_urls(sample_size, languages):
     urls = []
-    if (languages):
+    if languages:
         for lang in languages:
             lang = lang.lower()
             for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
@@ -99,7 +98,7 @@ def initialize_logging_handlers(output_dir):
 
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
-    logging.getLogger('').addHandler(console)    
+    logging.getLogger('').addHandler(console)
 
 def main():
     parser = argparse.ArgumentParser(
