@@ -143,6 +143,9 @@ def main():
         for _ in range(3):
             try:
                 repo = run.get_repository(repo_url)
+                if not repo:
+                    logger.error(f'Repo not found: {repo_url}')
+                    break
                 output = run.get_repository_stats(repo)
                 break
             except Exception as exp:

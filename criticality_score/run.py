@@ -523,14 +523,24 @@ def get_repository(url):
     parsed_url = urllib.parse.urlparse(url)
     repo_url = parsed_url.path.strip('/')
     if parsed_url.netloc.endswith('github.com'):
-        repo = GitHubRepository(get_github_auth_token().get_repo(repo_url))
-        return repo
+        repo = None
+        try:
+            repo = get_github_auth_token().get_repo(repo_url)
+        except github.GithubException as exp:
+            if exp.status == 404:
+                return None
+        return GitHubRepository(repo)
     if 'gitlab' in parsed_url.netloc:
+        repo = None
         host = parsed_url.scheme + '://' + parsed_url.netloc
         token_obj = get_gitlab_auth_token(host)
         repo_url_encoded = urllib.parse.quote_plus(repo_url)
-        repo = GitLabRepository(token_obj.projects.get(repo_url_encoded))
-        return repo
+        try:
+            repo = token_obj.projects.get(repo_url_encoded)
+        except gitlab.exceptions.GitlabGetError as exp:
+            if exp.response_code == 404:
+                return None
+        return GitLabRepository(repo)
 
     raise Exception('Unsupported url!')
 
@@ -557,6 +567,9 @@ def main():
 
     args = parser.parse_args()
     repo = get_repository(args.repo)
+    if not repo:
+        print(f'Repo not found: {args.repo}', file=sys.stderr)
+        return
     output = get_repository_stats(repo, args.params)
     if args.format == 'default':
         for key, value in output.items():
