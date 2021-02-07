@@ -45,4 +45,4 @@ RELEASE_LOOKBACK_DAYS = 365
 FAIL_RETRIES = 7
 
 # Regex to match dependents count.
-DEPENDENTS_REGEX = re.compile(b'.*[^0-9,]([0-9,]+).*commit results', re.DOTALL)
+DEPENDENTS_REGEX = re.compile(b'.*[^0-9,]([0-9,]+).*commit result', re.DOTALL)
