@@ -101,6 +101,7 @@ class Repository:
     def dependents_count(self):
         # TODO: Take package manager dependency trees into account. If we decide
         # to replace this, then find a solution for C/C++ as well.
+        match = None
         parsed_url = urllib.parse.urlparse(self.url)
         repo_name = parsed_url.path.strip('/')
         dependents_url = (
@@ -110,9 +111,11 @@ class Repository:
             result = requests.get(dependents_url)
             if result.status_code == 200:
                 content = result.content
-                break
+                match = DEPENDENTS_REGEX.match(content)
+                # Break only when get 200 status with match result
+                if match:
+                    break
             time.sleep(2**i)
-        match = DEPENDENTS_REGEX.match(content)
         if not match:
             return 0
         return int(match.group(1).replace(b',', b''))
