@@ -125,6 +125,7 @@ source control systems.
 
 ```shell
 $ gsutil ls gs://ossf-criticality-score/*.csv
+gs://ossf-criticality-score/all.csv
 gs://ossf-criticality-score/c_top_200.csv
 gs://ossf-criticality-score/cplusplus_top_200.csv
 gs://ossf-criticality-score/csharp_top_200.csv
