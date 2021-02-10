@@ -125,7 +125,6 @@ source control systems.
 
 ```shell
 $ gsutil ls gs://ossf-criticality-score/*.csv
-gs://ossf-criticality-score/all.csv
 gs://ossf-criticality-score/c_top_200.csv
 gs://ossf-criticality-score/cplusplus_top_200.csv
 gs://ossf-criticality-score/csharp_top_200.csv
@@ -149,6 +148,7 @@ $ python3 -u -m criticality_score.generate \
     --language c --count 200 --sample-size 5000 --output-dir output
 ```
 
+We have aggregated the results over 100K repositories in GitHub (language-independent) and are available for download [here](https://www.googleapis.com/download/storage/v1/b/ossf-criticality-score/o/all.csv?generation=1612987910088811&alt=media).
 
 ## Contributing
 
