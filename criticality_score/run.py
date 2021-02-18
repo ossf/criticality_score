@@ -530,8 +530,10 @@ def get_repository(url):
         repo = None
         try:
             repo = get_github_auth_token().get_repo(repo_url)
+            # Validate whether repo is empty; if it's empty, calling totalCount throws a 409 exception
+            total_commits = repo.get_commits().totalCount
         except github.GithubException as exp:
-            if exp.status == 404:
+            if exp.status == 404 or exp.status == 409:
                 return None
         return GitHubRepository(repo)
     if 'gitlab' in parsed_url.netloc:
@@ -541,6 +543,8 @@ def get_repository(url):
         repo_url_encoded = urllib.parse.quote_plus(repo_url)
         try:
             repo = token_obj.projects.get(repo_url_encoded)
+            if len(repo.commits.list()) == 0:
+                return None
         except gitlab.exceptions.GitlabGetError as exp:
             if exp.response_code == 404:
                 return None
@@ -583,7 +587,7 @@ def main():
     args = parser.parse_args()
     repo = get_repository(args.repo)
     if not repo:
-        logger.error(f'Repo not found: {args.repo}')
+        logger.error(f'Repo is empty or not found: {args.repo}')
         return
     output = get_repository_stats(repo, args.params)
     if args.format == 'default':

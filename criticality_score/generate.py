@@ -143,7 +143,7 @@ def main():
             try:
                 repo = run.get_repository(repo_url)
                 if not repo:
-                    logger.error(f'Repo not found: {repo_url}')
+                    logger.error(f'Repo is empty or not found: {repo_url}')
                     break
                 output = run.get_repository_stats(repo)
                 break
@@ -155,6 +155,8 @@ def main():
         stats.append(output)
         index += 1
 
+    if len(stats) == 0:
+        return
     languages = '_'.join(args.language) if args.language else 'all'
     languages = languages.replace('+', 'plus').replace('c#', 'csharp')
     output_filename = os.path.join(args.output_dir,
