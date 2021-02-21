@@ -406,6 +406,11 @@ def get_param_score(param, max_value, weight=1):
 def get_repository_stats(repo, additional_params=None):
     """Return repository stats, including criticality score."""
     # Validate and compute additional params first.
+    try:
+        if not repo.last_commit:
+            return None
+    except Exception:
+        return None
     if additional_params is None:
         additional_params = []
     additional_params_total_weight = 0
@@ -543,34 +548,28 @@ def get_repository(url):
 
     parsed_url = urllib.parse.urlparse(url)
     repo_url = parsed_url.path.strip('/')
-    repo = None
     if parsed_url.netloc.endswith('github.com'):
+        repo = None
         try:
-            repo_obj = get_github_auth_token().get_repo(repo_url)
-            repo = GitHubRepository(repo_obj)
+            repo = get_github_auth_token().get_repo(repo_url)
         except github.GithubException as exp:
             if exp.status == 404:
                 return None
+        return GitHubRepository(repo)
     if 'gitlab' in parsed_url.netloc:
+        repo = None
         host = parsed_url.scheme + '://' + parsed_url.netloc
         token_obj = get_gitlab_auth_token(host)
         repo_url_encoded = urllib.parse.quote_plus(repo_url)
         try:
-            repo_obj = token_obj.projects.get(repo_url_encoded)
-            repo = GitLabRepository(repo_obj)
+            repo = token_obj.projects.get(repo_url_encoded)
         except gitlab.exceptions.GitlabGetError as exp:
             if exp.response_code == 404:
                 return None
+        return GitLabRepository(repo)
 
-    if not repo:
-        raise Exception('Unsupported url!')
+    raise Exception('Unsupported url!')
 
-    try:
-        if not repo.last_commit:
-            return None
-    except Exception:
-        return None
-    return repo
 
 def initialize_logging_handlers():
     logging.basicConfig(level=logging.INFO)
@@ -606,9 +605,12 @@ def main():
     args = parser.parse_args()
     repo = get_repository(args.repo)
     if not repo:
-        logger.error(f'Repo is empty or not found: {args.repo}')
+        logger.error(f'Repo is not found: {args.repo}')
         return
     output = get_repository_stats(repo, args.params)
+    if not output:
+        logger.error(f'Repo is empty: {args.repo}')
+        return
     if args.format == 'default':
         for key, value in output.items():
             logger.info(f'{key}: {value}')

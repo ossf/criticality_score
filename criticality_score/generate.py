@@ -143,9 +143,11 @@ def main():
             try:
                 repo = run.get_repository(repo_url)
                 if not repo:
-                    logger.error(f'Repo is empty or not found: {repo_url}')
+                    logger.error(f'Repo is not found: {repo_url}')
                     break
                 output = run.get_repository_stats(repo)
+                if not output:
+                    logger.error(f'Repo is empty: {repo_url}')
                 break
             except Exception as exp:
                 logger.exception(f'Exception occurred when reading repo: {repo_url}\n{exp}')
