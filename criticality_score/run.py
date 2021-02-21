@@ -45,9 +45,9 @@ PARAMS = [
 
 class Repository:
     """General source repository."""
-    def __init__(self, repo, last_commit):
+    def __init__(self, repo):
         self._repo = repo
-        self._last_commit = last_commit
+        self._last_commit = None
         self._created_since = None
 
     @property
@@ -143,6 +143,9 @@ class GitHubRepository(Repository):
 
     @property
     def last_commit(self):
+        if self._last_commit:
+            return self._last_commit
+        self._last_commit = self._repo.get_commits()[0]
         return self._last_commit
 
     def get_first_commit_time(self):
@@ -303,7 +306,10 @@ class GitLabRepository(Repository):
 
     @property
     def last_commit(self):
-        return self.last_commit
+        if self._last_commit:
+            return self._last_commit
+        self._last_commit = self._repo.commits.list()[0]
+        return self._last_commit
 
     @property
     def created_since(self):
@@ -537,35 +543,34 @@ def get_repository(url):
 
     parsed_url = urllib.parse.urlparse(url)
     repo_url = parsed_url.path.strip('/')
+    repo = None
     if parsed_url.netloc.endswith('github.com'):
-        repo = None
-        last_commit = None
         try:
-            repo = get_github_auth_token().get_repo(repo_url)
-            last_commit = repo.get_commits()[0]
+            repo_obj = get_github_auth_token().get_repo(repo_url)
+            repo = GitHubRepository(repo_obj)
         except github.GithubException as exp:
-            if exp.status == 404 or exp.status == 409:
+            if exp.status == 404:
                 return None
-        return GitHubRepository(repo, last_commit)
     if 'gitlab' in parsed_url.netloc:
-        repo = None
-        last_commit = None
         host = parsed_url.scheme + '://' + parsed_url.netloc
         token_obj = get_gitlab_auth_token(host)
         repo_url_encoded = urllib.parse.quote_plus(repo_url)
         try:
-            repo = token_obj.projects.get(repo_url_encoded)
-            commits = repo.commits.list()
-            if len(commits) == 0:
-                return None
-            last_commit = commits[0]
+            repo_obj = token_obj.projects.get(repo_url_encoded)
+            repo = GitLabRepository(repo_obj)
         except gitlab.exceptions.GitlabGetError as exp:
             if exp.response_code == 404:
                 return None
-        return GitLabRepository(repo, last_commit)
 
-    raise Exception('Unsupported url!')
+    if not repo:
+        raise Exception('Unsupported url!')
 
+    try:
+        if not repo.last_commit:
+            return None
+    except Exception:
+        return None
+    return repo
 
 def initialize_logging_handlers():
     logging.basicConfig(level=logging.INFO)
