@@ -145,7 +145,10 @@ class GitHubRepository(Repository):
     def last_commit(self):
         if self._last_commit:
             return self._last_commit
-        self._last_commit = self._repo.get_commits()[0]
+        try:
+            self._last_commit = self._repo.get_commits()[0]
+        except Exception:
+            pass
         return self._last_commit
 
     def get_first_commit_time(self):
@@ -308,7 +311,7 @@ class GitLabRepository(Repository):
     def last_commit(self):
         if self._last_commit:
             return self._last_commit
-        self._last_commit = self._repo.commits.list()[0]
+        self._last_commit = next(iter(self._repo.commits.list()), None)
         return self._last_commit
 
     @property
@@ -406,10 +409,8 @@ def get_param_score(param, max_value, weight=1):
 def get_repository_stats(repo, additional_params=None):
     """Return repository stats, including criticality score."""
     # Validate and compute additional params first.
-    try:
-        if not repo.last_commit:
-            return None
-    except Exception:
+    if not repo.last_commit:
+        logger.error(f'Repo is empty: {repo.url}')
         return None
     if additional_params is None:
         additional_params = []
@@ -609,7 +610,6 @@ def main():
         return
     output = get_repository_stats(repo, args.params)
     if not output:
-        logger.error(f'Repo is empty: {args.repo}')
         return
     if args.format == 'default':
         for key, value in output.items():
