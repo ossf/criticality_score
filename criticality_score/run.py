@@ -47,6 +47,7 @@ class Repository:
     """General source repository."""
     def __init__(self, repo):
         self._repo = repo
+        self._last_commit = None
         self._created_since = None
 
     @property
@@ -59,6 +60,10 @@ class Repository:
 
     @property
     def language(self):
+        raise NotImplementedError
+
+    @property
+    def last_commit(self):
         raise NotImplementedError
 
     @property
@@ -136,6 +141,16 @@ class GitHubRepository(Repository):
     def language(self):
         return self._repo.language
 
+    @property
+    def last_commit(self):
+        if self._last_commit:
+            return self._last_commit
+        try:
+            self._last_commit = self._repo.get_commits()[0]
+        except Exception:
+            pass
+        return self._last_commit
+
     def get_first_commit_time(self):
         def _parse_links(response):
             link_string = response.headers.get('Link')
@@ -189,8 +204,7 @@ class GitHubRepository(Repository):
 
     @property
     def updated_since(self):
-        last_commit = self._repo.get_commits()[0]
-        last_commit_time = last_commit.commit.author.date
+        last_commit_time = self.last_commit.commit.author.date
         difference = datetime.datetime.utcnow() - last_commit_time
         return round(difference.days / 30)
 
@@ -294,6 +308,13 @@ class GitLabRepository(Repository):
         return (max(languages, key=languages.get)).lower()
 
     @property
+    def last_commit(self):
+        if self._last_commit:
+            return self._last_commit
+        self._last_commit = next(iter(self._repo.commits.list()), None)
+        return self._last_commit
+
+    @property
     def created_since(self):
         creation_time = self._date_from_string(self._repo.created_at)
         commit = None
@@ -308,10 +329,9 @@ class GitLabRepository(Repository):
 
     @property
     def updated_since(self):
-        last_commit = self._repo.commits.list()[0]
         difference = datetime.datetime.now(
             datetime.timezone.utc) - self._date_from_string(
-                last_commit.created_at)
+                self.last_commit.created_at)
         return round(difference.days / 30)
 
     @property
@@ -389,6 +409,9 @@ def get_param_score(param, max_value, weight=1):
 def get_repository_stats(repo, additional_params=None):
     """Return repository stats, including criticality score."""
     # Validate and compute additional params first.
+    if not repo.last_commit:
+        logger.error(f'Repo is empty: {repo.url}')
+        return None
     if additional_params is None:
         additional_params = []
     additional_params_total_weight = 0
@@ -583,9 +606,11 @@ def main():
     args = parser.parse_args()
     repo = get_repository(args.repo)
     if not repo:
-        logger.error(f'Repo not found: {args.repo}')
+        logger.error(f'Repo is not found: {args.repo}')
         return
     output = get_repository_stats(repo, args.params)
+    if not output:
+        return
     if args.format == 'default':
         for key, value in output.items():
             logger.info(f'{key}: {value}')
