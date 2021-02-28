@@ -259,7 +259,9 @@ class GitHubRepository(Repository):
             try:
                 total_tags = self._repo.get_tags().totalCount
             except Exception:
+                # Very large number of tags, i.e. 5000+. Cap at 26.
                 logger.error(f'get_tags is failed: {self._repo.url}')
+                return RECENT_RELEASES_THRESHOLD
             total = round(
                 (total_tags / days_since_creation) * RELEASE_LOOKBACK_DAYS)
         return total
