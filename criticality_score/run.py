@@ -255,7 +255,11 @@ class GitHubRepository(Repository):
             days_since_creation = self.created_since * 30
             if not days_since_creation:
                 return 0
-            total_tags = self._repo.get_tags().totalCount
+            total_tags = 0
+            try:
+                total_tags = self._repo.get_tags().totalCount
+            except Exception:
+                logger.error(f'get_tags is failed: {self._repo.url}')
             total = round(
                 (total_tags / days_since_creation) * RELEASE_LOOKBACK_DAYS)
         return total
