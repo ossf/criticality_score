@@ -157,6 +157,9 @@ def main():
         for _ in range(3):
             try:
                 repo = run.get_repository(repo_url)
+                if not repo:
+                    logger.error(f'Repo is not found: {repo_url}')
+                    break
                 output = run.get_repository_stats(repo)
                 break
             except Exception as exp:
@@ -167,6 +170,8 @@ def main():
         stats.append(output)
         index += 1
 
+    if len(stats) == 0:
+        return
     languages = '_'.join(args.language) if args.language else 'all'
     languages = languages.replace('+', 'plus').replace('c#', 'csharp')
     output_filename = os.path.join(args.output_dir,

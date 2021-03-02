@@ -148,6 +148,7 @@ $ python3 -u -m criticality_score.generate \
     --language c --count 200 --sample-size 5000 --output-dir output
 ```
 
+We have also aggregated the results over 100K repositories in GitHub (language-independent) and are available for download [here](https://www.googleapis.com/download/storage/v1/b/ossf-criticality-score/o/all.csv?generation=1614554714813772&alt=media).
 
 ## Contributing
 

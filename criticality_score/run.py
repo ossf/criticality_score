@@ -17,6 +17,7 @@ import argparse
 import csv
 import datetime
 import json
+import logging
 import math
 import os
 import sys
@@ -29,6 +30,8 @@ import gitlab
 import requests
 
 from .constants import *  # pylint: disable=wildcard-import
+
+logger = logging.getLogger()
 
 _CACHED_GITHUB_TOKEN = None
 _CACHED_GITHUB_TOKEN_OBJ = None
@@ -44,6 +47,7 @@ class Repository:
     """General source repository."""
     def __init__(self, repo):
         self._repo = repo
+        self._last_commit = None
         self._created_since = None
 
     @property
@@ -56,6 +60,10 @@ class Repository:
 
     @property
     def language(self):
+        raise NotImplementedError
+
+    @property
+    def last_commit(self):
         raise NotImplementedError
 
     @property
@@ -98,6 +106,7 @@ class Repository:
     def dependents_count(self):
         # TODO: Take package manager dependency trees into account. If we decide
         # to replace this, then find a solution for C/C++ as well.
+        match = None
         parsed_url = urllib.parse.urlparse(self.url)
         repo_name = parsed_url.path.strip('/')
         dependents_url = (
@@ -107,9 +116,11 @@ class Repository:
             result = requests.get(dependents_url)
             if result.status_code == 200:
                 content = result.content
-                break
+                match = DEPENDENTS_REGEX.match(content)
+                # Break only when get 200 status with match result
+                if match:
+                    break
             time.sleep(2**i)
-        match = DEPENDENTS_REGEX.match(content)
         if not match:
             return 0
         return int(match.group(1).replace(b',', b''))
@@ -129,6 +140,16 @@ class GitHubRepository(Repository):
     @property
     def language(self):
         return self._repo.language
+
+    @property
+    def last_commit(self):
+        if self._last_commit:
+            return self._last_commit
+        try:
+            self._last_commit = self._repo.get_commits()[0]
+        except Exception:
+            pass
+        return self._last_commit
 
     def get_first_commit_time(self):
         def _parse_links(response):
@@ -183,8 +204,7 @@ class GitHubRepository(Repository):
 
     @property
     def updated_since(self):
-        last_commit = self._repo.get_commits()[0]
-        last_commit_time = last_commit.commit.author.date
+        last_commit_time = self.last_commit.commit.author.date
         difference = datetime.datetime.utcnow() - last_commit_time
         return round(difference.days / 30)
 
@@ -235,7 +255,13 @@ class GitHubRepository(Repository):
             days_since_creation = self.created_since * 30
             if not days_since_creation:
                 return 0
-            total_tags = self._repo.get_tags().totalCount
+            total_tags = 0
+            try:
+                total_tags = self._repo.get_tags().totalCount
+            except Exception:
+                # Very large number of tags, i.e. 5000+. Cap at 26.
+                logger.error(f'get_tags is failed: {self._repo.url}')
+                return RECENT_RELEASES_THRESHOLD
             total = round(
                 (total_tags / days_since_creation) * RELEASE_LOOKBACK_DAYS)
         return total
@@ -288,6 +314,13 @@ class GitLabRepository(Repository):
         return (max(languages, key=languages.get)).lower()
 
     @property
+    def last_commit(self):
+        if self._last_commit:
+            return self._last_commit
+        self._last_commit = next(iter(self._repo.commits.list()), None)
+        return self._last_commit
+
+    @property
     def created_since(self):
         creation_time = self._date_from_string(self._repo.created_at)
         commit = None
@@ -302,10 +335,9 @@ class GitLabRepository(Repository):
 
     @property
     def updated_since(self):
-        last_commit = self._repo.commits.list()[0]
         difference = datetime.datetime.now(
             datetime.timezone.utc) - self._date_from_string(
-                last_commit.created_at)
+                self.last_commit.created_at)
         return round(difference.days / 30)
 
     @property
@@ -383,6 +415,9 @@ def get_param_score(param, max_value, weight=1):
 def get_repository_stats(repo, additional_params=None):
     """Return repository stats, including criticality score."""
     # Validate and compute additional params first.
+    if not repo.last_commit:
+        logger.error(f'Repo is empty: {repo.url}')
+        return None
     if additional_params is None:
         additional_params = []
     additional_params_total_weight = 0
@@ -393,8 +428,7 @@ def get_repository_stats(repo, additional_params=None):
                 int(i) for i in additional_param.split(':')
             ]
         except ValueError:
-            print('Parameter value in bad format: ' + additional_param,
-                  file=sys.stderr)
+            logger.error('Parameter value in bad format: ' + additional_param)
             sys.exit(1)
         additional_params_total_weight += weight
         additional_params_score += get_param_score(value, max_threshold,
@@ -456,7 +490,7 @@ def get_repository_stats(repo, additional_params=None):
                  DEPENDENTS_COUNT_WEIGHT)) + additional_params_score) /
         total_weight, 5)
 
-    # Make sure score between 0 (least-critical) and 1 (most-critical). 
+    # Make sure score between 0 (least-critical) and 1 (most-critical).
     criticality_score = max(min(criticality_score, 1), 0)
 
     result_dict['criticality_score'] = criticality_score
@@ -496,8 +530,7 @@ def get_github_auth_token():
             _CACHED_GITHUB_TOKEN_OBJ = token_obj
             return token_obj
 
-    print(f'Rate limit exceeded, sleeping till reset: {round(min_wait_time / 60, 1)} minutes.',
-          file=sys.stderr)
+    logger.warning(f'Rate limit exceeded, sleeping till reset: {round(min_wait_time / 60, 1)} minutes.')
     time.sleep(min_wait_time)
     return token_obj
 
@@ -509,7 +542,7 @@ def get_gitlab_auth_token(host):
         token_obj = gitlab.Gitlab(host, gitlab_auth_token)
         token_obj.auth()
     except gitlab.exceptions.GitlabAuthenticationError:
-        print("Auth token didn't work, trying un-authenticated. "
+        logger.info("Auth token didn't work, trying un-authenticated. "
               "Some params like comment_frequency will not work.")
         token_obj = gitlab.Gitlab(host)
     return token_obj
@@ -523,16 +556,35 @@ def get_repository(url):
     parsed_url = urllib.parse.urlparse(url)
     repo_url = parsed_url.path.strip('/')
     if parsed_url.netloc.endswith('github.com'):
-        repo = GitHubRepository(get_github_auth_token().get_repo(repo_url))
-        return repo
+        repo = None
+        try:
+            repo = get_github_auth_token().get_repo(repo_url)
+        except github.GithubException as exp:
+            if exp.status == 404:
+                return None
+        return GitHubRepository(repo)
     if 'gitlab' in parsed_url.netloc:
+        repo = None
         host = parsed_url.scheme + '://' + parsed_url.netloc
         token_obj = get_gitlab_auth_token(host)
         repo_url_encoded = urllib.parse.quote_plus(repo_url)
-        repo = GitLabRepository(token_obj.projects.get(repo_url_encoded))
-        return repo
+        try:
+            repo = token_obj.projects.get(repo_url_encoded)
+        except gitlab.exceptions.GitlabGetError as exp:
+            if exp.response_code == 404:
+                return None
+        return GitLabRepository(repo)
 
     raise Exception('Unsupported url!')
+
+
+def initialize_logging_handlers():
+    logging.basicConfig(level=logging.INFO)
+    logging.getLogger('').handlers.clear()
+
+    console = logging.StreamHandler()
+    console.setLevel(logging.INFO)
+    logging.getLogger('').addHandler(console)
 
 
 def main():
@@ -555,14 +607,21 @@ def main():
         help='Additional parameters in form <value>:<weight>:<max_threshold>',
         required=False)
 
+    initialize_logging_handlers()
+
     args = parser.parse_args()
     repo = get_repository(args.repo)
+    if not repo:
+        logger.error(f'Repo is not found: {args.repo}')
+        return
     output = get_repository_stats(repo, args.params)
+    if not output:
+        return
     if args.format == 'default':
         for key, value in output.items():
-            print(f'{key}: {value}')
+            logger.info(f'{key}: {value}')
     elif args.format == 'json':
-        print(json.dumps(output, indent=4))
+        logger.info(json.dumps(output, indent=4))
     elif args.format == 'csv':
         csv_writer = csv.writer(sys.stdout)
         csv_writer.writerow(output.keys())

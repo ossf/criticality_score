@@ -46,4 +46,4 @@ FAIL_RETRIES = 7
 GITHUB_QUERY_LOWER_LIMIT = 50
 
 # Regex to match dependents count.
-DEPENDENTS_REGEX = re.compile(b'.*[^0-9,]([0-9,]+).*commit results', re.DOTALL)
+DEPENDENTS_REGEX = re.compile(b'.*[^0-9,]([0-9,]+).*commit result', re.DOTALL)
