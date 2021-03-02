@@ -51,7 +51,6 @@ def get_github_repo_urls(sample_size, languages):
 
     return urls
 
-
 def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
     """Return repository urls given a language list and sample size."""
     upper_limit = get_github_query_upper_limit(github_lang)
@@ -75,13 +74,15 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
                 continue
             urls.append(repo_url)
             new_result = True
-            logger.info(f'{samples_processed} - {repo.name} - {repo_url} - {repo.stargazers_count}')
+            logger.info(f'Found repository'
+                    f'({samples_processed}): {repo_url}')
             samples_processed += 1
             if samples_processed > sample_size:
                 break
         if not new_result:
             break
-        upper_limit = repo.stargazers_count
+        # +100 to avoid any races with star updates.
+        upper_limit = repo.stargazers_count+100
 
     return urls
 
@@ -91,9 +92,8 @@ def get_github_query(github_lang=None, upper_limit=None):
         query += f' language:{github_lang}'
     query += f' stars:>{GITHUB_QUERY_LOWER_LIMIT}' if not upper_limit \
         else f' stars:{GITHUB_QUERY_LOWER_LIMIT}..{upper_limit}'
-    logger.info(f'GitHub query: {query}')
+    logger.info(f'Running query: {query}')
     return query
-
 
 def get_github_query_upper_limit(github_lang=None):
     query = get_github_query(github_lang)
@@ -102,7 +102,6 @@ def get_github_query_upper_limit(github_lang=None):
                                                 sort='stars',
                                                 order='desc'):
         return repo.stargazers_count
-
 
 def initialize_logging_handlers(output_dir):
     log_filename = os.path.join(output_dir, 'output.log')
@@ -130,10 +129,11 @@ def main():
                         type=int,
                         default=200,
                         help="Number of projects in result.")
-    parser.add_argument("--sample-size",
-                        type=int,
-                        default=5000,
-                        help="Number of projects to analyze (in descending order of stars).")
+    parser.add_argument(
+        "--sample-size",
+        type=int,
+        default=5000,
+        help="Number of projects to analyze (in descending order of stars).")
 
     args = parser.parse_args()
 
@@ -142,18 +142,14 @@ def main():
     # GitHub search can return incomplete results in a query, so try it multiple
     # times to avoid missing urls.
     repo_urls = set()
-    logger.info('Finding repos...')
-    repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
-
-    if len(repo_urls) == 0:
-        logger.info('No repo found with given parameters')
-        return
+    for rnd in range(1, 4):
+        logger.info(f'Finding repos (round {rnd}):')
+        repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
 
     stats = []
     index = 1
-    output = None
-    logger.info('Processing repos...')
     for repo_url in repo_urls:
+        output = None
         for _ in range(3):
             try:
                 repo = run.get_repository(repo_url)
