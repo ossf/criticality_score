@@ -19,6 +19,7 @@ import logging
 import os
 import time
 
+from .constants import GITHUB_QUERY_LOWER_LIMIT
 from . import run
 
 logger = logging.getLogger()
@@ -52,18 +53,10 @@ def get_github_repo_urls(sample_size, languages):
 
 def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
     """Return repository urls given a language list and sample size."""
+    upper_limit = get_github_query_upper_limit(github_lang)
     samples_processed = 1
-    last_stars_processed = None
     while samples_processed <= sample_size:
-
-        query = 'archived:false'
-        if github_lang:
-            query += f' language:{github_lang}'
-
-        if last_stars_processed:
-            # +100 to avoid any races with star updates.
-            query += f' stars:<{last_stars_processed+100}'
-        logger.info(f'Running query: {query}')
+        query = get_github_query(github_lang, upper_limit)
         token_obj = run.get_github_auth_token()
         new_result = False
         repo = None
@@ -88,9 +81,27 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
                 break
         if not new_result:
             break
-        last_stars_processed = repo.stargazers_count
+        # +100 to avoid any races with star updates.
+        upper_limit = repo.stargazers_count+100
 
     return urls
+
+def get_github_query(github_lang=None, upper_limit=None):
+    query = 'archived:false'
+    if github_lang:
+        query += f' language:{github_lang}'
+    query += f' stars:>{GITHUB_QUERY_LOWER_LIMIT}' if not upper_limit \
+        else f' stars:{GITHUB_QUERY_LOWER_LIMIT}..{upper_limit}'
+    logger.info(f'Running query: {query}')
+    return query
+
+def get_github_query_upper_limit(github_lang=None):
+    query = get_github_query(github_lang)
+    token_obj = run.get_github_auth_token()
+    for repo in token_obj.search_repositories(query=query,
+                                                sort='stars',
+                                                order='desc'):
+        return repo.stargazers_count
 
 def initialize_logging_handlers(output_dir):
     log_filename = os.path.join(output_dir, 'output.log')
