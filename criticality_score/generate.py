@@ -37,6 +37,8 @@ LANGUAGE_SEARCH_MAP = {
     'shell': ['Shell'],
 }
 IGNORED_KEYWORDS = ['docs', 'interview', 'tutorial']
+DEFAULT_SAMPLE_SIZE = 5000
+
 
 def get_github_repo_urls(sample_size, languages):
     urls = []
@@ -44,11 +46,13 @@ def get_github_repo_urls(sample_size, languages):
         for lang in languages:
             lang = lang.lower()
             for github_lang in LANGUAGE_SEARCH_MAP.get(lang, lang):
-                urls = get_github_repo_urls_for_language(urls, sample_size, github_lang)
+                urls = get_github_repo_urls_for_language(
+                    urls, sample_size, github_lang)
     else:
         urls = get_github_repo_urls_for_language(urls, sample_size)
 
     return urls
+
 
 def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
     """Return repository urls given a language list and sample size."""
@@ -68,8 +72,8 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
         new_result = False
         repo = None
         for repo in token_obj.search_repositories(query=query,
-                                                    sort='stars',
-                                                    order='desc'):
+                                                  sort='stars',
+                                                  order='desc'):
             # Forced sleep to avoid hitting rate limit.
             time.sleep(0.1)
             repo_url = repo.html_url
@@ -82,7 +86,7 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
             urls.append(repo_url)
             new_result = True
             logger.info(f'Found repository'
-                    f'({samples_processed}): {repo_url}')
+                        f'({samples_processed}): {repo_url}')
             samples_processed += 1
             if samples_processed > sample_size:
                 break
@@ -92,13 +96,30 @@ def get_github_repo_urls_for_language(urls, sample_size, github_lang=None):
 
     return urls
 
+
+def get_github_repo_urls_for_orgs(orgs):
+    """Return repository urls given a org list"""
+    repo_urls = set()
+    for org in orgs:
+        token_obj = run.get_github_auth_token()
+        token_org = token_obj.get_organization(org)
+        repos = token_org.get_repos()
+        for repo in repos:
+            repo_urls.add(repo.html_url)
+
+    return repo_urls
+
+
 def initialize_logging_handlers(output_dir):
     log_filename = os.path.join(output_dir, 'output.log')
-    logging.basicConfig(filename=log_filename, filemode='w', level=logging.INFO)
+    logging.basicConfig(filename=log_filename,
+                        filemode='w',
+                        level=logging.INFO)
 
     console = logging.StreamHandler()
     console.setLevel(logging.INFO)
     logging.getLogger('').addHandler(console)
+
 
 def main():
     parser = argparse.ArgumentParser(
@@ -116,24 +137,36 @@ def main():
                         help="Directory to place the output in.")
     parser.add_argument("--count",
                         type=int,
-                        default=200,
+                        default=10000,
                         help="Number of projects in result.")
     parser.add_argument(
         "--sample-size",
         type=int,
-        default=5000,
         help="Number of projects to analyze (in descending order of stars).")
+    parser.add_argument("--org",
+                        nargs='+',
+                        default=[],
+                        required=False,
+                        help="List of organizations for populating the repos.")
 
     args = parser.parse_args()
 
     initialize_logging_handlers(args.output_dir)
 
-    # GitHub search can return incomplete results in a query, so try it multiple
-    # times to avoid missing urls.
     repo_urls = set()
-    for rnd in range(1, 4):
-        logger.info(f'Finding repos (round {rnd}):')
-        repo_urls.update(get_github_repo_urls(args.sample_size, args.language))
+    if args.org:
+        assert not args.language, 'Languages is not supported with orgs.'
+        assert not args.sample_size, 'Sample size is not supported with orgs.'
+        repo_urls.update(get_github_repo_urls_for_orgs(args.org))
+    else:
+        if not args.sample_size:
+            args.sample_size = DEFAULT_SAMPLE_SIZE
+        # GitHub search can return incomplete results in a query, so try it
+        # multiple times to avoid missing urls.
+        for rnd in range(1, 4):
+            logger.info(f'Finding repos (round {rnd}):')
+            repo_urls.update(
+                get_github_repo_urls(args.sample_size, args.language))
 
     stats = []
     index = 1
@@ -148,10 +181,13 @@ def main():
                 output = run.get_repository_stats(repo)
                 break
             except Exception as exp:
-                logger.exception(f'Exception occurred when reading repo: {repo_url}\n{exp}')
+                logger.exception(
+                    f'Exception occurred when reading repo: {repo_url}\n{exp}')
         if not output:
             continue
-        logger.info(f"{index} - {output['name']} - {output['url']} - {output['criticality_score']}")
+        logger.info(
+            f"{index} - {output['name']} - {output['url']} - {output['criticality_score']}"
+        )
         stats.append(output)
         index += 1
 

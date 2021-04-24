@@ -117,9 +117,7 @@ class Repository:
             if result.status_code == 200:
                 content = result.content
                 match = DEPENDENTS_REGEX.match(content)
-                # Break only when get 200 status with match result
-                if match:
-                    break
+                break
             time.sleep(2**i)
         if not match:
             return 0
@@ -530,7 +528,9 @@ def get_github_auth_token():
             _CACHED_GITHUB_TOKEN_OBJ = token_obj
             return token_obj
 
-    logger.warning(f'Rate limit exceeded, sleeping till reset: {round(min_wait_time / 60, 1)} minutes.')
+    logger.warning(
+        f'Rate limit exceeded, sleeping till reset: {round(min_wait_time / 60, 1)} minutes.'
+    )
     time.sleep(min_wait_time)
     return token_obj
 
@@ -543,7 +543,7 @@ def get_gitlab_auth_token(host):
         token_obj.auth()
     except gitlab.exceptions.GitlabAuthenticationError:
         logger.info("Auth token didn't work, trying un-authenticated. "
-              "Some params like comment_frequency will not work.")
+                    "Some params like comment_frequency will not work.")
         token_obj = gitlab.Gitlab(host)
     return token_obj
 
