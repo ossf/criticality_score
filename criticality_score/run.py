@@ -168,13 +168,13 @@ class GitHubRepository(Repository):
             links = _parse_links(result)
             if links and links.get('last'):
                 result = requests.get(links['last'], headers=headers)
-                if result.status_code == 200:
-                    commits = json.loads(result.content)
-                    if commits:
-                        last_commit_time_string = (
-                            commits[-1]['commit']['committer']['date'])
-                        return datetime.datetime.strptime(
-                            last_commit_time_string, "%Y-%m-%dT%H:%M:%SZ")
+            if result.status_code == 200:
+                commits = json.loads(result.content)
+                if commits:
+                    last_commit_time_string = (
+                        commits[-1]['commit']['committer']['date'])
+                    return datetime.datetime.strptime(last_commit_time_string,
+                                                      "%Y-%m-%dT%H:%M:%SZ")
             time.sleep(2**i)
 
         return None

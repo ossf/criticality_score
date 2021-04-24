@@ -170,7 +170,7 @@ def main():
 
     stats = []
     index = 1
-    for repo_url in repo_urls:
+    for repo_url in sorted(repo_urls):
         output = None
         for _ in range(3):
             try:
@@ -185,9 +185,8 @@ def main():
                     f'Exception occurred when reading repo: {repo_url}\n{exp}')
         if not output:
             continue
-        logger.info(
-            f"{index} - {output['name']} - {output['url']} - {output['criticality_score']}"
-        )
+        logger.info(f"{index} - {output['name']} - {output['url']} - "
+                    f"{output['criticality_score']}")
         stats.append(output)
         index += 1
 
