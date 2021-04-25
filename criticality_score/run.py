@@ -102,6 +102,13 @@ class Repository:
     def comment_frequency(self):
         raise NotImplementedError
 
+    def _request_url_with_auth_headers(self, url):
+        headers = {}
+        if 'github.com' in url and _CACHED_GITHUB_TOKEN:
+            headers = {'Authorization': f'token {_CACHED_GITHUB_TOKEN}'}
+
+        return requests.get(url, headers=headers)
+
     @property
     def dependents_count(self):
         # TODO: Take package manager dependency trees into account. If we decide
@@ -111,12 +118,10 @@ class Repository:
         repo_name = parsed_url.path.strip('/')
         dependents_url = (
             f'https://github.com/search?q="{repo_name}"&type=commits')
-        content = b''
         for i in range(FAIL_RETRIES):
-            result = requests.get(dependents_url)
+            result = self._request_url_with_auth_headers(dependents_url)
             if result.status_code == 200:
-                content = result.content
-                match = DEPENDENTS_REGEX.match(content)
+                match = DEPENDENTS_REGEX.match(result.content)
                 break
             time.sleep(2**i)
         if not match:
@@ -162,12 +167,12 @@ class GitHubRepository(Repository):
                     links[match.group(2)] = match.group(1)
             return links
 
-        headers = {'Authorization': f'token {_CACHED_GITHUB_TOKEN}'}
         for i in range(FAIL_RETRIES):
-            result = requests.get(f'{self._repo.url}/commits', headers=headers)
+            result = self._request_url_with_auth_headers(
+                f'{self._repo.url}/commits')
             links = _parse_links(result)
             if links and links.get('last'):
-                result = requests.get(links['last'], headers=headers)
+                result = self._request_url_with_auth_headers(links['last'])
             if result.status_code == 200:
                 commits = json.loads(result.content)
                 if commits:
