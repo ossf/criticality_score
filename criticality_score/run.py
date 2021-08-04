@@ -37,7 +37,7 @@ _CACHED_GITHUB_TOKEN = None
 _CACHED_GITHUB_TOKEN_OBJ = None
 
 PARAMS = [
-    'created_since', 'updated_since', 'contributor_count', 'org_count',
+    'description', 'created_since', 'updated_since', 'contributor_count', 'watchers_count', 'org_count',
     'commit_frequency', 'recent_releases_count', 'updated_issues_count',
     'closed_issues_count', 'comment_frequency', 'dependents_count'
 ]
@@ -63,6 +63,10 @@ class Repository:
         raise NotImplementedError
 
     @property
+    def description(self):
+        raise NotImplementedError
+
+    @property
     def last_commit(self):
         raise NotImplementedError
 
@@ -76,6 +80,10 @@ class Repository:
 
     @property
     def contributor_count(self):
+        raise NotImplementedError
+
+    @property
+    def watchers_count(self):
         raise NotImplementedError
 
     @property
@@ -143,6 +151,10 @@ class GitHubRepository(Repository):
     @property
     def language(self):
         return self._repo.language
+
+    @property
+    def description(self):
+        return self._repo.description
 
     @property
     def last_commit(self):
@@ -218,6 +230,10 @@ class GitHubRepository(Repository):
         except Exception:
             # Very large number of contributors, i.e. 5000+. Cap at 5,000.
             return 5000
+
+    @property
+    def watchers_count(self):
+        return self._repo.watchers_count
 
     @property
     def org_count(self):
