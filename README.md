@@ -52,17 +52,19 @@ $ criticality_score --repo github.com/kubernetes/kubernetes
 name: kubernetes
 url: https://github.com/kubernetes/kubernetes
 language: Go
-created_since: 79
+description: Production-Grade Container Scheduling and Management
+created_since: 87
 updated_since: 0
-contributor_count: 3664
+contributor_count: 3999
+watchers_count: 79583
 org_count: 5
-commit_frequency: 102.7
-recent_releases_count: 76
-closed_issues_count: 2906
-updated_issues_count: 5136
-comment_frequency: 5.7
-dependents_count: 407254
-criticality_score: 0.9862
+commit_frequency: 97.2
+recent_releases_count: 70
+updated_issues_count: 5395
+closed_issues_count: 3062
+comment_frequency: 5.5
+dependents_count: 454393
+criticality_score: 0.99107
 ```
 
 You can add your own parameters to the criticality score calculation. For
