@@ -439,7 +439,8 @@ def get_repository_stats(repo, additional_params=None):
         return None
     if additional_params is None:
         additional_params = []
-    additional_params_total_weight = 0
+    additional_params_max_score = 0
+    additional_params_min_score = 0
     additional_params_score = 0
     for additional_param in additional_params:
         try:
@@ -449,7 +450,8 @@ def get_repository_stats(repo, additional_params=None):
         except ValueError:
             logger.error('Parameter value in bad format: ' + additional_param)
             sys.exit(1)
-        additional_params_total_weight += weight
+        additional_params_max_score += max(weight,0)
+        additional_params_min_score += min(weight,0)
         additional_params_score += get_param_score(value, max_threshold,
                                                    weight)
 
@@ -476,15 +478,19 @@ def get_repository_stats(repo, additional_params=None):
     for param in PARAMS:
         result_dict[param] = return_dict[param]
 
-    total_weight = (CREATED_SINCE_WEIGHT + UPDATED_SINCE_WEIGHT +
+    # Use 0 for any negative weight to give the maximum weight
+    max_score = (CREATED_SINCE_WEIGHT + max(UPDATED_SINCE_WEIGHT,0) +
                     CONTRIBUTOR_COUNT_WEIGHT + ORG_COUNT_WEIGHT +
                     COMMIT_FREQUENCY_WEIGHT + RECENT_RELEASES_WEIGHT +
                     CLOSED_ISSUES_WEIGHT + UPDATED_ISSUES_WEIGHT +
                     COMMENT_FREQUENCY_WEIGHT + DEPENDENTS_COUNT_WEIGHT +
-                    additional_params_total_weight)
+                    additional_params_max_score)
 
+    min_score = -1 + additional_params_min_score
+
+    # Normalize the score as (x - x_min) / (x_max - x_min)
     criticality_score = round(
-        ((get_param_score(result_dict['created_since'],
+        (((get_param_score(result_dict['created_since'],
                           CREATED_SINCE_THRESHOLD, CREATED_SINCE_WEIGHT)) +
          (get_param_score(result_dict['updated_since'],
                           UPDATED_SINCE_THRESHOLD, UPDATED_SINCE_WEIGHT)) +
@@ -506,11 +512,8 @@ def get_repository_stats(repo, additional_params=None):
              result_dict['comment_frequency'], COMMENT_FREQUENCY_THRESHOLD,
              COMMENT_FREQUENCY_WEIGHT)) + (get_param_score(
                  result_dict['dependents_count'], DEPENDENTS_COUNT_THRESHOLD,
-                 DEPENDENTS_COUNT_WEIGHT)) + additional_params_score) /
-        total_weight, 5)
-
-    # Make sure score between 0 (least-critical) and 1 (most-critical).
-    criticality_score = max(min(criticality_score, 1), 0)
+                 DEPENDENTS_COUNT_WEIGHT)) + additional_params_score) - min_score) /
+        (max_score - min_score), 5)
 
     result_dict['criticality_score'] = criticality_score
     return result_dict
