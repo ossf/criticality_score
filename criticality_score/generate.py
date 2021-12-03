@@ -35,6 +35,7 @@ LANGUAGE_SEARCH_MAP = {
     'ruby': ['Ruby'],
     'rust': ['Rust'],
     'shell': ['Shell'],
+    'r': ['R'],
 }
 IGNORED_KEYWORDS = ['docs', 'interview', 'tutorial']
 DEFAULT_SAMPLE_SIZE = 5000
