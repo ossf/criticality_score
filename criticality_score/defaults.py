@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""Constants used in OSS criticality score calculation."""
+"""Defaults used in OSS criticality score calculation."""
 import re
 
 # Weights for various parameters.
