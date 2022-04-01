@@ -706,14 +706,16 @@ def override_params(override_params):
             raise Exception(
                 'Wrong format argument, unknown parameter: ' + param_name)
 
-
 def main():
     parser = argparse.ArgumentParser(
-        description='Gives criticality score for an open source project')
+        description='Gives criticality score for an open source project or a list of projects.')
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--repo",
                         type=str,
                         help="repository url")
+    group.add_argument("--repolist",
+                        type=str,
+                        help="listfile of repository urls")
     group.add_argument("--local-file",
             type=str,
             dest="l_file",
@@ -745,9 +747,23 @@ def main():
     output = None
     if args.repo:
         output = get_repository_score_from_raw_stats(args.repo, args.params)
+    elif args.repolist:
+        if args.format != "csv":
+            logger.error(f"{args.format} format requested but only csv is supported with --repolist")
+            sys.exit(1)
+        with open(args.repolist, 'r') as rl:
+            output = []
+            for repo in rl:
+                repo_url = repo.strip()
+                try:
+                    row = get_repository_score_from_raw_stats(repo_url, args.params)
+                    output.append(row)
+                except Exception as exp:
+                    logger.exception(
+                        f'Exception occurred when reading repo: {repo_url}\n{exp}')
     elif args.l_file:
         if args.format != "csv":
-            logger.error(f"Only support for the format of csv, now is {args.format}")
+            logger.error(f"{args.format} format requested but only csv is supported with --local-file")
             sys.exit(1)
 
         output = get_repository_score_from_local_csv(args.l_file, args.params)
