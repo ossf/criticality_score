@@ -431,8 +431,40 @@ def get_param_score(param, max_value, weight=1):
     return (math.log(1 + param) / math.log(1 + max(param, max_value))) * weight
 
 
-def get_repository_stats(repo, additional_params=None, result_dict=None):
-    """Return repository stats, including criticality score."""
+def get_repository_stats(repo):
+    """Return repository stats by grabing the raw signal data from the repo."""
+    if not repo.last_commit:
+        logger.error(f'Repo is empty: {repo.url}')
+        return None
+
+    def _worker(repo, param, return_dict):
+        """worker function"""
+        return_dict[param] = getattr(repo, param)
+
+    threads = []
+    return_dict = {}
+    for param in PARAMS:
+        thread = threading.Thread(target=_worker,
+                                  args=(repo, param, return_dict))
+        thread.start()
+        threads.append(thread)
+    for thread in threads:
+        thread.join()
+
+    # Guarantee insertion order.
+    result_dict = {
+        'name': repo.name,
+        'url': repo.url,
+        'language': repo.language,
+    }
+    for param in PARAMS:
+        result_dict[param] = return_dict[param]
+
+    return result_dict
+
+
+def get_repository_score(repo_stats, additional_params=None):
+    """Return one repository's criticality score based on repo stats."""
     # Validate and compute additional params first.
     if additional_params is None:
         additional_params = []
@@ -450,34 +482,6 @@ def get_repository_stats(repo, additional_params=None, result_dict=None):
         additional_params_score += get_param_score(value, max_threshold,
                                                    weight)
 
-    if result_dict is None:
-        if not repo.last_commit:
-            logger.error(f'Repo is empty: {repo.url}')
-            return None
-
-        def _worker(repo, param, return_dict):
-            """worker function"""
-            return_dict[param] = getattr(repo, param)
-
-        threads = []
-        return_dict = {}
-        for param in PARAMS:
-            thread = threading.Thread(target=_worker,
-                                      args=(repo, param, return_dict))
-            thread.start()
-            threads.append(thread)
-        for thread in threads:
-            thread.join()
-
-        # Guarantee insertion order.
-        result_dict = {
-            'name': repo.name,
-            'url': repo.url,
-            'language': repo.language,
-        }
-        for param in PARAMS:
-            result_dict[param] = return_dict[param]
-
     total_weight = (CREATED_SINCE_WEIGHT + UPDATED_SINCE_WEIGHT +
                     CONTRIBUTOR_COUNT_WEIGHT + ORG_COUNT_WEIGHT +
                     COMMIT_FREQUENCY_WEIGHT + RECENT_RELEASES_WEIGHT +
@@ -486,25 +490,25 @@ def get_repository_stats(repo, additional_params=None, result_dict=None):
                     additional_params_total_weight)
 
     criticality_score = round(
-        ((get_param_score(float(result_dict['created_since']),
+        ((get_param_score(float(repo_stats['created_since']),
             CREATED_SINCE_THRESHOLD, CREATED_SINCE_WEIGHT)) +
-         (get_param_score(float(result_dict['updated_since']),
+         (get_param_score(float(repo_stats['updated_since']),
              UPDATED_SINCE_THRESHOLD, UPDATED_SINCE_WEIGHT)) +
-         (get_param_score(float(result_dict['contributor_count']),
+         (get_param_score(float(repo_stats['contributor_count']),
              CONTRIBUTOR_COUNT_THRESHOLD, CONTRIBUTOR_COUNT_WEIGHT)) +
-         (get_param_score(float(result_dict['org_count']),
+         (get_param_score(float(repo_stats['org_count']),
              ORG_COUNT_THRESHOLD, ORG_COUNT_WEIGHT)) +
-         (get_param_score(float(result_dict['commit_frequency']),
+         (get_param_score(float(repo_stats['commit_frequency']),
              COMMIT_FREQUENCY_THRESHOLD, COMMIT_FREQUENCY_WEIGHT)) +
-         (get_param_score(float(result_dict['recent_releases_count']),
+         (get_param_score(float(repo_stats['recent_releases_count']),
              RECENT_RELEASES_THRESHOLD, RECENT_RELEASES_WEIGHT)) +
-         (get_param_score(float(result_dict['closed_issues_count']),
+         (get_param_score(float(repo_stats['closed_issues_count']),
              CLOSED_ISSUES_THRESHOLD, CLOSED_ISSUES_WEIGHT)) +
-         (get_param_score(float(result_dict['updated_issues_count']),
+         (get_param_score(float(repo_stats['updated_issues_count']),
              UPDATED_ISSUES_THRESHOLD, UPDATED_ISSUES_WEIGHT)) +
-         (get_param_score(float(result_dict['comment_frequency']),
+         (get_param_score(float(repo_stats['comment_frequency']),
              COMMENT_FREQUENCY_THRESHOLD, COMMENT_FREQUENCY_WEIGHT)) +
-         (get_param_score(float(result_dict['dependents_count']),
+         (get_param_score(float(repo_stats['dependents_count']),
              DEPENDENTS_COUNT_THRESHOLD, DEPENDENTS_COUNT_WEIGHT)) +
          additional_params_score) /
         total_weight, 5)
@@ -512,8 +516,46 @@ def get_repository_stats(repo, additional_params=None, result_dict=None):
     # Make sure score between 0 (least-critical) and 1 (most-critical).
     criticality_score = max(min(criticality_score, 1), 0)
 
-    result_dict['criticality_score'] = criticality_score
-    return result_dict
+    return criticality_score
+
+
+def get_repository_score_from_raw_stats(repo_url, params=None):
+    """Get repository's criticality_score based on raw signal data."""
+    repo = get_repository(repo_url)
+    if repo is None:
+        logger.error(f'Repo is not found: {repo_url}')
+        return
+    repo_stats = get_repository_stats(repo)
+    repo_stats["criticality_score"] = get_repository_score(repo_stats, params)
+
+    return repo_stats
+
+
+def get_repository_score_from_local_csv(file_path, params=None):
+    """Get repository's criticality_score based on a local csv file."""
+    if params is None:
+        additional_params = []
+    else:
+        try:
+            additional_params = [additional_param.split(':') for additional_param in params]
+        except ValueError:
+            logger.error('Parameter value in bad format: ' + params)
+            sys.exit(1)
+
+    output = []
+    with open(file_path, "r") as fd:
+        input_data = csv.DictReader(fd, delimiter=',')
+        for row in input_data:
+            logger.debug(row)
+
+            calc_params = []
+            for key,weight,max_threshold in additional_params:
+                calc_params.append(f"{row[key]}:{weight}:{max_threshold}")
+
+            row["criticality_score"] = get_repository_score(row, calc_params)
+            output.append(row)
+
+    return output
 
 
 def get_github_token_info(token_obj):
@@ -581,6 +623,7 @@ def get_repository(url):
         try:
             repo = get_github_auth_token().get_repo(repo_url)
         except github.GithubException as exp:
+            logger.error(f"Get github repository failed: {exp}")
             if exp.status == 404:
                 return None
         return GitHubRepository(repo)
@@ -614,12 +657,10 @@ def main():
     group = parser.add_mutually_exclusive_group(required=True)
     group.add_argument("--repo",
                         type=str,
-                        # required=True,
                         help="repository url")
     group.add_argument("--local-file",
             type=str,
             dest="l_file",
-            # required=True,
             help="path of a local csv file with repo stats")
     parser.add_argument(
         "--format",
@@ -639,37 +680,13 @@ def main():
 
     output = None
     if args.repo:
-        repo = get_repository(args.repo)
-        if not repo:
-            logger.error(f'Repo is not found: {args.repo}')
-            return
-        output = get_repository_stats(repo, args.params)
-
-    if args.l_file:
+        output = get_repository_score_from_raw_stats(args.repo, args.params)
+    elif args.l_file:
         if args.format != "csv":
             logger.error(f"Only support for the format of csv, now is {args.format}")
             sys.exit(1)
 
-        if args.params is None:
-            additional_params = []
-        else:
-            try:
-                additional_params = [additional_param.split(':') for additional_param in args.params]
-            except ValueError:
-                logger.error('Parameter value in bad format: ' + args.params)
-                sys.exit(1)
-
-        output = []
-        with open(args.l_file, "r") as fd:
-            input_data = csv.DictReader(fd, delimiter=',')
-            for row in input_data:
-                logger.debug(row)
-
-                params = []
-                for key,weight,max_threshold in additional_params:
-                    params.append(f"{row[key]}:{weight}:{max_threshold}")
-
-                output.append(get_repository_stats(row["name"], params, row))
+        output = get_repository_score_from_local_csv(args.l_file, args.params)
 
     if output is None:
         return
