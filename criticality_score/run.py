@@ -441,14 +441,26 @@ def get_repository_stats(repo, additional_params=None):
         additional_params = []
     additional_params_total_weight = 0
     additional_params_score = 0
+    additional_params_dict = {}
+    unnamed_param = 1
     for additional_param in additional_params:
         try:
+            name, values = additional_param.split(':', 1)
             value, weight, max_threshold = [
-                int(i) for i in additional_param.split(':')
+                float(i) for i in values.split(':')
             ]
         except ValueError:
-            logger.error('Parameter value in bad format: ' + additional_param)
-            sys.exit(1)
+            # try parsing without name
+            try:
+                value, weight, max_threshold = [
+                    float(i) for i in additional_param.split(':')
+                ]
+            except ValueError:
+                logger.error('Additional parameter in bad format: "' + additional_param + '". Format is: [<name>:]<value>:<weight>:<max_threshold>')
+                sys.exit(1)
+            name='Unnamed param #' + str(unnamed_param)
+            unnamed_param += 1
+        additional_params_dict[name] = value
         additional_params_total_weight += weight
         additional_params_score += get_param_score(value, max_threshold,
                                                    weight)
@@ -475,6 +487,7 @@ def get_repository_stats(repo, additional_params=None):
     }
     for param in PARAMS:
         result_dict[param] = return_dict[param]
+    result_dict.update(additional_params_dict)
 
     total_weight = (CREATED_SINCE_WEIGHT + UPDATED_SINCE_WEIGHT +
                     CONTRIBUTOR_COUNT_WEIGHT + ORG_COUNT_WEIGHT +
@@ -625,7 +638,7 @@ def main():
         '--params',
         nargs='+',
         default=[],
-        help='Additional parameters in form <value>:<weight>:<max_threshold>',
+        help='Additional parameters in form [<name>:]<value>:<weight>:<max_threshold>',
         required=False)
 
     initialize_logging_handlers()
