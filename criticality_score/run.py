@@ -687,6 +687,8 @@ def main():
             sys.exit(1)
 
         output = get_repository_score_from_local_csv(args.l_file, args.params)
+    else:
+        raise Exception("Unknown data input type")
 
     if output is None:
         return
