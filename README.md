@@ -20,7 +20,7 @@ by [Rob Pike](https://github.com/robpike):
 
 <img src="https://raw.githubusercontent.com/ossf/criticality_score/main/images/formula.png" width="359" height="96">
 
-We use the following parameters to derive the criticality score for an
+We use the following default parameters to derive the criticality score for an
 open source project:
 
 | Parameter (S<sub>i</sub>)  | Weight (&alpha;<sub>i</sub>) | Max threshold (T<sub>i</sub>) | Description | Reasoning |
@@ -38,6 +38,7 @@ open source project:
 
 **NOTE**:
 
+- You can override those defaut values at runtime as described below.
 - We are looking for community ideas to improve upon these parameters.
 - There will always be exceptions to the individual reasoning rules.
 
@@ -71,7 +72,15 @@ You can add your own parameters to the criticality score calculation. For
 example, you can add internal project usage data to re-adjust the project's
 criticality score for your prioritization needs. This can be done by adding
 the `--params <param1_value>:<param1_weight>:<param1_max_threshold> ...`
-argument on the command line.
+argument on the command line. You cannot specify the parameter names and
+these won't be listed in the results but they will be included in the
+score calculation.
+
+You can override the default values for the weight and threshold of the
+built-in parameters to match your needs. This can be done by adding the
+`--overrides <param1_name>:<param1_weight>:<param1_max_threshold> ...`
+argument on the command line, where param1_name refers to the name of the
+parameter you want to override.
 
 ### Authentication
 
