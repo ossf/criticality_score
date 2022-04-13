@@ -11,17 +11,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/go-logr/logr"
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	"github.com/ossf/scorecard/v4/log"
+	sclog "github.com/ossf/scorecard/v4/log"
 	"github.com/shurcooL/githubv4"
+	log "github.com/sirupsen/logrus"
 )
 
 const (
 	githubDateFormat = "2006-01-02"
 	reposPerPage     = 100
 	oneDay           = time.Hour * 24
+	defaultLogLevel  = log.InfoLevel
 )
 
 var (
@@ -37,7 +38,7 @@ var (
 	workersFlag         = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	startDateFlag       = dateFlag(epochDate)
 	endDateFlag         = dateFlag(time.Now().UTC().Truncate(oneDay))
-	logFlag             = logLevelFlag(log.DefaultLevel)
+	logFlag             = logLevelFlag(defaultLogLevel)
 )
 
 // dateFlag implements the flag.Value interface to simplify the input and validation of
@@ -66,12 +67,16 @@ func (d *dateFlag) Time() time.Time {
 type logLevelFlag log.Level
 
 func (l *logLevelFlag) Set(value string) error {
-	*l = logLevelFlag(log.ParseLevel(value))
+	level, err := log.ParseLevel(string(value))
+	if err != nil {
+		return err
+	}
+	*l = logLevelFlag(level)
 	return nil
 }
 
 func (l logLevelFlag) String() string {
-	return string(log.Level(l))
+	return log.Level(l).String()
 }
 
 func (l logLevelFlag) Level() log.Level {
@@ -97,7 +102,7 @@ func init() {
 // and returns each repository on the results channel.
 //
 // When the queries channel is closed it will call wg.Done() to signal that the worker has finished.
-func searchWorker(s *githubsearch.Searcher, wg *sync.WaitGroup, logger logr.Logger, queries, results chan string) {
+func searchWorker(s *githubsearch.Searcher, wg *sync.WaitGroup, logger *log.Entry, queries, results chan string) {
 	defer wg.Done()
 	for q := range queries {
 		total := 0
@@ -107,7 +112,10 @@ func searchWorker(s *githubsearch.Searcher, wg *sync.WaitGroup, logger logr.Logg
 		})
 		if err != nil {
 			// TODO: this error handling is not at all graceful, and hard to recover from.
-			logger.Error(err, "Enumeration failed for query", "query", q)
+			logger.WithFields(log.Fields{
+				"query": q,
+				"error": err,
+			}).Error("Enumeration failed for query")
 			if errors.Is(err, githubsearch.ErrorUnableToListAllResult) {
 				if *requireMinStarsFlag {
 					os.Exit(1)
@@ -116,42 +124,47 @@ func searchWorker(s *githubsearch.Searcher, wg *sync.WaitGroup, logger logr.Logg
 				os.Exit(1)
 			}
 		}
-		logger.Info("Enumeration for query done", "query", q, "repo_count", total)
+		logger.WithFields(log.Fields{
+			"query":      q,
+			"repo_count": total,
+		}).Info("Enumeration for query done")
 	}
 }
 
 func main() {
 	flag.Parse()
 
+	logger := log.New()
+	logger.SetLevel(logFlag.Level())
+
 	// roundtripper requires us to use the scorecard logger.
-	// TODO: try and replace this with logrus directly.
-	logger := log.NewLogger(logFlag.Level())
+	scLogger := sclog.NewLogrusLogger(logger)
 
 	// Ensure the -start date is not before the epoch.
 	if startDateFlag.Time().Before(epochDate) {
-		logger.Error(nil, fmt.Sprintf("-start date must be no earlier than %s", epochDate.Format(githubDateFormat)))
+		logger.Errorf("-start date must be no earlier than %s", epochDate.Format(githubDateFormat))
 		os.Exit(2)
 	}
 
 	// Ensure -start is before -end
 	if endDateFlag.Time().Before(startDateFlag.Time()) {
-		logger.Error(nil, "-start date must be before -end date")
+		logger.Error("-start date must be before -end date")
 		os.Exit(2)
 	}
 
 	// Ensure a non-flag argument (the output file) is specified.
 	if flag.NArg() != 1 {
-		logger.Error(nil, "An output file must be specified.")
+		logger.Error("An output file must be specified.")
 		os.Exit(2)
 	}
 	outFilename := flag.Arg(0)
 
 	// Print a helpful message indicating the configuration we're using.
-	logger.Info(
-		"Preparing output file",
-		"filename", outFilename,
-		"force", *forceFlag,
-		"append", *appendFlag)
+	logger.WithFields(log.Fields{
+		"filename": outFilename,
+		"force":    *forceFlag,
+		"append":   *appendFlag,
+	}).Info("Preparing output file")
 
 	// Open the output file based on the flags
 	// TODO: support '-' to use os.Stdout.
@@ -170,21 +183,20 @@ func main() {
 	}
 	defer out.Close()
 
-	logger.Info(
-		"Starting enumeration",
-		"start", startDateFlag.String(),
-		"end", endDateFlag.String(),
-		"min_stars", *minStarsFlag,
-		"star_overlap", *starOverlapFlag,
-		"workers", *workersFlag,
-	)
+	logger.WithFields(log.Fields{
+		"start":        startDateFlag.String(),
+		"end":          endDateFlag.String(),
+		"min_stars":    *minStarsFlag,
+		"star_overlap": *starOverlapFlag,
+		"workers":      *workersFlag,
+	}).Info("Starting enumeration")
 
 	// Track how long it takes to enumerate the repositories
 	startTime := time.Now()
 	ctx := context.Background()
 
 	// Prepare a client for communicating with GitHub's GraphQL API
-	rt := roundtripper.NewTransport(ctx, logger)
+	rt := roundtripper.NewTransport(ctx, scLogger)
 	httpClient := &http.Client{
 		Transport: rt,
 	}
@@ -198,7 +210,7 @@ func main() {
 
 	// Start the worker goroutines to execute the search queries
 	for i := 0; i < *workersFlag; i++ {
-		workerLogger := logger.WithValues("worker", i)
+		workerLogger := logger.WithFields(log.Fields{"worker": i})
 		s := githubsearch.NewSearcher(ctx, client, workerLogger, githubsearch.PerPage(reposPerPage))
 		go searchWorker(s, &wg, workerLogger, queries, results)
 	}
@@ -216,23 +228,25 @@ func main() {
 
 	// Work happens here. Iterate through the dates from today, until the start date.
 	for created := endDateFlag.Time(); !startDateFlag.Time().After(created); created = created.Add(-oneDay) {
-		logger.Info("Scheduling day for enumeration", "created", created.Format(githubDateFormat))
+		logger.WithFields(log.Fields{
+			"created": created.Format(githubDateFormat),
+		}).Info("Scheduling day for enumeration")
 		queries <- baseQuery + fmt.Sprintf(" created:%s", created.Format(githubDateFormat))
 	}
-	logger.V(1).Info("Waiting for workers to finish")
+	logger.Debug("Waiting for workers to finish")
 	// Indicate to the workers that we're finished.
 	close(queries)
 	// Wait for the workers to be finished.
 	wg.Wait()
 
-	logger.V(1).Info("Waiting for writer to finish")
+	logger.Debug("Waiting for writer to finish")
 	// Close the results channel now the workers are done.
 	close(results)
 	// Wait for the writer to be finished.
 	<-done
 
-	logger.Info(
-		"Finished enumeration",
-		"total_repos", totalRepos,
-		"duration", time.Now().Sub(startTime).Truncate(time.Minute).String())
+	logger.WithFields(log.Fields{
+		"total_repos": totalRepos,
+		"duration":    time.Now().Sub(startTime).Truncate(time.Minute).String(),
+	}).Info("Finished enumeration")
 }

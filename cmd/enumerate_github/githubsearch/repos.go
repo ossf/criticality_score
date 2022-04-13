@@ -5,6 +5,7 @@ import (
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/pagination"
 	"github.com/shurcooL/githubv4"
+	log "github.com/sirupsen/logrus"
 )
 
 // repo is part of the GitHub GraphQL query and includes the fields
@@ -71,7 +72,9 @@ func buildQuery(q string, minStars, maxStars int) string {
 }
 
 func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
-	re.logger.V(1).Info("Searching GitHub", "query", q)
+	re.logger.WithFields(log.Fields{
+		"query": q,
+	}).Debug("Searching GitHub")
 	vars := map[string]interface{}{
 		"query":   githubv4.String(q),
 		"perPage": githubv4.Int(re.perPage),
@@ -121,15 +124,14 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			}
 		}
 		remaining := total - seen
-		re.logger.V(1).Info(
-			"Finished iterating through results",
-			"total_available", total,
-			"total_returned", seen,
-			"total_remaining", remaining,
-			"unique_repos", len(repos),
-			"last_stars", stars,
-			"query", q,
-		)
+		re.logger.WithFields(log.Fields{
+			"total_available": total,
+			"total_returned":  seen,
+			"total_remaining": remaining,
+			"unique_repos":    len(repos),
+			"last_stars":      stars,
+			"query":           q,
+		}).Debug("Finished iterating through results")
 		newMaxStars := stars + overlap
 		if remaining <= 0 {
 			break
@@ -138,14 +140,13 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 		} else {
 			// the gap between "stars" and "maxStars" is less than "overlap", so we can't
 			// safely step any lower without skipping stars.
-			re.logger.Error(
-				ErrorUnableToListAllResult,
-				"Too many repositories for current range",
-				"min_stars", minStars,
-				"stars", stars,
-				"max_stars", maxStars,
-				"overlap", overlap,
-			)
+			re.logger.WithFields(log.Fields{
+				"error":     ErrorUnableToListAllResult,
+				"min_stars": minStars,
+				"stars":     stars,
+				"max_stars": maxStars,
+				"overlap":   overlap,
+			}).Error("Too many repositories for current range")
 			return ErrorUnableToListAllResult
 		}
 	}
