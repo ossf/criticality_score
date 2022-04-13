@@ -129,7 +129,7 @@ func main() {
 
 	// Ensure the -start date is not before the epoch.
 	if startDateFlag.Time().Before(epochDate) {
-		fmt.Fprintf(os.Stderr, "-start date must be no earlier than %s\n", epochDate.Format(githubDateFormat))
+		logger.Error(nil, fmt.Sprintf("-start date must be no earlier than %s", epochDate.Format(githubDateFormat)))
 		os.Exit(2)
 	}
 
@@ -141,7 +141,7 @@ func main() {
 
 	// Ensure a non-flag argument (the output file) is specified.
 	if flag.NArg() != 1 {
-		fmt.Fprintln(os.Stderr, "An output file must be specified.")
+		logger.Error(nil, "An output file must be specified.")
 		os.Exit(2)
 	}
 	outFilename := flag.Arg(0)

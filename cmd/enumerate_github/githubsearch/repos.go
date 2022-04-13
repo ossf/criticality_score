@@ -91,8 +91,8 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 // - Getting the number of stars for the last repository returned.
 // - Using this star value, plus an overlap, to be the maximum star limit.
 //
-// The algorithm fails if there are results remaining after reaching minStars, or if the last
-// star value plus overlap has the same or larger value as the previous iteration.
+// The algorithm fails if the last star value plus overlap has the same or larger value as the
+// previous iteration.
 func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, emitter func(string)) error {
 	repos := make(map[string]struct{})
 	maxStars := -1
@@ -133,14 +133,6 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 		newMaxStars := stars + overlap
 		if remaining <= 0 {
 			break
-		} else if stars == minStars {
-			// remaining is > 0, but we've reached the our minStars, we can't proceed further.
-			re.logger.Error(
-				ErrorUnableToListAllResult,
-				"Too many repositories with minStars",
-				"min_stars", minStars,
-				"stars", stars)
-			return ErrorUnableToListAllResult
 		} else if maxStars == -1 || newMaxStars < maxStars {
 			maxStars = newMaxStars
 		} else {
