@@ -178,8 +178,11 @@ func main() {
 		out, err = os.OpenFile(outFilename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|os.O_EXCL, 0666)
 	}
 	if err != nil {
-		// file failed to open
-		panic(err)
+		// File failed to open
+		logger.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to open output file")
+		os.Exit(2)
 	}
 	defer out.Close()
 
