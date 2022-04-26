@@ -1,7 +1,9 @@
 package githubsearch
 
 import (
+	"errors"
 	"fmt"
+	"io"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/pagination"
 	"github.com/shurcooL/githubv4"
@@ -110,9 +112,11 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 		total := c.Total()
 		seen := 0
 		stars = 0
-		for !c.Finished() {
+		for {
 			obj, err := c.Next()
-			if err != nil {
+			if obj == nil && errors.Is(err, io.EOF) {
+				break
+			} else if err != nil {
 				return err
 			}
 			repo := obj.(repo)

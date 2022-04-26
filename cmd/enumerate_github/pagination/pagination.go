@@ -58,25 +58,24 @@ func (c *Cursor) isLastPage() bool {
 	return !c.query.HasNextPage()
 }
 
-func (c *Cursor) Finished() bool {
-	return c.atEndOfPage() && c.isLastPage()
-}
-
 func (c *Cursor) Total() int {
 	return c.query.Total()
 }
 
 func (c *Cursor) Next() (interface{}, error) {
-	if c.Finished() {
-		// We've finished so return an EOF
-		return nil, io.EOF
-	} else if c.atEndOfPage() {
-		// We're at the end of the page, but not finished, so grab the next page.
+	if c.atEndOfPage() {
+		// There are no more nodes in this page, so we need another page.
+		if c.isLastPage() {
+			// There are no more pages, so return an EOF
+			return nil, io.EOF
+		}
+		// Grab the next page.
 		if err := c.queryNextPage(); err != nil {
 			return nil, err
 		}
-		// Make sure we didn't get an empty result.
 		if c.atEndOfPage() {
+			// Despite grabing a new page we have no results,
+			// so return an EOF.
 			return nil, io.EOF
 		}
 	}
