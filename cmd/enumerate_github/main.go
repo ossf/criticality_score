@@ -12,6 +12,8 @@ import (
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
+	"github.com/ossf/criticality_score/internal/logflag"
+	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
 	"github.com/shurcooL/githubv4"
@@ -29,8 +31,6 @@ var (
 	// epochDate is the earliest date for which GitHub has data.
 	epochDate = time.Date(2008, 1, 1, 0, 0, 0, 0, time.UTC)
 
-	forceFlag           = flag.Bool("force", false, "overwrites FILE if it already exists and -append is not set.")
-	appendFlag          = flag.Bool("append", false, "appends to FILE if it already exists.")
 	minStarsFlag        = flag.Int("min-stars", 10, "only enumerates repositories with this or more of stars.")
 	starOverlapFlag     = flag.Int("star-overlap", 5, "the number of stars to overlap between queries.")
 	requireMinStarsFlag = flag.Bool("require-min-stars", false, "abort if -min-stars can't be reached during enumeration.")
@@ -38,7 +38,7 @@ var (
 	workersFlag         = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	startDateFlag       = dateFlag(epochDate)
 	endDateFlag         = dateFlag(time.Now().UTC().Truncate(oneDay))
-	logFlag             = logLevelFlag(defaultLogLevel)
+	logFlag             = logflag.Level(defaultLogLevel)
 )
 
 // dateFlag implements the flag.Value interface to simplify the input and validation of
@@ -87,6 +87,7 @@ func init() {
 	flag.Var(&startDateFlag, "start", "the start `date` to enumerate back to. Must be at or after 2008-01-01.")
 	flag.Var(&endDateFlag, "end", "the end `date` to enumerate from.")
 	flag.Var(&logFlag, "log", "set the `level` of logging.")
+	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
@@ -162,21 +163,10 @@ func main() {
 	// Print a helpful message indicating the configuration we're using.
 	logger.WithFields(log.Fields{
 		"filename": outFilename,
-		"force":    *forceFlag,
-		"append":   *appendFlag,
 	}).Info("Preparing output file")
 
-	// Open the output file based on the flags
-	// TODO: support '-' to use os.Stdout.
-	var out *os.File
-	var err error
-	if *appendFlag {
-		out, err = os.OpenFile(outFilename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|os.O_APPEND, 0666)
-	} else if *forceFlag {
-		out, err = os.OpenFile(outFilename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|os.O_TRUNC, 0666)
-	} else {
-		out, err = os.OpenFile(outFilename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|os.O_EXCL, 0666)
-	}
+	// Open the output file
+	out, err := outfile.Open(outFilename)
 	if err != nil {
 		// File failed to open
 		logger.WithFields(log.Fields{
