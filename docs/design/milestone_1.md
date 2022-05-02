@@ -4,13 +4,17 @@
 - Author: [calebbrown@google.com](mailto:calebbrown@google.com)
 - Updated: 2022-04-29
 
-
 ## Goal
 
 Anyone can reliably generate raw signal data using the `criticality_score`
 GitHub project.
 
-Support future moves towards scaling and automating criticality score.
+For this milestone, the focus will be on reproducing the existing signals
+collected by the Python implementation, and adding support for dependent data
+sourced from [deps.dev](https://deps.dev).
+
+Additionally there will be a focus on supporting future moves towards scaling
+and automating criticality score.
 
 ### Non-goals
 
@@ -25,54 +29,48 @@ Critical projects are hosted on GitLab, Bitbucket, or even self-hosted. These
 should be supported, but given that over 90% of open source projects are
 hosted by GitHub it seems prudent to focus efforts there first.
 
+**De-dupe mirrors from origin source repositories.**
+
+Mirrors are frequently used to provide broader access to a project. Usually
+when a self-hosted project uses a public service, such as GitHub, to host a
+mirror of the project.
+
+This milestone will not attempt to detect and canonicalize mirrors.
+
 ## Background
 
-TBC
+The OpenSSF has a
+[Working Group (WG) focused on Securing Critical Projects](https://github.com/ossf/wg-securing-critical-projects).
+A key part of this WG is focused on determining which Open Source projects are
+"critical". Critical Open Source projects are those which are broadly depended
+on by organizations, and present a security risk to those organizations, and
+their customers, if they are not supported.
+
+This project is one of a small set of sources of data used to find theses
+critical projects.
+
+The current Python implementation available in this repo has been stagnant for
+a while.
+
+It has some serious problems with how it enumerates projects on GitHub (see
+[#33](https://github.com/ossf/criticality_score/issues/33)), and lacks robust
+support for non-GitHub projects (see
+[#29](https://github.com/ossf/criticality_score/issues/29)).
+
+There are problems with the existing signals being collected (see
+[#55](https://github.com/ossf/criticality_score/issues/55),
+[#102](https://github.com/ossf/criticality_score/issues/102)) and interest in
+exploring other signals and approaches
+([#53](https://github.com/ossf/criticality_score/issues/53),
+[#102](https://github.com/ossf/criticality_score/issues/102) deps.dev,
+[#31](https://github.com/ossf/criticality_score/issues/31),
+[#82](https://github.com/ossf/criticality_score/issues/82), etc).
+
+Additionally, in [#102](https://github.com/ossf/criticality_score/issues/102) I propose an approach to improving the quality of the criticality score.
 
 ## Design Overview
 
-### Project Definition
-
-A _project_ is defined as only having a _single repository_, and a _single
-issue tracker_. A project may provide multiple _packages_.
-
-There are some "umbrella projects" (e.g. Kubernetes) that have multiple
-repositories associated with them, or may use a centralized issue tracker. An
-alternative approach would be to treat a project separately to the one or
-more repositories that belong to it.
-
-However this approach has the following drawbacks:
-
-* Makes it hard to distinguish between organizations and umbrella projects
-* Raises the possibility that a part of the umbrella project that is critical
-  to OSS is missed.
-* Complicates the calculation required to aggregate signals and generate a
-  criticality score.
-
-So instead we define a project as a single repository. This provides a clear
-"primary key" we can use for collecting signals.
-
-#### Forks and Mirrors
-
-Mirrors and forks are clones of another project's repository. 
-
-A mirror is usually used to provide broader access to a repository, such as
-when a self-hosted project mirrors its repository on GitHub.
-
-A fork has two primary uses:
-
-* A contributor commits changes to a fork for preparing pull-requests to the
-  main repository.
-* A fork may become its own project when the original is unmaintained, or if
-  the forker decides to head in a different direction.
-
-This raises two considerations for generating criticality scores:
-
-* Project repositories may need to be de-duped to avoid treating the original
-  source and its mirrors as separate projects.
-* Forks merely used for committing changes for a pull-request should be ignored
-  to lower the work and potential noise (fortunately these should score low
-  enough to make it easy to ignore them)
+Please see the [glossary](../glossary.md) for a terms used in this project.
 
 ### Multi Stage
 
@@ -141,7 +139,6 @@ The current implementation of this algorithm has a difference between GitHub
 search of less than 0.05% for >=20 stars (GitHub search was checked ~12 hours
 after the algorithm finished) and took 4 hours with 1 worker and 1 token.
 
-
 ##### Rate Limits
 
 A pool of GitHub tokens will be supported for increased performance.
@@ -150,11 +147,9 @@ A single GitHub token has a limit of "5000" each hour, a single search page
 consumes "1", and returning the 1000 results from a search consumes "10". This
 allows 500 search queries per hour for a single token.
 
-
 ##### Output
 
 Output from enumeration will be a text file containing a list of GitHub urls.
-
 
 #### Static Project URL Lists
 
@@ -180,7 +175,6 @@ would need to be curated to ensure each repository is still available. Culling
 for "interesting" (e.g. more than 1 star) repositories may also be useful to
 limit the amount of work generating signals.
 
-
 #### Future Sources of Projects
 
 There are many other sources of projects for future milestones that can be
@@ -196,19 +190,10 @@ used. These are out-of-scope for Milestone 1, but worth listing.
   self-hosted repositories (e.g. cgit, gitea, etc)
 * JIRA, Bugzilla, etc support for issue tracking
 
-
 ### Raw Signal Collection
 
 This stage is when the list of projects are iterated over and for each project
 a set of raw signal data is output.
-
-For Milestone 1, the focus will be on reproducing the existing signals
-collected by the Python implementation, and adding support for dependent data
-sourced from [deps.dev](https://deps.dev).
-
-Additionally there will be a focus on making it straightforward to add new
-signal sources and signals.
-
 
 #### Input / Output
 
