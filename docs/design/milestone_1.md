@@ -6,15 +6,15 @@
 
 ## Goal
 
-Anyone can reliably generate raw signal data using the `criticality_score`
-GitHub project.
+Anyone can reliably generate signal data using the `criticality_score` GitHub
+project.
+
+Additionally there will be a focus on supporting future moves towards scaling
+and automating criticality score.
 
 For this milestone, the focus will be on reproducing the existing signals
 collected by the Python implementation, and adding support for dependent data
 sourced from [deps.dev](https://deps.dev).
-
-Additionally there will be a focus on supporting future moves towards scaling
-and automating criticality score.
 
 ### Non-goals
 
@@ -69,6 +69,15 @@ exploring other signals and approaches
 Additionally, in [#102](https://github.com/ossf/criticality_score/issues/102) I propose an approach to improving the quality of the criticality score.
 
 ## Design Overview
+
+This milestone is a fundamental rearchitecturing of the project to meet the
+
+
+this is rearchitecturing the project to enable more reliability and extensibility
+focusing on:
+reliably enumerating GitHub projects
+Reliably generating existing signals. Adding dependent information.
+Making the current criticality rankings list generated more frequently. (And more easily)
 
 Please see the [glossary](../glossary.md) for a terms used in this project.
 
