@@ -302,7 +302,9 @@ Supported scalars can be:
 * Date
 * DateTime
 
-All Dates and DateTimes must be in UTC and will be output in RFC3339 format.
+All Dates and DateTimes must be in UTC and will be output in the
+RFC3339/ISO8601 format: `YYYY-MM-DDTHH:mm:ssZ`. (See
+[`time.RFC3339`](https://pkg.go.dev/time#pkg-constants))
 
 Strings will support Unicode.
 
