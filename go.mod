@@ -3,6 +3,8 @@ module github.com/ossf/criticality_score
 go 1.18
 
 require (
+	github.com/google/go-github/v44 v44.1.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/ossf/scorecard/v4 v4.1.1-0.20220413163106-b00b31646ab4
 	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
 	github.com/sirupsen/logrus v1.8.1

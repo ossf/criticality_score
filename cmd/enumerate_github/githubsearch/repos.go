@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ossf/criticality_score/cmd/enumerate_github/pagination"
+	"github.com/ossf/criticality_score/internal/githubapi/pagination"
 	"github.com/shurcooL/githubv4"
 	log "github.com/sirupsen/logrus"
 )
