@@ -37,7 +37,7 @@ func (r *repo) init(ctx context.Context) error {
 		return err
 	}
 	r.logger.Debug("Fetching created time")
-	if created, err := legacy.FetchCreatedTime(ctx, r.client, r.BasicData.Owner.Login, r.BasicData.Name, data.CreatedAt); err != nil {
+	if created, err := legacy.FetchCreatedTime(ctx, r.client, data.Owner.Login, data.Name, data.CreatedAt); err != nil {
 		return err
 	} else {
 		r.created = created
