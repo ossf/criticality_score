@@ -1,7 +1,7 @@
 
 # Criticality Score Revamp: Milestone 1
 
-- Author: [calebbrown@google.com](mailto:calebbrown@google.com)
+- Author: [Caleb Brown](mailto:calebbrown@google.com)
 - Updated: 2022-04-29
 
 ## Goal
