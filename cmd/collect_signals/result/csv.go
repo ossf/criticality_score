@@ -16,7 +16,7 @@ type csvWriter struct {
 }
 
 func headerFromSignalSets(sets []signal.Set) []string {
-	hs := make([]string, 0)
+	var hs []string
 	for _, s := range sets {
 		if err := signal.ValidateSet(s); err != nil {
 			panic(err)
@@ -52,7 +52,7 @@ func (s *csvWriter) writeRecord(c *csvRecord) error {
 	if err := s.maybeWriteHeader(); err != nil {
 		return err
 	}
-	rec := make([]string, 0)
+	var rec []string
 	for _, k := range s.header {
 		rec = append(rec, c.values[k])
 	}

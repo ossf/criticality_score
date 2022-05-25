@@ -60,7 +60,7 @@ func main() {
 	lastArg := flag.NArg() - 1
 
 	// Open all the in-files for reading
-	readers := []io.Reader{}
+	var readers []io.Reader
 	consumingStdin := false
 	for _, inFilename := range flag.Args()[:lastArg] {
 		if inFilename == "-" && !consumingStdin {

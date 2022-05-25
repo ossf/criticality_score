@@ -194,7 +194,7 @@ func iterSetFields(s Set, cb func(*fieldConfig, any) error) error {
 //
 // If namespace is true the field names will be prefixed with the namespace.
 func SetFields(s Set, namespace bool) []string {
-	fs := []string{}
+	var fs []string
 	prefix := ""
 	legacyPrefix := ""
 	if namespace {
@@ -217,7 +217,7 @@ func SetFields(s Set, namespace bool) []string {
 // The values are either `nil` if the Field is not set, or the value that was
 // set.
 func SetValues(s Set) []any {
-	vs := make([]any, 0)
+	var vs []any
 	_ = iterSetFields(s, func(_ *fieldConfig, v any) error {
 		vs = append(vs, v)
 		return nil

@@ -52,7 +52,7 @@ func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
 	// Check for duplicates using a map to preserve the insertion order
 	// of the collectors.
 	exists := make(map[signal.Namespace]empty)
-	res := make([]Collector, 0)
+	var res []Collector
 	for _, c := range r.cs {
 		if !c.IsSupported(repo) {
 			continue
@@ -74,7 +74,7 @@ func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
 // This result can be used to determine all the signals that are defined.
 func (r *Registry) EmptySets() []signal.Set {
 	exists := make(map[signal.Namespace]empty)
-	ss := make([]signal.Set, 0)
+	var ss []signal.Set
 	for _, c := range r.cs {
 		// skip existing namespaces
 		if _, ok := exists[c.EmptySet().Namespace()]; ok {
@@ -88,7 +88,7 @@ func (r *Registry) EmptySets() []signal.Set {
 // Collect will collect all the signals for the given repo.
 func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal.Set, error) {
 	cs := r.collectorsForRepository(repo)
-	ss := []signal.Set{}
+	var ss []signal.Set
 	for _, c := range cs {
 		s, err := c.Collect(ctx, repo)
 		if err != nil {

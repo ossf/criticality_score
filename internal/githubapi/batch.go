@@ -14,7 +14,7 @@ func BatchQuery[T any](ctx context.Context, c *Client, queries map[string]string
 	// for when we don't know the exact query before runtime.
 	var t T
 	fieldType := reflect.TypeOf(t)
-	fields := []reflect.StructField{}
+	var fields []reflect.StructField
 	fieldToKey := map[string]string{}
 	idx := 0
 	for key, q := range queries {
