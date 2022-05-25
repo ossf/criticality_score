@@ -5,6 +5,9 @@ import (
 	"time"
 )
 
+// empty is a convenience wrapper for the empty struct.
+type empty struct{}
+
 func TimeDelta(a, b time.Time, u time.Duration) int {
 	var d time.Duration
 	if a.Before(b) {

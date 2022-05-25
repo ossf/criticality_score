@@ -82,14 +82,14 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		return 0, err
 	}
 	// Extract the Company from each returned field and add it to the org set.
-	orgSet := make(map[string]struct{})
+	orgSet := make(map[string]empty)
 	for _, u := range r {
 		org := u.Company
 		if org == "" {
 			continue
 		}
 		org = strings.TrimRight(orgFilter.Replace(strings.ToLower(org)), ",")
-		orgSet[org] = struct{}{}
+		orgSet[org] = empty{}
 	}
 	return len(orgSet), nil
 }

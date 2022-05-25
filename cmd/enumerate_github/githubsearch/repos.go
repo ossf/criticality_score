@@ -99,7 +99,7 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 // The algorithm fails if the last star value plus overlap has the same or larger value as the
 // previous iteration.
 func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, emitter func(string)) error {
-	repos := make(map[string]struct{})
+	repos := make(map[string]empty)
 	maxStars := -1
 	stars := 0
 	for {

@@ -8,6 +8,9 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 )
 
+// empty is a convenience wrapper for the empty struct.
+type empty struct{}
+
 var globalRegistry = NewRegistry()
 
 type Registry struct {
@@ -48,7 +51,7 @@ func (r *Registry) Register(c Collector) {
 func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
 	// Check for duplicates using a map to preserve the insertion order
 	// of the collectors.
-	exists := make(map[signal.Namespace]struct{})
+	exists := make(map[signal.Namespace]empty)
 	res := make([]Collector, 0)
 	for _, c := range r.cs {
 		if !c.IsSupported(repo) {
@@ -59,7 +62,7 @@ func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
 			panic("")
 		}
 		// Record that we have seen this key
-		exists[c.EmptySet().Namespace()] = struct{}{}
+		exists[c.EmptySet().Namespace()] = empty{}
 		res = append(res, c)
 	}
 	return res
@@ -70,7 +73,7 @@ func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
 //
 // This result can be used to determine all the signals that are defined.
 func (r *Registry) EmptySets() []signal.Set {
-	exists := make(map[signal.Namespace]struct{})
+	exists := make(map[signal.Namespace]empty)
 	ss := make([]signal.Set, 0)
 	for _, c := range r.cs {
 		// skip existing namespaces
