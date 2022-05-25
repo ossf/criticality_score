@@ -63,7 +63,7 @@ func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL
 		Repository basicRepoData `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
 	}{}
 	now := time.Now().UTC()
-	vars := map[string]interface{}{
+	vars := map[string]any{
 		"repositoryOwner":      githubv4.String(owner),
 		"repositoryName":       githubv4.String(name),
 		"legacyCommitLookback": githubv4.GitTimestamp{Time: now.Add(-legacyCommitLookback)},

@@ -39,7 +39,7 @@ func (r *repoReleasesQuery) Length() int {
 }
 
 // Get implements the pagination.PagedQuery interface
-func (r *repoReleasesQuery) Get(i int) interface{} {
+func (r *repoReleasesQuery) Get(i int) any {
 	return r.Repository.Releases.Nodes[i].Release.CreatedAt
 }
 
@@ -49,13 +49,13 @@ func (r *repoReleasesQuery) HasNextPage() bool {
 }
 
 // NextPageVars implements the pagination.PagedQuery interface
-func (r *repoReleasesQuery) NextPageVars() map[string]interface{} {
+func (r *repoReleasesQuery) NextPageVars() map[string]any {
 	if r.Repository.Releases.PageInfo.EndCursor == "" {
-		return map[string]interface{}{
+		return map[string]any{
 			"endCursor": (*githubv4.String)(nil),
 		}
 	} else {
-		return map[string]interface{}{
+		return map[string]any{
 			"endCursor": githubv4.String(r.Repository.Releases.PageInfo.EndCursor),
 		}
 	}
@@ -63,7 +63,7 @@ func (r *repoReleasesQuery) NextPageVars() map[string]interface{} {
 
 func FetchReleaseCount(ctx context.Context, c *githubapi.Client, owner, name string, lookback time.Duration) (int, error) {
 	s := &repoReleasesQuery{}
-	vars := map[string]interface{}{
+	vars := map[string]any{
 		"perPage":         githubv4.Int(releasesPerPage),
 		"endCursor":       githubv4.String(owner),
 		"repositoryOwner": githubv4.String(owner),

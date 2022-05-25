@@ -42,7 +42,7 @@ func (q *repoQuery) Length() int {
 }
 
 // Get implements the pagination.PagedQuery interface
-func (q *repoQuery) Get(i int) interface{} {
+func (q *repoQuery) Get(i int) any {
 	return q.Search.Nodes[i].Repository
 }
 
@@ -52,13 +52,13 @@ func (q *repoQuery) HasNextPage() bool {
 }
 
 // NextPageVars implements the pagination.PagedQuery interface
-func (q *repoQuery) NextPageVars() map[string]interface{} {
+func (q *repoQuery) NextPageVars() map[string]any {
 	if q.Search.PageInfo.EndCursor == "" {
-		return map[string]interface{}{
+		return map[string]any{
 			"endCursor": (*githubv4.String)(nil),
 		}
 	} else {
-		return map[string]interface{}{
+		return map[string]any{
 			"endCursor": githubv4.String(q.Search.PageInfo.EndCursor),
 		}
 	}
@@ -77,7 +77,7 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 	re.logger.WithFields(log.Fields{
 		"query": q,
 	}).Debug("Searching GitHub")
-	vars := map[string]interface{}{
+	vars := map[string]any{
 		"query":   githubv4.String(q),
 		"perPage": githubv4.Int(re.perPage),
 	}
