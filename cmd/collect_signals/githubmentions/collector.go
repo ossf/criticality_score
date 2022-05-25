@@ -40,6 +40,10 @@ func (c *Collector) EmptySet() signal.Set {
 	return &mentionSet{}
 }
 
+func (c *Collector) IsSupported(r projectrepo.Repo) bool {
+	return true
+}
+
 func (c *Collector) Collect(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
 	s := &mentionSet{}
 	if c, err := c.githubSearchTotalCommitMentions(ctx, r.URL()); err != nil {

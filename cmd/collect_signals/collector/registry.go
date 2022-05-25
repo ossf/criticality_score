@@ -14,18 +14,18 @@ type empty struct{}
 var globalRegistry = NewRegistry()
 
 type Registry struct {
-	cs []*collectorWrapper
+	cs []Collector
 }
 
 // NewRegistry creates a new instance of Registry.
 func NewRegistry() *Registry {
-	return &Registry{cs: []*collectorWrapper{}}
+	return &Registry{}
 }
 
 // containsCollector returns true if c has already been registered.
 func (r *Registry) containsCollector(c Collector) bool {
-	for _, cw := range r.cs {
-		if cw.Collector == c {
+	for _, regC := range r.cs {
+		if regC == c {
 			return true
 		}
 	}
@@ -45,7 +45,7 @@ func (r *Registry) Register(c Collector) {
 	if err := signal.ValidateSet(c.EmptySet()); err != nil {
 		panic(err)
 	}
-	r.cs = append(r.cs, &collectorWrapper{Collector: c})
+	r.cs = append(r.cs, c)
 }
 
 func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
@@ -114,18 +114,6 @@ func Collect(ctx context.Context, r projectrepo.Repo) ([]signal.Set, error) {
 }
 
 func validateCollector(c Collector) {
-	empty := c.EmptySet()
-	ns := empty.Namespace()
-	// A collector with a Key of KeyRepo or KeyIssue must implement the
-	// LimitedCollector interface.
-	if ns == signal.NamespaceRepo || ns == signal.NamespaceIssues {
-		switch c.(type) {
-		case LimitedCollector:
-			// no-op
-		default:
-			panic(fmt.Sprintf("%s collector must implement LimitedCollector", ns))
-		}
-	}
 	// TODO - ensure a collector with the same Namespace as another use
 	// the same signal.Set
 }
