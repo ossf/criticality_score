@@ -91,6 +91,6 @@ func marshalValue(value any) (string, error) {
 	case time.Time:
 		return v.Format(time.RFC3339), nil
 	default:
-		return "", nil
+		return "", MarshalError
 	}
 }
