@@ -272,7 +272,7 @@ following:
 
 * Lowercase characters
 * Numbers
-* Underscores.
+* Underscores
 
 The following restrictions further apply to `[collector]` names:
 
@@ -302,9 +302,15 @@ Supported scalars can be:
 * Date
 * DateTime
 
-All Dates and DateTimes must be in UTC.
+All Dates and DateTimes must be in UTC and will be output in the
+RFC3339/ISO8601 format: `YYYY-MM-DDTHH:mm:ssZ`. (See
+[`time.RFC3339`](https://pkg.go.dev/time#pkg-constants))
 
 Strings will support Unicode.
+
+Null values for scalars are supported. A null value indicates that the signal
+could not be collected. To simplify output parsing, an empty string is
+equivalent to a null string and is to be interpreted as a null string.
 
 #### Batching (out of scope)
 

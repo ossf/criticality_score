@@ -12,20 +12,20 @@ import (
 type PagedQuery interface {
 	Total() int
 	Length() int
-	Get(int) interface{}
+	Get(int) any
 	HasNextPage() bool
-	NextPageVars() map[string]interface{}
+	NextPageVars() map[string]any
 }
 
 type Cursor struct {
 	ctx    context.Context
 	client *githubv4.Client
 	query  PagedQuery
-	vars   map[string]interface{}
+	vars   map[string]any
 	cur    int
 }
 
-func Query(ctx context.Context, client *githubv4.Client, query PagedQuery, vars map[string]interface{}) (*Cursor, error) {
+func Query(ctx context.Context, client *githubv4.Client, query PagedQuery, vars map[string]any) (*Cursor, error) {
 	c := &Cursor{
 		ctx:    ctx,
 		client: client,
@@ -62,7 +62,7 @@ func (c *Cursor) Total() int {
 	return c.query.Total()
 }
 
-func (c *Cursor) Next() (interface{}, error) {
+func (c *Cursor) Next() (any, error) {
 	if c.atEndOfPage() {
 		// There are no more nodes in this page, so we need another page.
 		if c.isLastPage() {
