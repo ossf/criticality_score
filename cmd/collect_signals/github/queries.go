@@ -56,6 +56,7 @@ func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL
 	// Search based on owner and repo name becaues the `repository` query
 	// better handles changes in ownership and repository name than the
 	// `resource` query.
+	// TODO - consider improving support for scp style urls and urls ending in .git
 	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
 	owner := parts[0]
 	name := parts[1]
