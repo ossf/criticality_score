@@ -37,6 +37,8 @@ func (r *Registry) containsCollector(c Collector) bool {
 //
 // This method may panic if the Collector's signal Set is not valid, or if the
 // Collector has already been added.
+//
+// The order which Collectors are added is preserved.
 func (r *Registry) Register(c Collector) {
 	validateCollector(c)
 	if r.containsCollector(c) {
@@ -72,6 +74,10 @@ func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
 // Collectors.
 //
 // This result can be used to determine all the signals that are defined.
+//
+// The order of each empty Set is the same as the order of registration. If two
+// Collectors return a Set with the same Namespace, only the first Set will be
+// included.
 func (r *Registry) EmptySets() []signal.Set {
 	exists := make(map[signal.Namespace]empty)
 	var ss []signal.Set
@@ -101,14 +107,24 @@ func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal
 
 // Register registers the collector with the global registry for use during
 // calls to Collect().
+//
+// See Registry.Register().
 func Register(c Collector) {
 	globalRegistry.Register(c)
 }
 
+// EmptySet returns all the empty signal Sets for all the Collectors registered
+// with the global registry.
+//
+// See Registry.EmptySets().
 func EmptySets() []signal.Set {
 	return globalRegistry.EmptySets()
 }
 
+// Collect collects all the signals for the given repo using the Collectors
+// registered with the global registry.
+//
+// See Registry.Collect().
 func Collect(ctx context.Context, r projectrepo.Repo) ([]signal.Set, error) {
 	return globalRegistry.Collect(ctx, r)
 }
