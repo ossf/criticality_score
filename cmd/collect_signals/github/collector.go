@@ -82,7 +82,10 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 	}
 	s := &signal.IssuesSet{}
 
-	// TODO: these should cache on the project
+	// TODO: the calculation of the frequency should be moved into the legacy
+	// package. Ideally this would be behind an struct/interface that allows
+	// caching and also removes the need to pass client, owner and name to each
+	// function call.
 	ghr.logger.Debug("Fetching updated issues")
 	if up, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateAll, legacy.IssueLookback); err != nil {
 		return nil, err
@@ -93,7 +96,7 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 			if comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback); err != nil {
 				if errors.Is(err, legacy.TooManyResultsError) {
 					ghr.logger.Debug("Comment count failed with too many result")
-					s.CommentFrequency.Set(2.0)
+					s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
 				} else {
 					return nil, err
 				}

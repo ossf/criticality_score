@@ -13,6 +13,8 @@ const (
 	MaxTopContributors          = 15
 	TooManyContributorsOrgCount = 10
 
+	TooManyCommentsFrequency = 2.0
+
 	releasesPerPage = 100
 )
 
