@@ -4,6 +4,7 @@ import (
 	"encoding/csv"
 	"fmt"
 	"io"
+	"sync"
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
@@ -13,6 +14,9 @@ type csvWriter struct {
 	header        []string
 	w             *csv.Writer
 	headerWritten bool
+
+	// Prevents concurrent writes to w, and headerWritten.
+	mu sync.Mutex
 }
 
 func headerFromSignalSets(sets []signal.Set) []string {
@@ -41,6 +45,15 @@ func (w *csvWriter) Record() RecordWriter {
 }
 
 func (s *csvWriter) maybeWriteHeader() error {
+	// Check headerWritten without the lock to avoid holding the lock if the
+	// header has already been written.
+	if s.headerWritten {
+		return nil
+	}
+	// Grab the lock and re-check headerWritten just in case another goroutine
+	// entered the same critical section. Also prevent concurrent writes to w.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if s.headerWritten {
 		return nil
 	}
@@ -56,6 +69,10 @@ func (s *csvWriter) writeRecord(c *csvRecord) error {
 	for _, k := range s.header {
 		rec = append(rec, c.values[k])
 	}
+	// Grab the lock when we're ready to write the record to prevent
+	// concurrent writes to w.
+	s.mu.Lock()
+	defer s.mu.Unlock()
 	if err := s.w.Write(rec); err != nil {
 		return err
 	}
