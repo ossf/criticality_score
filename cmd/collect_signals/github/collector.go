@@ -55,9 +55,13 @@ func (rc *RepoCollector) Collect(ctx context.Context, r projectrepo.Repo) (signa
 		if releaseCount != 0 {
 			s.RecentReleaseCount.Set(releaseCount)
 		} else {
-			timeSinceCreated := int(now.Sub(ghr.createdAt()).Hours()) / 24
-			t := (ghr.BasicData.Tags.TotalCount * legacyReleaseLookbackDays) / timeSinceCreated
-			s.RecentReleaseCount.Set(t)
+			daysSinceCreated := int(now.Sub(ghr.createdAt()).Hours()) / 24
+			if daysSinceCreated > 0 {
+				t := (ghr.BasicData.Tags.TotalCount * legacyReleaseLookbackDays) / daysSinceCreated
+				s.RecentReleaseCount.Set(t)
+			} else {
+				s.RecentReleaseCount.Set(0)
+			}
 		}
 	}
 	return s, nil
