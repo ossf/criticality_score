@@ -3,7 +3,6 @@ package main
 import (
 	"bufio"
 	"context"
-	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -13,7 +12,6 @@ import (
 	"path"
 	"strings"
 
-	gh "github.com/google/go-github/v44/github"
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/github"
 	"github.com/ossf/criticality_score/cmd/collect_signals/githubmentions"
@@ -68,30 +66,6 @@ func handleRepo(ctx context.Context, logger *log.Entry, u *url.URL, out result.W
 	logger.Info("Collecting")
 	ss, err := collector.Collect(ctx, r)
 	if err != nil {
-		var arle *gh.AbuseRateLimitError
-		if errors.As(err, &arle) {
-			logger.WithFields(log.Fields{
-				"status":      arle.Response.Status,
-				"headers":     arle.Response.Header,
-				"message":     arle.Message,
-				"retry_after": arle.RetryAfter,
-			}).Error("Abuse Error error...")
-		}
-		var er *gh.ErrorResponse
-		if errors.As(err, &er) {
-			f, err2 := os.Create("fail.html")
-			if err2 != nil {
-				panic(err2)
-			}
-			defer f.Close()
-			io.Copy(f, er.Response.Body)
-			logger.WithFields(log.Fields{
-				"status":  er.Response.Status,
-				"headers": er.Response.Header,
-				"message": er.Message,
-				"doc_url": er.DocumentationURL,
-			}).Error("Response error...")
-		}
 		logger.WithFields(log.Fields{
 			"error": err,
 		}).Error("Failed to collect signals for project")
