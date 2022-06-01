@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -12,22 +13,27 @@ import (
 	"path"
 	"strings"
 
+	gh "github.com/google/go-github/v44/github"
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/github"
 	"github.com/ossf/criticality_score/cmd/collect_signals/githubmentions"
+	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/githubapi"
 	"github.com/ossf/criticality_score/internal/logflag"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/workerpool"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
 	log "github.com/sirupsen/logrus"
-	//csvutil (it's docs are heaps better!)
 )
 
 const defaultLogLevel = log.InfoLevel
 
-var logFlag = logflag.Level(defaultLogLevel)
+var (
+	workersFlag = flag.Int("workers", 1, "the total number of concurrent workers to use.")
+	logFlag     = logflag.Level(defaultLogLevel)
+)
 
 func init() {
 	flag.Var(&logFlag, "log", "set the `level` of logging.")
@@ -41,6 +47,71 @@ func init() {
 		fmt.Fprintf(w, "OUT_FILE must be either be a file or - to write to stdout.\n")
 		fmt.Fprintf(w, "\nFlags:\n")
 		flag.PrintDefaults()
+	}
+}
+
+func handleRepo(ctx context.Context, logger *log.Entry, u *url.URL, out result.Writer) {
+	r, err := projectrepo.Resolve(ctx, u)
+	if err != nil {
+		logger.WithFields(log.Fields{
+			"error": err,
+		}).Warning("Failed to create project")
+		// TODO: we should have an error that indicates that the URL/Project
+		// should be skipped/ignored.
+		return // TODO: add a flag to continue or abort on failure
+	}
+	logger = logger.WithField("canonical_url", r.URL().String())
+
+	// TODO: p.URL() should be checked to see if it has already been processed.
+
+	// Collect the signals for the given project
+	logger.Info("Collecting")
+	ss, err := collector.Collect(ctx, r)
+	if err != nil {
+		var arle *gh.AbuseRateLimitError
+		if errors.As(err, &arle) {
+			logger.WithFields(log.Fields{
+				"status":      arle.Response.Status,
+				"headers":     arle.Response.Header,
+				"message":     arle.Message,
+				"retry_after": arle.RetryAfter,
+			}).Error("Abuse Error error...")
+		}
+		var er *gh.ErrorResponse
+		if errors.As(err, &er) {
+			f, err2 := os.Create("fail.html")
+			if err2 != nil {
+				panic(err2)
+			}
+			defer f.Close()
+			io.Copy(f, er.Response.Body)
+			logger.WithFields(log.Fields{
+				"status":  er.Response.Status,
+				"headers": er.Response.Header,
+				"message": er.Message,
+				"doc_url": er.DocumentationURL,
+			}).Error("Response error...")
+		}
+		logger.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to collect signals for project")
+		os.Exit(1) // TODO: add a flag to continue or abort on failure
+	}
+
+	rec := out.Record()
+	for _, s := range ss {
+		if err := rec.WriteSignalSet(s); err != nil {
+			logger.WithFields(log.Fields{
+				"error": err,
+			}).Error("Failed to write signal set")
+			os.Exit(1) // TODO: add a flag to continue or abort on failure
+		}
+	}
+	if err := rec.Done(); err != nil {
+		logger.WithFields(log.Fields{
+			"error": err,
+		}).Error("Failed to complete record")
+		os.Exit(1) // TODO: add a flag to continue or abort on failure
 	}
 }
 
@@ -100,6 +171,9 @@ func main() {
 
 	ctx := context.Background()
 
+	// Bump the # idle conns per host
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = *workersFlag * 5
+
 	// Prepare a client for communicating with GitHub's GraphQLv4 API and Restv3 API
 	rt := roundtripper.NewTransport(ctx, scLogger)
 	httpClient := &http.Client{
@@ -107,7 +181,8 @@ func main() {
 	}
 	ghClient := githubapi.NewClient(httpClient)
 
-	ghRepoFactory := github.NewRepoFactory(ghClient, logger)
+	// Register all the Repo factories.
+	projectrepo.Register(github.NewRepoFactory(ghClient, logger))
 
 	// Register all the collectors that are supported.
 	collector.Register(&github.RepoCollector{})
@@ -116,6 +191,15 @@ func main() {
 
 	// Prepare the output writer
 	out := result.NewCsvWriter(w, collector.EmptySets())
+
+	// Start the workers that process a channel of repo urls.
+	repos := make(chan *url.URL)
+	wait := workerpool.WorkerPool(*workersFlag, func(worker int) {
+		innerLogger := logger.WithField("worker", worker)
+		for u := range repos {
+			handleRepo(ctx, innerLogger.WithField("url", u.String()), u, out)
+		}
+	})
 
 	// Read in each line from the input files
 	scanner := bufio.NewScanner(r)
@@ -134,51 +218,8 @@ func main() {
 			"url": u.String(),
 		}).Debug("Parsed project url")
 
-		// TODO: Create a resolver in the project package.
-		r, err := ghRepoFactory.New(ctx, u)
-		if err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-				"url":   u.String(),
-			}).Warning("Failed to create project")
-			continue
-			//os.Exit(1) // TODO: add a flag to continue or abort on failure
-			// TODO: we should have an error that indicates that the URL/Project
-			// should be skipped/ignored.
-		}
-
-		// TODO: p.URL() should be checked to see if it has already been processed.
-
-		// Collect the signals for the given project
-		logger.WithFields(log.Fields{
-			"url": u.String(),
-		}).Info("Collecting")
-		ss, err := collector.Collect(ctx, r)
-		if err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-				"url":   r.URL().String(),
-			}).Error("Failed to collect signals for project")
-			os.Exit(1) // TODO: add a flag to continue or abort on failure
-		}
-
-		rec := out.Record()
-		for _, s := range ss {
-			if err := rec.WriteSignalSet(s); err != nil {
-				logger.WithFields(log.Fields{
-					"error": err,
-					"url":   r.URL().String(),
-				}).Error("Failed to write signal set")
-				os.Exit(1) // TODO: add a flag to continue or abort on failure
-			}
-		}
-		if err := rec.Done(); err != nil {
-			logger.WithFields(log.Fields{
-				"error":      err,
-				"repository": line,
-			}).Error("Failed to complete record")
-			os.Exit(1) // TODO: add a flag to continue or abort on failure
-		}
+		// Send the url to the workers
+		repos <- u
 	}
 	if err := scanner.Err(); err != nil {
 		logger.WithFields(log.Fields{
@@ -186,6 +227,11 @@ func main() {
 		}).Error("Failed while reading input")
 		os.Exit(2)
 	}
+	// Close the repos channel to indicate that there is no more input.
+	close(repos)
+
+	// Wait until all the workers have finished.
+	wait()
 
 	// TODO: track metrics as we are running to measure coverage of data
 }
