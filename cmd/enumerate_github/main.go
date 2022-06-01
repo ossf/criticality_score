@@ -8,12 +8,12 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"sync"
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
 	"github.com/ossf/criticality_score/internal/logflag"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/workerpool"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
 	"github.com/shurcooL/githubv4"
@@ -101,10 +101,7 @@ func init() {
 
 // searchWorker waits for a query on the queries channel, starts a search with that query using s
 // and returns each repository on the results channel.
-//
-// When the queries channel is closed it will call wg.Done() to signal that the worker has finished.
-func searchWorker(s *githubsearch.Searcher, wg *sync.WaitGroup, logger *log.Entry, queries, results chan string) {
-	defer wg.Done()
+func searchWorker(s *githubsearch.Searcher, logger *log.Entry, queries, results chan string) {
 	for q := range queries {
 		total := 0
 		err := s.ReposByStars(q, *minStarsFlag, *starOverlapFlag, func(repo string) {
@@ -196,17 +193,15 @@ func main() {
 	client := githubv4.NewClient(httpClient)
 
 	baseQuery := *queryFlag
-	var wg sync.WaitGroup
-	wg.Add(*workersFlag)
 	queries := make(chan string)
 	results := make(chan string, (*workersFlag)*reposPerPage)
 
 	// Start the worker goroutines to execute the search queries
-	for i := 0; i < *workersFlag; i++ {
+	wait := workerpool.WorkerPool(*workersFlag, func(i int) {
 		workerLogger := logger.WithFields(log.Fields{"worker": i})
 		s := githubsearch.NewSearcher(ctx, client, workerLogger, githubsearch.PerPage(reposPerPage))
-		go searchWorker(s, &wg, workerLogger, queries, results)
-	}
+		searchWorker(s, workerLogger, queries, results)
+	})
 
 	// Start a separate goroutine to collect results so worker output is always consumed.
 	done := make(chan bool)
@@ -230,7 +225,7 @@ func main() {
 	// Indicate to the workers that we're finished.
 	close(queries)
 	// Wait for the workers to be finished.
-	wg.Wait()
+	wait()
 
 	logger.Debug("Waiting for writer to finish")
 	// Close the results channel now the workers are done.
