@@ -146,8 +146,25 @@ func NewRequest(r *http.Request, client func(*http.Request) (*http.Response, err
 	}
 }
 
+// Done indicates whether or not the request can be attempted any more times.
+//
+// Initially Done will be false. It will move to true when the following
+// occurs:
+//
+//  1. Do returns a 2xx or 3xx response
+//  2. Do returns an error
+//  3. The number of attempts exceeds MaxRetries
+//  4. No RetryStrategy was returned or only NoRetry, and RetryAfter() had no
+//  delay.
+//
+// If Done returns true, Do must never be called again, otherwise Do will
+// return ErrorNoMoreAttempts.
+//
+// If Done returns false, Do needs to be called.
+//
+// If Do has never been called, this method will always return false.
 func (r *Request) Done() bool {
-	return r.done || r.attempts >= r.o.maxRetries
+	return r.done || r.attempts > r.o.maxRetries
 }
 
 func (r *Request) onError(err error) (*http.Response, error) {

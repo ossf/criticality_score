@@ -126,25 +126,13 @@ func TestRetryAfterDuration(t *testing.T) {
 	}
 }
 
-func TestZeroMaxRetries(t *testing.T) {
-	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
-		return &http.Response{
-			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
-		}, nil
-	}, MakeOptions(MaxRetries(0)))
-	if !req.Done() {
-		t.Fatalf("Done() == false; want true")
-	}
-}
-
-func TestOneMaxRetriesOnlyTriesOnce(t *testing.T) {
+func TestZeroMaxRetriesOnlyTriesOnce(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusBadRequest,
 			Body:       ioutil.NopCloser(strings.NewReader("")),
 		}, nil
-	}, MakeOptions(MaxRetries(1), RetryAfter(func(_ *http.Response) time.Duration {
+	}, MakeOptions(MaxRetries(0), RetryAfter(func(_ *http.Response) time.Duration {
 		// Force a retry
 		return time.Minute
 	})))
