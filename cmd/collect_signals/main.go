@@ -149,7 +149,7 @@ func main() {
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = *workersFlag * 5
 
 	// Prepare a client for communicating with GitHub's GraphQLv4 API and Restv3 API
-	rt := roundtripper.NewTransport(ctx, scLogger)
+	rt := githubapi.NewRoundTripper(roundtripper.NewTransport(ctx, scLogger), logger)
 	httpClient := &http.Client{
 		Transport: rt,
 	}
