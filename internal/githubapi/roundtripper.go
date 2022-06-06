@@ -100,11 +100,11 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 			}).Warn("ReadAll failed.")
 		return retry.NoRetry, err
 	}
-	// Don't error check the unmarshall - if it is an error and the parsing has
-	// failed then will return with no retry. A parsing error here would mean
-	// the server did something wrong. Not attempting a retry will cause the
-	// response to be processed again by go-github with an error being
-	// generated there.
+	// Don't error check the unmarshall - if there is an error and the parsing
+	// has failed then this function will return with no retry. A parsing error
+	// here would mean the server did something wrong. Not attempting a retry
+	// will cause the response to be processed again by go-github with an error
+	// being generated there.
 	json.Unmarshal(data, errorResponse)
 	s.logger.WithFields(log.Fields{
 		"url":     errorResponse.DocumentationURL,
