@@ -89,7 +89,7 @@ func (r *csvRecord) WriteSignalSet(s signal.Set) error {
 	data := signal.SetAsMap(s, true)
 	for k, v := range data {
 		if s, err := marshalValue(v); err != nil {
-			return err
+			return fmt.Errorf("failed to write field %s: %w", k, err)
 		} else {
 			r.values[k] = s
 		}
@@ -107,7 +107,9 @@ func marshalValue(value any) (string, error) {
 		return fmt.Sprintf("%v", value), nil
 	case time.Time:
 		return v.Format(time.RFC3339), nil
+	case nil:
+		return "", nil
 	default:
-		return "", MarshalError
+		return "", fmt.Errorf("%w: %T", MarshalError, value)
 	}
 }
