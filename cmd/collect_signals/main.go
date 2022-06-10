@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
+	"github.com/ossf/criticality_score/cmd/collect_signals/depsdev"
 	"github.com/ossf/criticality_score/cmd/collect_signals/github"
 	"github.com/ossf/criticality_score/cmd/collect_signals/githubmentions"
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
@@ -29,8 +30,9 @@ import (
 const defaultLogLevel = log.InfoLevel
 
 var (
-	workersFlag = flag.Int("workers", 1, "the total number of concurrent workers to use.")
-	logFlag     = logflag.Level(defaultLogLevel)
+	gcpProjectFlag = flag.String("gcp-project", "", "the Google Cloud Project to use. Required for deps.dev data collection.")
+	workersFlag    = flag.Int("workers", 1, "the total number of concurrent workers to use.")
+	logFlag        = logflag.Level(defaultLogLevel)
 )
 
 func init() {
@@ -162,6 +164,24 @@ func main() {
 	collector.Register(&github.RepoCollector{})
 	collector.Register(&github.IssuesCollector{})
 	collector.Register(githubmentions.NewCollector(ghClient))
+
+	// Register the deps.dev collector IFF there is a GCP Project ID set.
+	if *gcpProjectFlag == "" {
+		logger.Warn("No GCP Project ID set. Skipping deps.dev signal collection")
+	} else {
+		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag)
+		if err != nil {
+			logger.WithFields(log.Fields{
+				"error":          err,
+				"gcp_project_id": *gcpProjectFlag,
+			}).Error("Failed to create deps.dev collector")
+			os.Exit(2)
+		}
+		logger.WithFields(log.Fields{
+			"gcp_project_id": *gcpProjectFlag,
+		}).Info("deps.dev signal collector enabled")
+		collector.Register(ddcollector)
+	}
 
 	// Prepare the output writer
 	out := result.NewCsvWriter(w, collector.EmptySets())
