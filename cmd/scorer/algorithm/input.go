@@ -1,0 +1,51 @@
+package algorithm
+
+type Bounds struct {
+	Lower           float64 `yaml:"lower"`
+	Upper           float64 `yaml:"upper"`
+	SmallerIsBetter bool    `yaml:"smaller_is_better"`
+}
+
+func (b Bounds) Apply(v float64) float64 {
+	// |----L---v----U----| == v stays as is
+	// |--v-L--------U----| == v moves to L
+	// |----L--------U--v-| == v moves to U
+	if v < b.Lower {
+		v = b.Lower
+	} else if v > b.Upper {
+		v = b.Upper
+	}
+	// Afterwards we move L to 0, by calculating v = v - L
+	v = v - b.Lower
+	if b.SmallerIsBetter {
+		v = b.Threshold() - v
+	}
+	// If "SmallerIsBetter" is true, then we move the value
+	return v
+}
+
+func (b Bounds) Threshold() float64 {
+	return b.Upper - b.Lower
+
+}
+
+type Input struct {
+	Bounds       *Bounds
+	Weight       float64
+	Distribution *Distribution
+	Source       Value
+	Tags         []string
+}
+
+func (i *Input) Value(fields map[string]float64) (float64, bool) {
+	v, ok := i.Source.Value(fields)
+	if !ok {
+		return 0, false
+	}
+	var den float64 = 1
+	if i.Bounds != nil {
+		v = i.Bounds.Apply(v)
+		den = i.Distribution.Normalize(i.Bounds.Threshold())
+	}
+	return i.Distribution.Normalize(v) / den, true
+}

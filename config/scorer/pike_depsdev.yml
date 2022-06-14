@@ -1,0 +1,84 @@
+algorithm: weighted_arithmetic_mean
+
+inputs:
+  - field: legacy.created_since
+    weight: 1
+    bounds:
+      upper: 120
+    distribution: zapfian
+
+  - field: legacy.updated_since
+    weight: 1
+    bounds:
+      upper: 120
+      smaller_is_better: yes
+    distribution: zapfian
+
+  - field: legacy.contributor_count
+    weight: 2
+    bounds:
+      upper: 5000
+    distribution: zapfian
+
+  - field: legacy.org_count
+    weight: 1
+    bounds:
+      upper: 10
+    distribution: zapfian
+
+  - field: legacy.commit_frequency
+    weight: 1
+    bounds:
+      upper: 1000
+    distribution: zapfian
+
+  - field: legacy.recent_release_count
+    weight: 0.5
+    bounds:
+      upper: 26
+    distribution: zapfian
+
+  - field: legacy.updated_issues_count
+    weight: 0.5
+    bounds:
+      upper: 5000
+    distribution: zapfian
+
+  - field: legacy.closed_issues_count
+    weight: 0.5
+    bounds:
+      upper: 5000
+    distribution: zapfian
+
+  - field: legacy.issue_comment_frequency
+    weight: 1
+    bounds:
+      upper: 15
+    distribution: zapfian
+
+  # If deps.dev dependenct count doesn't exist we use this configuration
+  # for the GitHub search mention count.
+  - field: legacy.github_mention_count
+    weight: 2
+    bounds:
+      upper: 500000
+    condition:
+      not: yes
+      field_exists: "depsdev.dependent_count"
+    distribution: zapfian
+
+  # If deps.dev dependent count *does* exist we lower the importance of
+  # the GitHub search mention count.
+  - field: legacy.github_mention_count
+    weight: 1
+    bounds:
+      upper: 500000
+    condition:
+      field_exists: "depsdev.dependent_count"
+    distribution: zapfian
+
+  - field: depsdev.dependent_count
+    weight: 4
+    bounds:
+      upper: 200000
+    distribution: zapfian
