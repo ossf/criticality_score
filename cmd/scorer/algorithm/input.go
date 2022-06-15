@@ -18,9 +18,12 @@ func (b Bounds) Apply(v float64) float64 {
 	// Afterwards we move L to 0, by calculating v = v - L
 	v = v - b.Lower
 	if b.SmallerIsBetter {
+		// If "SmallerIsBetter" is true then invert the value with the
+		// threshold. So, a 0 value becomes the threshold value and a
+		// value at the threshold becomes 0.
+		// TODO: consider how this affects the distribution
 		v = b.Threshold() - v
 	}
-	// If "SmallerIsBetter" is true, then we move the value
 	return v
 }
 
