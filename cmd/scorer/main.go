@@ -72,7 +72,7 @@ func generateColumnName() string {
 	// Change any non-alphanumeric character into an underscore
 	f = regexp.MustCompile("[^a-z0-9_]").ReplaceAllString(f, "_")
 	// Append "_score" to the end
-	return fmt.Sprintf("%s_score", f)
+	return f + "_score"
 }
 
 func makeOutHeader(header []string, resultColumn string) ([]string, error) {
