@@ -29,7 +29,7 @@ func (r *Registry) Register(name string, f Factory) {
 // NewAlgorithm generates a new instance of Algorithm for the supplied name and
 // fields.
 //
-// If the registery does not have a Factory for the supplied name an error will
+// If the registry does not have a Factory for the supplied name an error will
 // be returned.
 //
 // If the Algorithm fails to be created by the Factory, an error will also be
