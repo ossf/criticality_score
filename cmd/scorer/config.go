@@ -11,8 +11,8 @@ import (
 )
 
 type Condition struct {
-	Not         bool   `yaml:"not"`
-	FieldExists string `yaml:"field_exists"`
+	Not         *Condition `yaml:"not"`
+	FieldExists string     `yaml:"field_exists"`
 }
 
 type Input struct {
@@ -41,14 +41,34 @@ func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	return nil
 }
 
+func buildCondition(c *Condition) (algorithm.Condition, error) {
+	if c.FieldExists != "" && c.Not != nil {
+		return nil, errors.New("only one field of condition must be set")
+	}
+	if c.FieldExists != "" {
+		return algorithm.ExistsCondition(algorithm.Field(c.FieldExists)), nil
+	}
+	if c.Not != nil {
+		innerC, err := buildCondition(c.Not)
+		if err != nil {
+			return nil, err
+		}
+		return algorithm.NotCondition(innerC), nil
+	}
+	return nil, errors.New("one condition field must be set")
+}
+
 func (i *Input) ToAlgorithmInput() (*algorithm.Input, error) {
 	var v algorithm.Value
 	v = algorithm.Field(i.Field)
 	if i.Condition != nil {
+		c, err := buildCondition(i.Condition)
+		if err != nil {
+			return nil, err
+		}
 		v = &algorithm.ConditionalValue{
-			Not:    i.Condition.Not,
-			Exists: algorithm.Field(i.Condition.FieldExists),
-			Inner:  v,
+			Condition: c,
+			Inner:     v,
 		}
 	}
 	d := algorithm.LookupDistribution(i.Distribution)

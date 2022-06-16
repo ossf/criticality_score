@@ -21,13 +21,26 @@ func (f Field) Value(fields map[string]float64) (float64, bool) {
 	return v, ok
 }
 
-// ConditionalValue wraps an Inner value, but will only return it if Exists
-// is present. If Not is true, the value will be only be returned if Exists
-// is absent.
+type Condition func(fields map[string]float64) bool
+
+func NotCondition(c Condition) Condition {
+	return func(fields map[string]float64) bool {
+		return !c(fields)
+	}
+}
+
+func ExistsCondition(f Field) Condition {
+	return func(fields map[string]float64) bool {
+		_, exists := fields[f.String()]
+		return exists
+	}
+}
+
+// ConditionalValue wraps an Inner value that will only be returned if the
+// Condition returns true.
 type ConditionalValue struct {
-	Not    bool
-	Exists Field
-	Inner  Value
+	Condition Condition
+	Inner     Value
 }
 
 // Value implements the Value interface.
@@ -36,10 +49,13 @@ func (cv *ConditionalValue) Value(fields map[string]float64) (float64, bool) {
 	if !ok {
 		return 0, false
 	}
-	_, exists := fields[cv.Exists.String()]
-	if exists != cv.Not { // not XOR exists
+	if cv.Condition(fields) {
 		return v, true
 	} else {
 		return 0, false
 	}
 }
+
+// Condition struct { Eval(fields map[string]float64) bool }
+// Not(Condition) Condition
+// Exists(Field) Condition

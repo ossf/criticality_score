@@ -63,8 +63,8 @@ inputs:
     bounds:
       upper: 500000
     condition:
-      not: yes
-      field_exists: "depsdev.dependent_count"
+      not:
+        field_exists: "depsdev.dependent_count"
     distribution: zapfian
 
   # If deps.dev dependent count *does* exist we lower the importance of
