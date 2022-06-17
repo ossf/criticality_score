@@ -39,6 +39,9 @@ func (b *bq) Project() string {
 
 func (b *bq) OneResultQuery(ctx context.Context, query string, params map[string]any, result any) error {
 	q := b.client.Query(query)
+	for k, v := range params {
+		q.Parameters = append(q.Parameters, bigquery.QueryParameter{Name: k, Value: v})
+	}
 	it, err := q.Read(ctx)
 	if err != nil {
 		return err
