@@ -20,6 +20,7 @@ const (
 )
 
 var (
+	issuesRe        = regexp.MustCompile("^repos/[^/]+/[^/]+/issues$")
 	issueCommentsRe = regexp.MustCompile("^repos/[^/]+/[^/]+/issues/comments$")
 )
 
@@ -54,7 +55,14 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 		return retry.NoRetry, nil
 	}
 	s.logger.WithField("status", r.Status).Warn("5xx: detected")
-	if issueCommentsRe.MatchString(strings.Trim(r.Request.URL.Path, "/")) {
+	path := strings.Trim(r.Request.URL.Path, "/")
+	if issuesRe.MatchString(path) {
+		s.logger.Warn("Ignoring /repos/X/Y/issues url.")
+		// If the req url was /repos/[owner]/[name]/issues pass the
+		// error through as it is likely a GitHub bug.
+		return retry.NoRetry, nil
+	}
+	if issueCommentsRe.MatchString(path) {
 		s.logger.Warn("Ignoring /repos/X/Y/issues/comments url.")
 		// If the req url was /repos/[owner]/[name]/issues/comments pass the
 		// error through as it is likely a GitHub bug.

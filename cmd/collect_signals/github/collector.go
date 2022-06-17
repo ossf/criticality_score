@@ -86,38 +86,39 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 	}
 	s := &signal.IssuesSet{}
 
+	ghr.logger.Debug("Fetching closed issues")
+	closed, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateClosed, legacy.IssueLookback)
+	if err != nil {
+		return nil, err
+	}
+	s.ClosedCount.Set(closed)
+
 	// TODO: the calculation of the frequency should be moved into the legacy
 	// package. Ideally this would be behind an struct/interface that allows
 	// caching and also removes the need to pass client, owner and name to each
 	// function call.
 	ghr.logger.Debug("Fetching updated issues")
-	if up, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateAll, legacy.IssueLookback); err != nil {
+	up, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateAll, legacy.IssueLookback)
+	if err != nil {
 		return nil, err
-	} else {
-		s.UpdatedCount.Set(up)
-		if up != 0 {
-			ghr.logger.Debug("Fetching comment frequency")
-			if comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback); err != nil {
-				if errors.Is(err, legacy.TooManyResultsError) {
-					ghr.logger.Debug("Comment count failed with too many result")
-					s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
-				} else {
-					return nil, err
-				}
-			} else {
-				s.CommentFrequency.Set(legacy.Round(float64(comments)/float64(up), 2))
-			}
-		} else {
-			s.CommentFrequency.Set(0)
-		}
 	}
-	ghr.logger.Debug("Fetching closed issues")
-	if closed, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateClosed, legacy.IssueLookback); err != nil {
-		return nil, err
-	} else {
-		s.ClosedCount.Set(closed)
+	s.UpdatedCount.Set(up)
+
+	if up == 0 {
+		s.CommentFrequency.Set(0)
+		return s, nil
 	}
 
+	ghr.logger.Debug("Fetching comment frequency")
+	comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback)
+	if errors.Is(err, legacy.TooManyResultsError) {
+		ghr.logger.Debug("Comment count failed with too many result")
+		s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
+	} else if err != nil {
+		return nil, err
+	} else {
+		s.CommentFrequency.Set(legacy.Round(float64(comments)/float64(up), 2))
+	}
 	return s, nil
 }
 
