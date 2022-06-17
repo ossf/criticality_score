@@ -27,6 +27,10 @@ func FetchIssueCount(ctx context.Context, c *githubapi.Client, owner, name strin
 		ListOptions: github.ListOptions{PerPage: 1}, // 1 result per page means LastPage is total number of records.
 	}
 	is, resp, err := c.Rest().Issues.ListByRepo(ctx, owner, name, opts)
+	// The API returns 5xx responses if there are too many issues.
+	if c := githubapi.ErrorResponseStatusCode(err); 500 <= c && c < 600 {
+		return MaxIssuesLimit, nil
+	}
 	if err != nil {
 		return 0, err
 	}
