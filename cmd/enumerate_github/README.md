@@ -29,6 +29,22 @@ $ enumerate_github [FLAGS]... FILE
 
 The URL for each repository is written to `FILE`. If `FILE` is `-` the results will be written to STDOUT.
 
+`FLAGS` are optional. See below for documentation.
+
+### Authentication
+
+A comma delimited environment variable with one or more GitHub Personal Access
+Tokens must be set
+
+Supported environment variables are `GITHUB_AUTH_TOKEN`, `GITHUB_TOKEN`, 
+`GH_TOKEN`, or `GH_AUTH_TOKEN`.
+
+Example:
+
+```shell
+$ export GITHUB_TOKEN=ghp_abc,ghp_123
+```
+
 ### Flags
 
 #### Output flags
@@ -63,20 +79,7 @@ If `FILE` exists and neither `-append` nor `-force` is set the command will fail
 
 - `-log level` set the level of logging. Can be `debug`, `info` (default), `warn` or `error`.
 - `-workers int` the total number of concurrent workers to use. Default is `1`.
-
-### Authentication
-
-Expects an environment variable with one or more GitHub Personal Access Tokens,
-separated by a comma.
-
-Supported environment variables are `GITHUB_AUTH_TOKEN`, `GITHUB_TOKEN`, 
-`GH_TOKEN`, or `GH_AUTH_TOKEN`.
-
-Example:
-
-```shell
-$ export GITHUB_TOKEN=ghp_abc,ghp_123
-```
+- `-help` displays help text.
 
 ## How It Works
 
