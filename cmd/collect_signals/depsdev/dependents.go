@@ -13,7 +13,6 @@ import (
 )
 
 const (
-	datasetName                      = "depsdev_analysis"
 	dependentCountsTableName         = "dependent_counts"
 	packageVersionToProjectTableName = "package_version_to_project"
 
@@ -54,10 +53,15 @@ FROM ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
 WHERE ProjectName = @projectname AND ProjectType = @projecttype;
 `
 
-func NewDependents(ctx context.Context, client *bigquery.Client, logger *log.Logger) (*dependents, error) {
+func NewDependents(ctx context.Context, client *bigquery.Client, logger *log.Logger, datasetName string) (*dependents, error) {
+	b := &bq{client: client}
 	c := &dependents{
-		b:      &bq{client: client},
-		logger: logger,
+		b: b,
+		logger: logger.WithFields(log.Fields{
+			"project_id": b.Project(),
+			"dataset":    datasetName,
+		}),
+		datasetName: datasetName,
 	}
 	var err error
 
@@ -96,9 +100,10 @@ func NewDependents(ctx context.Context, client *bigquery.Client, logger *log.Log
 
 type dependents struct {
 	b            bqAPI
-	logger       *log.Logger
+	logger       *log.Entry
 	snapshotTime time.Time
 	countQuery   string
+	datasetName  string
 }
 
 func (c *dependents) generateQuery(temp string) string {
@@ -108,7 +113,7 @@ func (c *dependents) generateQuery(temp string) string {
 		ProjectID   string
 		DatasetName string
 		TableName   string
-	}{c.b.Project(), datasetName, dependentCountsTableName})
+	}{c.b.Project(), c.datasetName, dependentCountsTableName})
 	return b.String()
 }
 
@@ -146,14 +151,14 @@ func (c *dependents) getLatestSnapshotTime(ctx context.Context) (time.Time, erro
 
 func (c *dependents) getOrCreateDataset(ctx context.Context) (*Dataset, error) {
 	// Attempt to get the current dataset
-	ds, err := c.b.GetDataset(ctx, datasetName)
+	ds, err := c.b.GetDataset(ctx, c.datasetName)
 	if err != nil {
 		return nil, err
 	}
 	if ds == nil {
 		// Dataset doesn't exist so create it
 		c.logger.Debug("creating dependent count dataset")
-		ds, err = c.b.CreateDataset(ctx, datasetName)
+		ds, err = c.b.CreateDataset(ctx, c.datasetName)
 		if err != nil {
 			return nil, err
 		}
