@@ -19,8 +19,8 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/githubapi"
-	"github.com/ossf/criticality_score/internal/logflag"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
@@ -32,11 +32,11 @@ const defaultLogLevel = log.InfoLevel
 var (
 	gcpProjectFlag = flag.String("gcp-project", "", "the Google Cloud Project to use. Required for deps.dev data collection.")
 	workersFlag    = flag.Int("workers", 1, "the total number of concurrent workers to use.")
-	logFlag        = logflag.Level(defaultLogLevel)
+	logLevel       log.Level
 )
 
 func init() {
-	flag.Var(&logFlag, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &logLevel, "log", defaultLogLevel, "set the `level` of logging.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -95,7 +95,7 @@ func main() {
 	flag.Parse()
 
 	logger := log.New()
-	logger.SetLevel(logFlag.Level())
+	logger.SetLevel(logLevel)
 
 	// roundtripper requires us to use the scorecard logger.
 	scLogger := sclog.NewLogrusLogger(logger)

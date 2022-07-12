@@ -11,8 +11,8 @@ import (
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
-	"github.com/ossf/criticality_score/internal/logflag"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
@@ -38,7 +38,7 @@ var (
 	workersFlag         = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	startDateFlag       = dateFlag(epochDate)
 	endDateFlag         = dateFlag(time.Now().UTC().Truncate(oneDay))
-	logFlag             = logflag.Level(defaultLogLevel)
+	logLevel            log.Level
 )
 
 // dateFlag implements the flag.Value interface to simplify the input and validation of
@@ -62,31 +62,10 @@ func (d *dateFlag) Time() time.Time {
 	return (time.Time)(*d)
 }
 
-// logLevelFlag implements the flag.Value interface to simplify the input and validation
-// of the current log level.
-type logLevelFlag log.Level
-
-func (l *logLevelFlag) Set(value string) error {
-	level, err := log.ParseLevel(string(value))
-	if err != nil {
-		return err
-	}
-	*l = logLevelFlag(level)
-	return nil
-}
-
-func (l logLevelFlag) String() string {
-	return log.Level(l).String()
-}
-
-func (l logLevelFlag) Level() log.Level {
-	return log.Level(l)
-}
-
 func init() {
 	flag.Var(&startDateFlag, "start", "the start `date` to enumerate back to. Must be at or after 2008-01-01.")
 	flag.Var(&endDateFlag, "end", "the end `date` to enumerate from.")
-	flag.Var(&logFlag, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &logLevel, "log", defaultLogLevel, "set the `level` of logging.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -133,7 +112,7 @@ func main() {
 	flag.Parse()
 
 	logger := log.New()
-	logger.SetLevel(logFlag.Level())
+	logger.SetLevel(logLevel)
 
 	// roundtripper requires us to use the scorecard logger.
 	scLogger := sclog.NewLogrusLogger(logger)

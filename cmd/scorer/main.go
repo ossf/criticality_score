@@ -8,12 +8,12 @@
 //
 // For example:
 //
-//    algorithm: pike
-//    fields:
-//      legacy.created_since:
-//        weight: 1
-//        upper: 120
-//        distribution: zapfian
+//	algorithm: pike
+//	fields:
+//	  legacy.created_since:
+//	    weight: 1
+//	    upper: 120
+//	    distribution: zapfian
 //
 // The raw signals, along with the score, are returning in the output.
 package main
@@ -31,8 +31,8 @@ import (
 	"strings"
 
 	_ "github.com/ossf/criticality_score/cmd/scorer/algorithm/wam"
-	"github.com/ossf/criticality_score/internal/logflag"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/textvarflag"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -41,11 +41,11 @@ const defaultLogLevel = log.InfoLevel
 var (
 	configFlag     = flag.String("config", "", "the filename of the config")
 	columnNameFlag = flag.String("column", "", "the name of the output column")
-	logFlag        = logflag.Level(defaultLogLevel)
+	logLevel       log.Level
 )
 
 func init() {
-	flag.Var(&logFlag, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &logLevel, "log", defaultLogLevel, "set the `level` of logging.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE") // TODO: add the ability to disable "append"
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -102,7 +102,7 @@ func main() {
 	flag.Parse()
 
 	logger := log.New()
-	logger.SetLevel(logFlag.Level())
+	logger.SetLevel(logLevel)
 
 	if flag.NArg() != 2 {
 		logger.Error("Must have an input file and an output file specified")
