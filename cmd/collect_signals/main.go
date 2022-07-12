@@ -30,9 +30,11 @@ import (
 const defaultLogLevel = log.InfoLevel
 
 var (
-	gcpProjectFlag = flag.String("gcp-project", "", "the Google Cloud Project to use. Required for deps.dev data collection.")
-	workersFlag    = flag.Int("workers", 1, "the total number of concurrent workers to use.")
-	logLevel       log.Level
+	gcpProjectFlag     = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
+	depsdevDisableFlag = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
+	depsdevDatasetFlag = flag.String("depsdev-dataset", depsdev.DefaultDatasetName, "the BigQuery dataset name to use.")
+	workersFlag        = flag.Int("workers", 1, "the total number of concurrent workers to use.")
+	logLevel           log.Level
 )
 
 func init() {
@@ -165,21 +167,18 @@ func main() {
 	collector.Register(&github.IssuesCollector{})
 	collector.Register(githubmentions.NewCollector(ghClient))
 
-	// Register the deps.dev collector IFF there is a GCP Project ID set.
-	if *gcpProjectFlag == "" {
-		logger.Warn("No GCP Project ID set. Skipping deps.dev signal collection")
+	if *depsdevDisableFlag {
+		// deps.dev collection has been disabled, so skip it.
+		logger.Warn("deps.dev signal collection is disabled.")
 	} else {
-		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag)
+		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
 		if err != nil {
 			logger.WithFields(log.Fields{
-				"error":          err,
-				"gcp_project_id": *gcpProjectFlag,
+				"error": err,
 			}).Error("Failed to create deps.dev collector")
 			os.Exit(2)
 		}
-		logger.WithFields(log.Fields{
-			"gcp_project_id": *gcpProjectFlag,
-		}).Info("deps.dev signal collector enabled")
+		logger.Info("deps.dev signal collector enabled")
 		collector.Register(ddcollector)
 	}
 

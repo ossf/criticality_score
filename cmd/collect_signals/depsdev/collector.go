@@ -13,6 +13,7 @@ import (
 )
 
 const defaultLocation = "US"
+const DefaultDatasetName = "depsdev_analysis"
 
 type depsDevSet struct {
 	DependentCount signal.Field[int] `signal:"dependent_count"`
@@ -56,12 +57,12 @@ func (c *depsDevCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 // NewCollector creates a new Collector for gathering data from deps.dev.
 //
 // TODO add options to configure the dataset:
-//  - an optional projectID
-//  - datasetname
-//  - when to expire the dataset (maybe?)
-//  - force dataset re-creation (-update-strategy = always,stale,weekly,monthly,never)
-//  - force dataset destruction (-depsdev-destroy-data)
-func NewCollector(ctx context.Context, logger *log.Logger, projectID string) (collector.Collector, error) {
+//   - force dataset re-creation (-update-strategy = always,stale,weekly,monthly,never)
+//   - force dataset destruction (-depsdev-destroy-data)
+func NewCollector(ctx context.Context, logger *log.Logger, projectID, datasetName string) (collector.Collector, error) {
+	if projectID == "" {
+		projectID = bigquery.DetectProjectID
+	}
 	gcpClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
 		return nil, err
@@ -69,7 +70,7 @@ func NewCollector(ctx context.Context, logger *log.Logger, projectID string) (co
 	// Set the location
 	gcpClient.Location = defaultLocation
 
-	dependents, err := NewDependents(ctx, gcpClient, logger)
+	dependents, err := NewDependents(ctx, gcpClient, logger, datasetName)
 	if err != nil {
 		return nil, err
 	}
