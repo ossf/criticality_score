@@ -11,8 +11,8 @@ into a data analysis system such as BigQuery.
 ## Example
 
 ```shell
-$ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here 
-$ export ...
+$ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here
+$ gcloud login --update-adc  # Sign-in to GCP
 $ collect_signals \
     -workers=1 \
     github_projects.txt \
@@ -64,7 +64,8 @@ to the account used, or be an "Owner".
 
 ##### Option 1: `gcloud login`
 
-This option is useful during development. Run `gcloud login` to login to GCP.
+This option is useful during development. Run `gcloud login --update-adc` to
+login to GCP and prepare application default credentials.
 
 ##### Option 2: GCE Service Worker
 
@@ -157,7 +158,7 @@ the quota for a single token in about 30-40 minutes.
 
 ### Q: How do I restart after a failure?
 
-If running with a single worker this process is fairly straight forward.
+If running with a single worker this process is fairly straightforward.
 
 1. Copy the input repository list file to a new file to edit.
 1. Open the new file in an editor (note: it may be very large).
@@ -169,6 +170,9 @@ If running with a single worker this process is fairly straight forward.
       correspond to entries in the output csv until there are no unprocessed
       repository urls interleaving processed urls. Delete the remaining urls
       above the unprocessed urls.
+1. Restart `collect_signals`:
+    - Use the new file as the input.
+    - Either use a new file as the output, or specify `-append`.
 
 *Note:* when correlating URLs it is possible that the repository has been
 renamed.
