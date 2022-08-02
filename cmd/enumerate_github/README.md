@@ -75,7 +75,7 @@ If `FILE` exists and neither `-append` nor `-force` is set the command will fail
   to `5`. A an overlap is used to avoid missing repositories whose star count
   changes during enumeration.
 
-#### Misc Flags
+#### Misc flags
 
 - `-log level` set the level of logging. Can be `debug`, `info` (default), `warn` or `error`.
 - `-workers int` the total number of concurrent workers to use. Default is `1`.
