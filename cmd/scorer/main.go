@@ -13,7 +13,7 @@
 //	  legacy.created_since:
 //	    weight: 1
 //	    upper: 120
-//	    distribution: zapfian
+//	    distribution: zipfian
 //
 // The raw signals, along with the score, are returning in the output.
 package main
