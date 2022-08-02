@@ -39,7 +39,7 @@ import (
 const defaultLogLevel = log.InfoLevel
 
 var (
-	configFlag     = flag.String("config", "", "the filename of the config")
+	configFlag     = flag.String("config", "", "the filename of the config (required)")
 	columnNameFlag = flag.String("column", "", "the name of the output column")
 	logLevel       log.Level
 )
