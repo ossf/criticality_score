@@ -55,7 +55,3 @@ func (cv *ConditionalValue) Value(fields map[string]float64) (float64, bool) {
 		return 0, false
 	}
 }
-
-// Condition struct { Eval(fields map[string]float64) bool }
-// Not(Condition) Condition
-// Exists(Field) Condition
