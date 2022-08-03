@@ -7,59 +7,59 @@ inputs:
     weight: 1
     bounds:
       upper: 120
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.updated_since
     weight: 1
     bounds:
       upper: 120
       smaller_is_better: yes
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.contributor_count
     weight: 2
     bounds:
       upper: 5000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.org_count
     weight: 1
     bounds:
       upper: 10
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.commit_frequency
     weight: 1
     bounds:
       upper: 1000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.recent_release_count
     weight: 0.5
     bounds:
       upper: 26
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.updated_issues_count
     weight: 0.5
     bounds:
       upper: 5000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.closed_issues_count
     weight: 0.5
     bounds:
       upper: 5000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.issue_comment_frequency
     weight: 1
     bounds:
       upper: 15
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.github_mention_count
     weight: 2
     bounds:
       upper: 500000
-    distribution: zapfian
+    distribution: zipfian

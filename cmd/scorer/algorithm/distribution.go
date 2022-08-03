@@ -20,7 +20,7 @@ func (d *Distribution) Normalize(v float64) float64 {
 var (
 	normalizationFuncs = map[string]func(float64) float64{
 		"linear":  func(v float64) float64 { return v },
-		"zapfian": func(v float64) float64 { return math.Log(1 + v) },
+		"zipfian": func(v float64) float64 { return math.Log(1 + v) },
 	}
 	DefaultDistributionName = "linear"
 )

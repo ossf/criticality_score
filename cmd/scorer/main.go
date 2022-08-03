@@ -13,7 +13,7 @@
 //	  legacy.created_since:
 //	    weight: 1
 //	    upper: 120
-//	    distribution: zapfian
+//	    distribution: zipfian
 //
 // The raw signals, along with the score, are returning in the output.
 package main
@@ -39,7 +39,7 @@ import (
 const defaultLogLevel = log.InfoLevel
 
 var (
-	configFlag     = flag.String("config", "", "the filename of the config")
+	configFlag     = flag.String("config", "", "the filename of the config (required)")
 	columnNameFlag = flag.String("column", "", "the name of the output column")
 	logLevel       log.Level
 )

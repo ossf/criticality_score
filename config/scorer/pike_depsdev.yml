@@ -5,56 +5,56 @@ inputs:
     weight: 1
     bounds:
       upper: 120
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.updated_since
     weight: 1
     bounds:
       upper: 120
       smaller_is_better: yes
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.contributor_count
     weight: 2
     bounds:
       upper: 5000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.org_count
     weight: 1
     bounds:
       upper: 10
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.commit_frequency
     weight: 1
     bounds:
       upper: 1000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.recent_release_count
     weight: 0.5
     bounds:
       upper: 26
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.updated_issues_count
     weight: 0.5
     bounds:
       upper: 5000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.closed_issues_count
     weight: 0.5
     bounds:
       upper: 5000
-    distribution: zapfian
+    distribution: zipfian
 
   - field: legacy.issue_comment_frequency
     weight: 1
     bounds:
       upper: 15
-    distribution: zapfian
+    distribution: zipfian
 
   # If deps.dev dependenct count doesn't exist we use this configuration
   # for the GitHub search mention count.
@@ -65,7 +65,7 @@ inputs:
     condition:
       not:
         field_exists: "depsdev.dependent_count"
-    distribution: zapfian
+    distribution: zipfian
 
   # If deps.dev dependent count *does* exist we lower the importance of
   # the GitHub search mention count.
@@ -75,10 +75,10 @@ inputs:
       upper: 500000
     condition:
       field_exists: "depsdev.dependent_count"
-    distribution: zapfian
+    distribution: zipfian
 
   - field: depsdev.dependent_count
     weight: 4
     bounds:
       upper: 200000
-    distribution: zapfian
+    distribution: zipfian
