@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
+	"github.com/ossf/criticality_score/internal/envflag"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
@@ -39,6 +40,19 @@ var (
 	startDateFlag       = dateFlag(epochDate)
 	endDateFlag         = dateFlag(time.Now().UTC().Truncate(oneDay))
 	logLevel            log.Level
+
+	// Maps environment variables to the flags they correspond to.
+	envFlagMap = envflag.Map{
+		"CRITICALITY_SCORE_LOG_LEVEL":          "log",
+		"CRITICALITY_SCORE_WORKERS":            "workers",
+		"CRITICALITY_SCORE_START_DATE":         "start",
+		"CRITICALITY_SCORE_END_DATE":           "end",
+		"CRITICALITY_SCORE_OUTFILE_FORCE":      "force",
+		"CRITICALITY_SCORE_QUERY":              "query",
+		"CRITICALITY_SCORE_STARS_MIN":          "min-stars",
+		"CRITICALITY_SCORE_STARS_OVERLAP":      "start-overlap",
+		"CRITICALITY_SCORE_STARS_MIN_REQUIRED": "require-min-stars",
+	}
 )
 
 // dateFlag implements the flag.Value interface to simplify the input and validation of
@@ -109,7 +123,7 @@ func searchWorker(s *githubsearch.Searcher, logger *log.Entry, queries, results 
 }
 
 func main() {
-	flag.Parse()
+	envflag.Parse(envFlagMap)
 
 	logger := log.New()
 	logger.SetLevel(logLevel)
