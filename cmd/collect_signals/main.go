@@ -137,7 +137,7 @@ func main() {
 
 	// Open the out-file for writing
 	outFilename := flag.Args()[lastArg]
-	w, err := outfile.Open(outFilename)
+	w, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
 		logger.WithFields(log.Fields{
 			"error":    err,
