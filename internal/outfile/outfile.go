@@ -32,7 +32,7 @@ type Opener struct {
 }
 
 // CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.
-func CreateOpener(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) *Opener {
+func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) *Opener {
 	o := &Opener{
 		Perm:       0o666,
 		StdoutName: "-",
@@ -76,7 +76,7 @@ var defaultOpener *Opener
 
 // DefineFlags is a wrapper around CreateOpener for updating a default instance
 // of Opener.
-func DefineFlags(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) {
+func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
 	defaultOpener = CreateOpener(fs, forceFlag, appendFlag, fileHelpName)
 }
 
