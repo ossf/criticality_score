@@ -54,11 +54,16 @@ func (o *Opener) openInternal(filename string, extraFlags int) (*os.File, error)
 // If filename does exist, the behavior of this function will depend on the
 // flags:
 // - if appendFlag is set on the command line the existing file will be
-//   appended to.
+//
+//	appended to.
+//
 // - if forceFlag is set on the command line the existing file will be
-//   truncated.
+//
+//	truncated.
+//
 // - if neither forceFlag nor appendFlag are set an error will be
-//   returned.
+//
+//	returned.
 func (o *Opener) Open(filename string) (f *os.File, err error) {
 	if o.StdoutName != "" && filename == o.StdoutName {
 		f = os.Stdout
