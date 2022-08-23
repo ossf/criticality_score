@@ -132,6 +132,7 @@ func TestOpenFlagTest(t *testing.T) {
 }
 
 func assertLastOpen(t *testing.T, o *testOpener, filename string, requireFlags int, perm os.FileMode) {
+	t.Helper()
 	if o.lastOpen == nil {
 		t.Fatalf("Open(...) not called, want call to Open(...)")
 	}
