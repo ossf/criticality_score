@@ -24,7 +24,7 @@ func newTestOpener() *testOpener {
 	o := &testOpener{}
 	o.flag = flag.NewFlagSet("", flag.ContinueOnError)
 	o.opener = CreateOpener(o.flag, "force", "append", "FILE")
-	o.opener.Perm = 0567
+	o.opener.Perm = 0o567
 	o.opener.StdoutName = "-stdout-"
 	o.opener.fileOpener = fileOpenerFunc(func(filename string, flags int, perm os.FileMode) (*os.File, error) {
 		o.lastOpen = &openCall{
@@ -113,7 +113,7 @@ func TestOpenFlagTest(t *testing.T) {
 			if f == nil {
 				t.Fatal("Open() == nil, want a file")
 			}
-			assertLastOpen(t, o, "path/to/file", test.expectedFlag, 0567)
+			assertLastOpen(t, o, "path/to/file", test.expectedFlag, 0o567)
 		})
 	}
 

@@ -34,7 +34,7 @@ type Opener struct {
 // CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.
 func CreateOpener(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) *Opener {
 	o := &Opener{
-		Perm:       0666,
+		Perm:       0o666,
 		StdoutName: "-",
 		fileOpener: fileOpenerFunc(os.OpenFile),
 	}
