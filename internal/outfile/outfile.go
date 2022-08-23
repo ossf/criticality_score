@@ -58,10 +58,17 @@ func (o *Opener) openFile(filename string, extraFlags int) (io.WriteCloser, erro
 	return o.fileOpener.Open(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
 }
 
-func (o *Opener) openBlobStore(ctx context.Context, bucket, prefix string) (io.WriteCloser, error) {
+func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser, error) {
 	if o.append || !o.force {
 		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
 	}
+
+	// Seperate the path from the URL as options may be present in the query
+	// string.
+	prefix := u.Path
+	u.Path = ""
+	bucket := u.String()
+
 	b, err := blob.OpenBucket(ctx, bucket)
 	if err != nil {
 		return nil, fmt.Errorf("failed to opening %s: %w", bucket, err)
@@ -90,7 +97,7 @@ func (o *Opener) Open(ctx context.Context, filename string) (wc io.WriteCloser, 
 	if o.StdoutName != "" && filename == o.StdoutName {
 		wc = os.Stdout
 	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
-		wc, err = o.openBlobStore(ctx, u.Scheme+"://"+u.Host, u.Path)
+		wc, err = o.openBlobStore(ctx, u)
 	} else if o.append {
 		wc, err = o.openFile(filename, os.O_APPEND)
 	} else if o.force {
