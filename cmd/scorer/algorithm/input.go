@@ -33,11 +33,11 @@ func (b Bounds) Threshold() float64 {
 }
 
 type Input struct {
-	Bounds       *Bounds
-	Weight       float64
-	Distribution *Distribution
 	Source       Value
+	Bounds       *Bounds
+	Distribution *Distribution
 	Tags         []string
+	Weight       float64
 }
 
 func (i *Input) Value(fields map[string]float64) (float64, bool) {

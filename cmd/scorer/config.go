@@ -16,12 +16,12 @@ type Condition struct {
 }
 
 type Input struct {
-	Field        string            `yaml:"field"`
-	Weight       float64           `yaml:"weight"`
 	Bounds       *algorithm.Bounds `yaml:"bounds"`
-	Distribution string            `yaml:"distribution"`
 	Condition    *Condition        `yaml:"condition"`
+	Field        string            `yaml:"field"`
+	Distribution string            `yaml:"distribution"`
 	Tags         []string          `yaml:"tags"`
+	Weight       float64           `yaml:"weight"`
 }
 
 // Implements yaml.Unmarshaler interface.

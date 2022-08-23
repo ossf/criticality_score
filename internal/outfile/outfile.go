@@ -24,11 +24,11 @@ func (f fileOpenerFunc) Open(filename string, flags int, perm os.FileMode) (*os.
 }
 
 type Opener struct {
+	fileOpener fileOpener
+	StdoutName string
 	force      bool
 	append     bool
-	fileOpener fileOpener
 	Perm       os.FileMode
-	StdoutName string
 }
 
 // CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.

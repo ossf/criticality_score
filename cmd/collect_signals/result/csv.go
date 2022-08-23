@@ -11,8 +11,8 @@ import (
 )
 
 type csvWriter struct {
-	header        []string
 	w             *csv.Writer
+	header        []string
 	headerWritten bool
 
 	// Prevents concurrent writes to w, and headerWritten.
