@@ -24,7 +24,7 @@ type Input struct {
 	Tags         []string          `yaml:"tags"`
 }
 
-// Implements yaml.Unmarshaler interface
+// Implements yaml.Unmarshaler interface.
 func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	type RawInput Input
 	raw := &RawInput{

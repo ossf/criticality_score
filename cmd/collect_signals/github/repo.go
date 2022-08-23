@@ -21,7 +21,7 @@ type repo struct {
 	created   time.Time
 }
 
-// URL implements the projectrepo.Repo interface
+// URL implements the projectrepo.Repo interface.
 func (r *repo) URL() *url.URL {
 	return r.realURL
 }

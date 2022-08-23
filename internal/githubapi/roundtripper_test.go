@@ -27,7 +27,7 @@ func newTestStrategies() *strategies {
 
 type readerFn func(p []byte) (n int, err error)
 
-// Read implements the io.Reader interface
+// Read implements the io.Reader interface.
 func (r readerFn) Read(p []byte) (n int, err error) {
 	return r(p)
 }

@@ -17,7 +17,7 @@ type repo struct {
 	Url            string
 }
 
-// repoQuery is a GraphQL query for iterating over repositories in GitHub
+// repoQuery is a GraphQL query for iterating over repositories in GitHub.
 type repoQuery struct {
 	Search struct {
 		RepositoryCount int
@@ -31,27 +31,27 @@ type repoQuery struct {
 	} `graphql:"search(type: REPOSITORY, query: $query, first: $perPage, after: $endCursor)"`
 }
 
-// Total implements the pagination.PagedQuery interface
+// Total implements the pagination.PagedQuery interface.
 func (q *repoQuery) Total() int {
 	return q.Search.RepositoryCount
 }
 
-// Length implements the pagination.PagedQuery interface
+// Length implements the pagination.PagedQuery interface.
 func (q *repoQuery) Length() int {
 	return len(q.Search.Nodes)
 }
 
-// Get implements the pagination.PagedQuery interface
+// Get implements the pagination.PagedQuery interface.
 func (q *repoQuery) Get(i int) any {
 	return q.Search.Nodes[i].Repository
 }
 
-// HasNextPage implements the pagination.PagedQuery interface
+// HasNextPage implements the pagination.PagedQuery interface.
 func (q *repoQuery) HasNextPage() bool {
 	return q.Search.PageInfo.HasNextPage
 }
 
-// NextPageVars implements the pagination.PagedQuery interface
+// NextPageVars implements the pagination.PagedQuery interface.
 func (q *repoQuery) NextPageVars() map[string]any {
 	if q.Search.PageInfo.EndCursor == "" {
 		return map[string]any{

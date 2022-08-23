@@ -49,7 +49,7 @@ func respBodyContains(r *http.Response, search string) (bool, error) {
 	return bytes.Contains(data, []byte(search)), nil
 }
 
-// ServerError implements retry.RetryStrategyFn
+// ServerError implements retry.RetryStrategyFn.
 func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode < 500 || 600 <= r.StatusCode {
 		return retry.NoRetry, nil
@@ -72,7 +72,7 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 
 }
 
-// ServerError400 implements retry.RetryStrategyFn
+// ServerError400 implements retry.RetryStrategyFn.
 func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode != http.StatusBadRequest {
 		return retry.NoRetry, nil
@@ -90,7 +90,7 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 	}
 }
 
-// SecondaryRateLimit implements retry.RetryStrategyFn
+// SecondaryRateLimit implements retry.RetryStrategyFn.
 func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode != http.StatusForbidden {
 		return retry.NoRetry, nil
@@ -127,7 +127,7 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	return retry.NoRetry, nil
 }
 
-// RetryAfter implements retry.RetryAfterFn
+// RetryAfter implements retry.RetryAfterFn.
 // TODO: move to retry once we're confident it is working.
 func (s *strategies) RetryAfter(r *http.Response) time.Duration {
 	if v := r.Header["Retry-After"]; len(v) > 0 {

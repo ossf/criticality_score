@@ -28,27 +28,27 @@ type repoReleasesQuery struct {
 	} `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
 }
 
-// Total implements the pagination.PagedQuery interface
+// Total implements the pagination.PagedQuery interface.
 func (r *repoReleasesQuery) Total() int {
 	return r.Repository.Releases.TotalCount
 }
 
-// Length implements the pagination.PagedQuery interface
+// Length implements the pagination.PagedQuery interface.
 func (r *repoReleasesQuery) Length() int {
 	return len(r.Repository.Releases.Nodes)
 }
 
-// Get implements the pagination.PagedQuery interface
+// Get implements the pagination.PagedQuery interface.
 func (r *repoReleasesQuery) Get(i int) any {
 	return r.Repository.Releases.Nodes[i].Release.CreatedAt
 }
 
-// HasNextPage implements the pagination.PagedQuery interface
+// HasNextPage implements the pagination.PagedQuery interface.
 func (r *repoReleasesQuery) HasNextPage() bool {
 	return r.Repository.Releases.PageInfo.HasNextPage
 }
 
-// NextPageVars implements the pagination.PagedQuery interface
+// NextPageVars implements the pagination.PagedQuery interface.
 func (r *repoReleasesQuery) NextPageVars() map[string]any {
 	if r.Repository.Releases.PageInfo.EndCursor == "" {
 		return map[string]any{

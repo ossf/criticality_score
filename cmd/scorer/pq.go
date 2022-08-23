@@ -16,23 +16,23 @@ type RowItem struct {
 // "container/heap" documentation.
 type PriorityQueue []*RowItem
 
-// Len implements the heap.Interface interface
+// Len implements the heap.Interface interface.
 func (pq PriorityQueue) Len() int { return len(pq) }
 
-// Less implements the heap.Interface interface
+// Less implements the heap.Interface interface.
 func (pq PriorityQueue) Less(i, j int) bool {
 	// We want Pop to give us the highest, not lowest, priority so we use greater than here.
 	return pq[i].score > pq[j].score
 }
 
-// Swap implements the heap.Interface interface
+// Swap implements the heap.Interface interface.
 func (pq PriorityQueue) Swap(i, j int) {
 	pq[i], pq[j] = pq[j], pq[i]
 	pq[i].index = i
 	pq[j].index = j
 }
 
-// Push implements the heap.Interface interface
+// Push implements the heap.Interface interface.
 func (pq *PriorityQueue) Push(x any) {
 	n := len(*pq)
 	item := x.(*RowItem)
@@ -40,7 +40,7 @@ func (pq *PriorityQueue) Push(x any) {
 	*pq = append(*pq, item)
 }
 
-// Pop implements the heap.Interface interface
+// Pop implements the heap.Interface interface.
 func (pq *PriorityQueue) Pop() any {
 	old := *pq
 	n := len(old)
