@@ -1,9 +1,18 @@
 package outfile
 
 import (
+	"context"
 	"flag"
 	"fmt"
+	"io"
+	"net/url"
 	"os"
+
+	"gocloud.dev/blob"
+	_ "gocloud.dev/blob/fileblob"
+	_ "gocloud.dev/blob/gcsblob"
+	_ "gocloud.dev/blob/memblob"
+	_ "gocloud.dev/blob/s3blob"
 )
 
 // fileOpener wraps a method for opening files.
@@ -26,6 +35,7 @@ func (f fileOpenerFunc) Open(filename string, flags int, perm os.FileMode) (*os.
 type Opener struct {
 	fileOpener fileOpener
 	StdoutName string
+	forceFlag  string
 	force      bool
 	append     bool
 	Perm       os.FileMode
@@ -37,14 +47,30 @@ func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) 
 		Perm:       0o666,
 		StdoutName: "-",
 		fileOpener: fileOpenerFunc(os.OpenFile),
+		forceFlag:  forceFlag,
 	}
 	fs.BoolVar(&(o.force), forceFlag, false, fmt.Sprintf("overwrites %s if it already exists and -%s is not set.", fileHelpName, appendFlag))
 	fs.BoolVar(&(o.append), appendFlag, false, fmt.Sprintf("appends to %s if it already exists.", fileHelpName))
 	return o
 }
 
-func (o *Opener) openInternal(filename string, extraFlags int) (*os.File, error) {
+func (o *Opener) openFile(filename string, extraFlags int) (io.WriteCloser, error) {
 	return o.fileOpener.Open(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
+}
+
+func (o *Opener) openBlobStore(ctx context.Context, bucket, prefix string) (io.WriteCloser, error) {
+	if o.append || !o.force {
+		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
+	}
+	b, err := blob.OpenBucket(ctx, bucket)
+	if err != nil {
+		return nil, fmt.Errorf("failed to opening %s: %w", bucket, err)
+	}
+	w, err := b.NewWriter(ctx, prefix, nil)
+	if err != nil {
+		return nil, fmt.Errorf("failed creating writer for %s/%s: %w", bucket, prefix, err)
+	}
+	return w, nil
 }
 
 // Open opens and returns a file for output with the given filename.
@@ -53,26 +79,24 @@ func (o *Opener) openInternal(filename string, extraFlags int) (*os.File, error)
 // If filename does not exist, it will be created with the mode set in o.Perm.
 // If filename does exist, the behavior of this function will depend on the
 // flags:
-// - if appendFlag is set on the command line the existing file will be
 //
-//	appended to.
-//
-// - if forceFlag is set on the command line the existing file will be
-//
-//	truncated.
-//
-// - if neither forceFlag nor appendFlag are set an error will be
-//
-//	returned.
-func (o *Opener) Open(filename string) (f *os.File, err error) {
+//   - if appendFlag is set on the command line the existing file will be
+//     appended to.
+//   - if forceFlag is set on the command line the existing file will be
+//     truncated.
+//   - if neither forceFlag nor appendFlag are set an error will be
+//     returned.
+func (o *Opener) Open(ctx context.Context, filename string) (wc io.WriteCloser, err error) {
 	if o.StdoutName != "" && filename == o.StdoutName {
-		f = os.Stdout
+		wc = os.Stdout
+	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
+		wc, err = o.openBlobStore(ctx, u.Scheme+"://"+u.Host, u.Path)
 	} else if o.append {
-		f, err = o.openInternal(filename, os.O_APPEND)
+		wc, err = o.openFile(filename, os.O_APPEND)
 	} else if o.force {
-		f, err = o.openInternal(filename, os.O_TRUNC)
+		wc, err = o.openFile(filename, os.O_TRUNC)
 	} else {
-		f, err = o.openInternal(filename, os.O_EXCL)
+		wc, err = o.openFile(filename, os.O_EXCL)
 	}
 	return
 }
@@ -86,6 +110,6 @@ func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
 }
 
 // Open is a wrapper around Opener.Open for the default instance of Opener.
-func Open(filename string) (*os.File, error) {
-	return defaultOpener.Open(filename)
+func Open(ctx context.Context, filename string) (io.WriteCloser, error) {
+	return defaultOpener.Open(ctx, filename)
 }

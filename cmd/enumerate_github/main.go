@@ -50,7 +50,7 @@ var (
 		"CRITICALITY_SCORE_OUTFILE_FORCE":      "force",
 		"CRITICALITY_SCORE_QUERY":              "query",
 		"CRITICALITY_SCORE_STARS_MIN":          "min-stars",
-		"CRITICALITY_SCORE_STARS_OVERLAP":      "start-overlap",
+		"CRITICALITY_SCORE_STARS_OVERLAP":      "star-overlap",
 		"CRITICALITY_SCORE_STARS_MIN_REQUIRED": "require-min-stars",
 	}
 )
@@ -156,7 +156,7 @@ func main() {
 	}).Info("Preparing output file")
 
 	// Open the output file
-	out, err := outfile.Open(outFilename)
+	out, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
 		// File failed to open
 		logger.WithFields(log.Fields{

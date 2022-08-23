@@ -1,6 +1,7 @@
 package outfile
 
 import (
+	"context"
 	"errors"
 	"flag"
 	"os"
@@ -59,16 +60,36 @@ func TestAppendFlagDefined(t *testing.T) {
 
 func TestOpenStdout(t *testing.T) {
 	o := newTestOpener()
-	f, err := o.opener.Open("-stdout-")
+	f, err := o.opener.Open(context.Background(), "-stdout-")
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
 	if f != os.Stdout {
-		n := "nil"
-		if f != nil {
-			n = f.Name()
-		}
-		t.Fatalf("Open() == %s, want %v", n, os.Stdout.Name())
+		t.Fatal("Open() == not stdout, want stdout")
+	}
+}
+
+func TestOpenBucketUrl(t *testing.T) {
+	o := newTestOpener()
+	o.flag.Parse([]string{"-force"})
+	f, err := o.opener.Open(context.Background(), "mem://bucket/prefix")
+	if err != nil {
+		t.Fatalf("Open() == %v, want nil", err)
+	}
+	if o.lastOpen != nil {
+		t.Fatal("Open(...) called instead of bucket code")
+	}
+	if f == nil {
+		t.Fatal("Open() == nil, want io.WriterCloser")
+	}
+}
+
+func TestOpenBucketUrlNoForceFlag(t *testing.T) {
+	o := newTestOpener()
+	o.flag.Parse([]string{})
+	_, err := o.opener.Open(context.Background(), "mem://bucket/prefix")
+	if err == nil {
+		t.Fatalf("Open() == nil, want an error")
 	}
 }
 
@@ -106,7 +127,7 @@ func TestOpenFlagTest(t *testing.T) {
 		t.Run(test.name, func(t *testing.T) {
 			o := newTestOpener()
 			o.flag.Parse(test.args)
-			f, err := o.opener.Open("path/to/file")
+			f, err := o.opener.Open(context.Background(), "path/to/file")
 			if err != nil {
 				t.Fatalf("Open() == %v, want nil", err)
 			}
@@ -123,7 +144,7 @@ func TestOpenFlagTest(t *testing.T) {
 			o := newTestOpener()
 			o.flag.Parse(test.args)
 			o.openErr = errors.New("test error")
-			_, err := o.opener.Open("path/to/file")
+			_, err := o.opener.Open(context.Background(), "path/to/file")
 			if err == nil {
 				t.Fatalf("Open() is nil, want %v", o.openErr)
 			}
