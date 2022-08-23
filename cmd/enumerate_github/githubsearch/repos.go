@@ -102,6 +102,7 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 	repos := make(map[string]empty)
 	maxStars := -1
 	stars := 0
+
 	for {
 		q := buildQuery(baseQuery, minStars, maxStars)
 		c, err := re.runRepoQuery(q)
@@ -137,11 +138,15 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			"query":           q,
 		}).Debug("Finished iterating through results")
 		newMaxStars := stars + overlap
-		if remaining <= 0 {
-			break
-		} else if maxStars == -1 || newMaxStars < maxStars {
+		switch {
+		case remaining <= 0:
+			// nothing remains, we are done.
+			return nil
+		case maxStars == -1:
+			fallthrough
+		case newMaxStars < maxStars:
 			maxStars = newMaxStars
-		} else {
+		default:
 			// the gap between "stars" and "maxStars" is less than "overlap", so we can't
 			// safely step any lower without skipping stars.
 			re.logger.WithFields(log.Fields{
@@ -154,5 +159,4 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			return ErrorUnableToListAllResult
 		}
 	}
-	return nil
 }
