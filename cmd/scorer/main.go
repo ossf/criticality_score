@@ -19,6 +19,7 @@
 package main
 
 import (
+	"context"
 	"encoding/csv"
 	"errors"
 	"flag"
@@ -133,7 +134,7 @@ func main() {
 	}
 
 	// Open the out-file for writing
-	f, err := outfile.Open(outFilename)
+	f, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
 		logger.WithFields(log.Fields{
 			"error":    err,
@@ -151,7 +152,7 @@ func main() {
 		os.Exit(2)
 	}
 
-	f, err = os.Open(*configFlag)
+	cf, err := os.Open(*configFlag)
 	if err != nil {
 		logger.WithFields(log.Fields{
 			"error":    err,
@@ -159,7 +160,7 @@ func main() {
 		}).Error("Failed to open config file")
 		os.Exit(2)
 	}
-	c, err := LoadConfig(f)
+	c, err := LoadConfig(cf)
 	if err != nil {
 		logger.WithFields(log.Fields{
 			"error":    err,
