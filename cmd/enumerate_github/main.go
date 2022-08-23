@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
@@ -26,6 +27,8 @@ const (
 	reposPerPage     = 100
 	oneDay           = time.Hour * 24
 	defaultLogLevel  = log.InfoLevel
+	runIDToken       = "[[runid]]"
+	runIDDateFormat  = "20060102-1504"
 )
 
 var (
@@ -149,6 +152,15 @@ func main() {
 		os.Exit(2)
 	}
 	outFilename := flag.Arg(0)
+
+	// Expand runIDToken into the runID inside the output file's name.
+	if strings.Contains(outFilename, runIDToken) {
+		runID := time.Now().UTC().Format(runIDDateFormat)
+		logger.WithFields(log.Fields{
+			"run-id": runID,
+		}).Info("Using Run ID")
+		outFilename = strings.ReplaceAll(outFilename, runIDToken, runID)
+	}
 
 	// Print a helpful message indicating the configuration we're using.
 	logger.WithFields(log.Fields{
