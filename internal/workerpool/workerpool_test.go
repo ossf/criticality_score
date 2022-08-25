@@ -45,6 +45,7 @@ func TestUniqueWorkerId(t *testing.T) {
 func TestExampleWorkload(t *testing.T) {
 	nums := make(chan int)
 	doubles := make(chan int)
+	done := make(chan bool)
 	var results []int
 
 	// Consume the doubles channel
@@ -52,6 +53,7 @@ func TestExampleWorkload(t *testing.T) {
 		for i := range doubles {
 			results = append(results, i)
 		}
+		done <- true
 	}()
 
 	// Start a pool of workers
@@ -71,6 +73,12 @@ func TestExampleWorkload(t *testing.T) {
 
 	// Wait for all the workers to be finished
 	wait()
+
+	// Close the doubles channels to terminate the consumer.
+	close(doubles)
+
+	// Wait for the consumer to be finished.
+	<-done
 
 	// Make sure all were generated
 	if l := len(results); l != 10 {
