@@ -142,7 +142,7 @@ func (c *dependents) Count(ctx context.Context, projectName, projectType string)
 	if err == nil {
 		return rec.DependentCount, true, nil
 	}
-	if errors.Is(err, NoResultError) {
+	if errors.Is(err, ErrorNoResults) {
 		return 0, false, nil
 	}
 	return 0, false, err

@@ -30,7 +30,7 @@ import (
 )
 
 const (
-	githubErrorIdSearch = "\"error_500\""
+	githubErrorIDSearch = "\"error_500\""
 )
 
 var (
@@ -95,7 +95,7 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 		return retry.NoRetry, nil
 	}
 	s.logger.Debug("It's a text/html doc")
-	if isError, err := respBodyContains(r, githubErrorIdSearch); isError {
+	if isError, err := respBodyContains(r, githubErrorIDSearch); isError {
 		s.logger.Debug("Found target string - assuming 500.")
 		return retry.RetryImmediate, nil
 	} else {

@@ -68,7 +68,7 @@ func FetchIssueCommentCount(ctx context.Context, c *githubapi.Client, owner, nam
 	cs, resp, err := c.Rest().Issues.ListComments(ctx, owner, name, 0, opts)
 	// The API returns 5xx responses if there are too many comments.
 	if c := githubapi.ErrorResponseStatusCode(err); 500 <= c && c < 600 {
-		return 0, TooManyResultsError
+		return 0, ErrorTooManyResults
 	}
 	if err != nil {
 		return 0, err

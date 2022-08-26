@@ -28,7 +28,7 @@ import (
 // that will be populated in a response.
 type repo struct {
 	StargazerCount int
-	Url            string
+	URL            string
 }
 
 // repoQuery is a GraphQL query for iterating over repositories in GitHub.
@@ -137,9 +137,9 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			repo := obj.(repo)
 			seen++
 			stars = repo.StargazerCount
-			if _, ok := repos[repo.Url]; !ok {
-				repos[repo.Url] = empty{}
-				emitter(repo.Url)
+			if _, ok := repos[repo.URL]; !ok {
+				repos[repo.URL] = empty{}
+				emitter(repo.URL)
 			}
 		}
 		remaining := total - seen

@@ -29,8 +29,8 @@ import (
 )
 
 const (
-	testAbuseRateLimitDocUrl     = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits"
-	testSecondaryRateLimitDocUrl = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#secondary-rate-limits"
+	testAbuseRateLimitDocURL     = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits"
+	testSecondaryRateLimitDocURL = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#secondary-rate-limits"
 )
 
 func newTestStrategies() *strategies {
@@ -241,7 +241,7 @@ func TestSecondaryRateLimit(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
 		Body: ioutil.NopCloser(bytes.NewBuffer(
-			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocUrl)))),
+			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
 	}
 	s, err := newTestStrategies().SecondaryRateLimit(r)
 	if err != nil {
@@ -256,7 +256,7 @@ func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
 		Body: ioutil.NopCloser(bytes.NewBuffer(
-			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocUrl)))),
+			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocURL)))),
 	}
 	s, err := newTestStrategies().SecondaryRateLimit(r)
 	if err != nil {
@@ -323,7 +323,7 @@ func TestSecondaryRateLimit_StatusCodes(t *testing.T) {
 			r := &http.Response{
 				StatusCode: test.statusCode,
 				Body: ioutil.NopCloser(bytes.NewBuffer(
-					[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocUrl)))),
+					[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
 			}
 			s, err := newTestStrategies().SecondaryRateLimit(r)
 			if err != nil {

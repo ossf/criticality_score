@@ -34,4 +34,4 @@ const (
 	releasesPerPage = 100
 )
 
-var TooManyResultsError = errors.New("too many results")
+var ErrorTooManyResults = errors.New("too many results")

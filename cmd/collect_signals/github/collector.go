@@ -123,7 +123,7 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 
 	ghr.logger.Debug("Fetching comment frequency")
 	comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback)
-	if errors.Is(err, legacy.TooManyResultsError) {
+	if errors.Is(err, legacy.ErrorTooManyResults) {
 		ghr.logger.Debug("Comment count failed with too many result")
 		s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
 	} else if err != nil {

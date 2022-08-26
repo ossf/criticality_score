@@ -58,40 +58,40 @@ func (w *csvWriter) Record() RecordWriter {
 	}
 }
 
-func (s *csvWriter) maybeWriteHeader() error {
+func (w *csvWriter) maybeWriteHeader() error {
 	// Check headerWritten without the lock to avoid holding the lock if the
 	// header has already been written.
-	if s.headerWritten {
+	if w.headerWritten {
 		return nil
 	}
 	// Grab the lock and re-check headerWritten just in case another goroutine
 	// entered the same critical section. Also prevent concurrent writes to w.
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if s.headerWritten {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if w.headerWritten {
 		return nil
 	}
-	s.headerWritten = true
-	return s.w.Write(s.header)
+	w.headerWritten = true
+	return w.w.Write(w.header)
 }
 
-func (s *csvWriter) writeRecord(c *csvRecord) error {
-	if err := s.maybeWriteHeader(); err != nil {
+func (w *csvWriter) writeRecord(c *csvRecord) error {
+	if err := w.maybeWriteHeader(); err != nil {
 		return err
 	}
 	var rec []string
-	for _, k := range s.header {
+	for _, k := range w.header {
 		rec = append(rec, c.values[k])
 	}
 	// Grab the lock when we're ready to write the record to prevent
 	// concurrent writes to w.
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	if err := s.w.Write(rec); err != nil {
+	w.mu.Lock()
+	defer w.mu.Unlock()
+	if err := w.w.Write(rec); err != nil {
 		return err
 	}
-	s.w.Flush()
-	return s.w.Error()
+	w.w.Flush()
+	return w.w.Error()
 }
 
 type csvRecord struct {
@@ -124,6 +124,6 @@ func marshalValue(value any) (string, error) {
 	case nil:
 		return "", nil
 	default:
-		return "", fmt.Errorf("%w: %T", MarshalError, value)
+		return "", fmt.Errorf("%w: %T", ErrorMarshalFailure, value)
 	}
 }
