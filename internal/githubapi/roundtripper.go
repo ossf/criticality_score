@@ -83,7 +83,6 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 		return retry.NoRetry, nil
 	}
 	return retry.RetryImmediate, nil
-
 }
 
 // ServerError400 implements retry.RetryStrategyFn.

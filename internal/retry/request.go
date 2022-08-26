@@ -25,9 +25,7 @@ const (
 	DefaultInitialDuration = 2 * time.Minute
 )
 
-var (
-	ErrorNoMoreAttempts = errors.New("request cannot by retried")
-)
+var ErrorNoMoreAttempts = errors.New("request cannot by retried")
 
 type RetryStrategy int
 

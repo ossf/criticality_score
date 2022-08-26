@@ -26,8 +26,10 @@ import (
 	log "github.com/sirupsen/logrus"
 )
 
-const defaultLocation = "US"
-const DefaultDatasetName = "depsdev_analysis"
+const (
+	defaultLocation    = "US"
+	DefaultDatasetName = "depsdev_analysis"
+)
 
 type depsDevSet struct {
 	DependentCount signal.Field[int] `signal:"dependent_count"`

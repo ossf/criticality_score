@@ -34,8 +34,13 @@ type Searcher struct {
 	perPage int
 }
 
-type Option interface{ set(*Searcher) }
-type option func(*Searcher)      // option implements Option.
+type Option interface {
+	set(*Searcher)
+}
+
+// option implements Option.
+type option func(*Searcher)
+
 func (o option) set(s *Searcher) { o(s) }
 
 // PerPage will set how many results will per requested per page for each search query.

@@ -43,7 +43,6 @@ func (b Bounds) Apply(v float64) float64 {
 
 func (b Bounds) Threshold() float64 {
 	return b.Upper - b.Lower
-
 }
 
 type Input struct {

@@ -24,8 +24,7 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 )
 
-type RepoCollector struct {
-}
+type RepoCollector struct{}
 
 func (rc *RepoCollector) EmptySet() signal.Set {
 	return &signal.RepoSet{}
@@ -86,8 +85,7 @@ func (rc *RepoCollector) IsSupported(p projectrepo.Repo) bool {
 	return ok
 }
 
-type IssuesCollector struct {
-}
+type IssuesCollector struct{}
 
 func (ic *IssuesCollector) EmptySet() signal.Set {
 	return &signal.IssuesSet{}
