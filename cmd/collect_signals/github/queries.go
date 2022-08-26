@@ -25,8 +25,8 @@ import (
 
 const (
 	legacyReleaseLookbackDays = 365
-	legacyReleaseLookback     = time.Duration(legacyReleaseLookbackDays * 24 * time.Hour)
-	legacyCommitLookback      = time.Duration(365 * 24 * time.Hour)
+	legacyReleaseLookback     = legacyReleaseLookbackDays * 24 * time.Hour
+	legacyCommitLookback      = 365 * 24 * time.Hour
 )
 
 type basicRepoData struct {
