@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	dependentCountsTableName         = "dependent_counts"
-	packageVersionToProjectTableName = "package_version_to_project"
+	dependentCountsTableName = "dependent_counts"
 
 	snapshotQuery = "SELECT MAX(Time) AS SnapshotTime FROM `bigquery-public-data.deps_dev_v1.Snapshots`"
 )
