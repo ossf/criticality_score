@@ -17,7 +17,7 @@ package githubapi
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -54,9 +54,9 @@ type strategies struct {
 }
 
 func respBodyContains(r *http.Response, search string) (bool, error) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil {
 		return false, err
 	}
@@ -110,9 +110,9 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	}
 	s.logger.Warn("403: forbidden detected")
 	errorResponse := &github.ErrorResponse{Response: r}
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil || data == nil {
 		s.logger.WithFields(
 			log.Fields{

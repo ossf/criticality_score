@@ -16,7 +16,7 @@ package retry
 
 import (
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -27,7 +27,7 @@ func TestInit_NotDone(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}, MakeOptions())
 
@@ -40,7 +40,7 @@ func Test200NoRetryStrategyFunc(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}, MakeOptions())
 	resp, err := req.Do()
@@ -60,7 +60,7 @@ func TestDoAfterDoneReturnsError(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusOK,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}, MakeOptions())
 
@@ -83,7 +83,7 @@ func Test2xx3xxAlwaysDone(t *testing.T) {
 			req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 				return &http.Response{
 					StatusCode: code,
-					Body:       ioutil.NopCloser(strings.NewReader("")),
+					Body:       io.NopCloser(strings.NewReader("")),
 				}, nil
 			}, MakeOptions(Strategy(func(_ *http.Response) (RetryStrategy, error) {
 				// Always force a retry if the strategy is called.
@@ -101,7 +101,7 @@ func TestRetryAfterZeroDuration(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}, MakeOptions(RetryAfter(func(_ *http.Response) time.Duration {
 		return 0
@@ -123,7 +123,7 @@ func TestRetryAfterDuration(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}, opts)
 	req.Do()
@@ -144,7 +144,7 @@ func TestZeroMaxRetriesOnlyTriesOnce(t *testing.T) {
 	req := NewRequest(&http.Request{}, func(r *http.Request) (*http.Response, error) {
 		return &http.Response{
 			StatusCode: http.StatusBadRequest,
-			Body:       ioutil.NopCloser(strings.NewReader("")),
+			Body:       io.NopCloser(strings.NewReader("")),
 		}, nil
 	}, MakeOptions(MaxRetries(0), RetryAfter(func(_ *http.Response) time.Duration {
 		// Force a retry

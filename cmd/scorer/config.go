@@ -18,7 +18,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
 
 	"github.com/ossf/criticality_score/cmd/scorer/algorithm"
 	"gopkg.in/yaml.v3"
@@ -114,7 +113,7 @@ type Config struct {
 // If the data cannot be parsed an error will be returned.
 func LoadConfig(r io.Reader) (*Config, error) {
 	c := &Config{}
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}
