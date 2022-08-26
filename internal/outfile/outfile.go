@@ -77,7 +77,7 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
 	}
 
-	// Seperate the path from the URL as options may be present in the query
+	// Separate the path from the URL as options may be present in the query
 	// string.
 	prefix := u.Path
 	u.Path = ""
