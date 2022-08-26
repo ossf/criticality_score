@@ -1,3 +1,17 @@
+// Copyright 2022 Criticality Score Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package workerpool_test
 
 import (
@@ -45,6 +59,7 @@ func TestUniqueWorkerId(t *testing.T) {
 func TestExampleWorkload(t *testing.T) {
 	nums := make(chan int)
 	doubles := make(chan int)
+	done := make(chan bool)
 	var results []int
 
 	// Consume the doubles channel
@@ -52,6 +67,7 @@ func TestExampleWorkload(t *testing.T) {
 		for i := range doubles {
 			results = append(results, i)
 		}
+		done <- true
 	}()
 
 	// Start a pool of workers
@@ -71,6 +87,12 @@ func TestExampleWorkload(t *testing.T) {
 
 	// Wait for all the workers to be finished
 	wait()
+
+	// Close the doubles channels to terminate the consumer.
+	close(doubles)
+
+	// Wait for the consumer to be finished.
+	<-done
 
 	// Make sure all were generated
 	if l := len(results); l != 10 {
