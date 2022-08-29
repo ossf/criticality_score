@@ -14,7 +14,11 @@
 
 package githubapi
 
-import "github.com/google/go-github/v44/github"
+import (
+	"errors"
+
+	"github.com/google/go-github/v44/github"
+)
 
 // ErrorResponseStatusCode will unwrap a github.ErrorResponse and return the
 // status code inside.
@@ -25,7 +29,8 @@ func ErrorResponseStatusCode(err error) int {
 	if err == nil {
 		return 0
 	}
-	e, ok := err.(*github.ErrorResponse)
+	var e *github.ErrorResponse
+	ok := errors.As(err, &e)
 	if !ok {
 		return 0
 	}

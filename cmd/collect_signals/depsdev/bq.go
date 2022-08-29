@@ -129,6 +129,7 @@ func isNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	apiErr, ok := err.(*googleapi.Error)
+	var apiErr *googleapi.Error
+	ok := errors.As(err, &apiErr)
 	return ok && apiErr.Code == 404
 }

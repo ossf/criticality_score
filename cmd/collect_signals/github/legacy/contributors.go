@@ -16,6 +16,7 @@ package legacy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
@@ -114,7 +115,8 @@ func errorTooManyContributors(err error) bool {
 	if err == nil {
 		return false
 	}
-	e, ok := err.(*github.ErrorResponse)
+	var e *github.ErrorResponse
+	ok := errors.As(err, &e)
 	if !ok {
 		return false
 	}
