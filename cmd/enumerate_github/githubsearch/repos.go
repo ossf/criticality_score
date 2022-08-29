@@ -27,21 +27,21 @@ import (
 // repo is part of the GitHub GraphQL query and includes the fields
 // that will be populated in a response.
 type repo struct {
-	StargazerCount int
 	URL            string
+	StargazerCount int
 }
 
 // repoQuery is a GraphQL query for iterating over repositories in GitHub.
 type repoQuery struct {
 	Search struct {
-		RepositoryCount int
-		Nodes           []struct {
+		Nodes []struct {
 			Repository repo `graphql:"...on Repository"`
 		}
 		PageInfo struct {
-			HasNextPage bool
 			EndCursor   string
+			HasNextPage bool
 		}
+		RepositoryCount int
 	} `graphql:"search(type: REPOSITORY, query: $query, first: $perPage, after: $endCursor)"`
 }
 

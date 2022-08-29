@@ -16,6 +16,7 @@ package signal
 
 import "time"
 
+//nolint:govet
 type RepoSet struct {
 	URL      Field[string]
 	Language Field[string]

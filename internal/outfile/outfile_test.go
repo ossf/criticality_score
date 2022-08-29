@@ -108,6 +108,7 @@ func TestOpenBucketUrlNoForceFlag(t *testing.T) {
 }
 
 func TestOpenFlagTest(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		name         string
 		args         []string

@@ -30,25 +30,16 @@ const (
 )
 
 type basicRepoData struct {
-	Name            string
+	Name      string
+	URL       string
+	MirrorURL string
+
 	Owner           struct{ Login string }
 	LicenseInfo     struct{ Name string }
-	StargazerCount  int
-	URL             string
-	MirrorURL       string
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	PrimaryLanguage struct {
-		Name string
-	}
-	Watchers struct {
-		TotalCount int
-	}
-	HasIssuesEnabled bool
-	IsArchived       bool
-	IsDisabled       bool
-	IsEmpty          bool
-	IsMirror         bool
+	PrimaryLanguage struct{ Name string }
+
+	CreatedAt time.Time
+	UpdatedAt time.Time
 
 	DefaultBranchRef struct {
 		Target struct {
@@ -60,6 +51,15 @@ type basicRepoData struct {
 			} `graphql:"... on Commit"`
 		}
 	}
+
+	StargazerCount   int
+	HasIssuesEnabled bool
+	IsArchived       bool
+	IsDisabled       bool
+	IsEmpty          bool
+	IsMirror         bool
+
+	Watchers struct{ TotalCount int }
 
 	Tags struct {
 		TotalCount int

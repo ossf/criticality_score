@@ -28,8 +28,7 @@ import (
 type repoReleasesQuery struct {
 	Repository struct {
 		Releases struct {
-			TotalCount int
-			Nodes      []struct {
+			Nodes []struct {
 				Release struct {
 					CreatedAt time.Time
 				} `graphql:"... on Release"`
@@ -38,6 +37,7 @@ type repoReleasesQuery struct {
 				EndCursor   string
 				HasNextPage bool
 			}
+			TotalCount int
 		} `graphql:"releases(orderBy:{direction:DESC, field:CREATED_AT}, first: $perPage, after: $endCursor)"`
 	} `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
 }
