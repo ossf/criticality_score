@@ -90,7 +90,7 @@ func (d *dateFlag) String() string {
 }
 
 func (d *dateFlag) Time() time.Time {
-	return (time.Time)(*d)
+	return time.Time(*d)
 }
 
 func init() {

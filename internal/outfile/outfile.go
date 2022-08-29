@@ -107,19 +107,20 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 //     truncated.
 //   - if neither forceFlag nor appendFlag are set an error will be
 //     returned.
-func (o *Opener) Open(ctx context.Context, filename string) (wc io.WriteCloser, err error) {
+func (o *Opener) Open(ctx context.Context, filename string) (io.WriteCloser, error) {
 	if o.StdoutName != "" && filename == o.StdoutName {
-		wc = os.Stdout
+		return os.Stdout, nil
 	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
-		wc, err = o.openBlobStore(ctx, u)
-	} else if o.append {
-		wc, err = o.openFile(filename, os.O_APPEND)
-	} else if o.force {
-		wc, err = o.openFile(filename, os.O_TRUNC)
-	} else {
-		wc, err = o.openFile(filename, os.O_EXCL)
+		return o.openBlobStore(ctx, u)
 	}
-	return
+	switch {
+	case o.append:
+		return o.openFile(filename, os.O_APPEND)
+	case o.force:
+		return o.openFile(filename, os.O_TRUNC)
+	default:
+		return o.openFile(filename, os.O_EXCL)
+	}
 }
 
 var defaultOpener *Opener

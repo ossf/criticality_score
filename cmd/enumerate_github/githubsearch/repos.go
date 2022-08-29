@@ -112,7 +112,7 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 //
 // The algorithm fails if the last star value plus overlap has the same or larger value as the
 // previous iteration.
-func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, emitter func(string)) error {
+func (re *Searcher) ReposByStars(baseQuery string, minStars, overlap int, emitter func(string)) error {
 	repos := make(map[string]empty)
 	maxStars := -1
 	stars := 0
@@ -156,9 +156,7 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 		case remaining <= 0:
 			// nothing remains, we are done.
 			return nil
-		case maxStars == -1:
-			fallthrough
-		case newMaxStars < maxStars:
+		case maxStars == -1, newMaxStars < maxStars:
 			maxStars = newMaxStars
 		default:
 			// the gap between "stars" and "maxStars" is less than "overlap", so we can't

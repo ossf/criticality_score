@@ -99,7 +99,7 @@ func makeOutHeader(header []string, resultColumn string) ([]string, error) {
 	return append(header, resultColumn), nil
 }
 
-func makeRecord(header []string, row []string) map[string]float64 {
+func makeRecord(header, row []string) map[string]float64 {
 	record := make(map[string]float64)
 	for i, k := range header {
 		raw := row[i]

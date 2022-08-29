@@ -123,12 +123,13 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 
 	ghr.logger.Debug("Fetching comment frequency")
 	comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback)
-	if errors.Is(err, legacy.ErrorTooManyResults) {
+	switch {
+	case errors.Is(err, legacy.ErrorTooManyResults):
 		ghr.logger.Debug("Comment count failed with too many result")
 		s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
-	} else if err != nil {
+	case err != nil:
 		return nil, err
-	} else {
+	default:
 		s.CommentFrequency.Set(legacy.Round(float64(comments)/float64(up), 2))
 	}
 	return s, nil
