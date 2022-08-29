@@ -32,8 +32,6 @@ type RecordWriter interface {
 }
 
 type Writer interface {
-	//WriteAll([]signal.Set) error
-
 	// Record returns a RecordWriter that can be used to write a new record.
 	Record() RecordWriter
 }
