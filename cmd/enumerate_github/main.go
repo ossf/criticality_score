@@ -254,6 +254,6 @@ func main() {
 
 	logger.WithFields(log.Fields{
 		"total_repos": totalRepos,
-		"duration":    time.Now().Sub(startTime).Truncate(time.Minute).String(),
+		"duration":    time.Since(startTime).Truncate(time.Minute).String(),
 	}).Info("Finished enumeration")
 }
