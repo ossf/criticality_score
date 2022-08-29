@@ -180,7 +180,7 @@ func TestServerError400_BodyError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ServerError() returned no error, want %v", want)
 	}
-	if err != want {
+	if !errors.Is(err, want) {
 		t.Fatalf("ServerError() errored %v, want %v", err, want)
 	}
 }
@@ -293,7 +293,7 @@ func TestSecondaryRateLimit_BodyError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ServerError() returned no error, want %v", want)
 	}
-	if err != want {
+	if !errors.Is(err, want) {
 		t.Fatalf("ServerError() errored %v, want %v", err, want)
 	}
 }

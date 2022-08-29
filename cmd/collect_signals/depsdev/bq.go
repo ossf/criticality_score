@@ -61,7 +61,7 @@ func (b *bq) OneResultQuery(ctx context.Context, query string, params map[string
 		return err
 	}
 	err = it.Next(result)
-	if err == iterator.Done {
+	if errors.Is(err, iterator.Done) {
 		return ErrorNoResults
 	}
 	if err != nil {

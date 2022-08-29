@@ -26,6 +26,7 @@
 package envflag
 
 import (
+	"errors"
 	"flag"
 	"os"
 )
@@ -51,7 +52,7 @@ func ParseFlagSet(fs *flag.FlagSet, args []string, m Map) error {
 		case flag.ContinueOnError:
 			return err
 		case flag.ExitOnError:
-			if err == flag.ErrHelp {
+			if errors.Is(err, flag.ErrHelp) {
 				os.Exit(0)
 			}
 			os.Exit(2)
@@ -65,7 +66,7 @@ func ParseFlagSet(fs *flag.FlagSet, args []string, m Map) error {
 func Parse(m Map) {
 	if err := m.Assign(flag.CommandLine); err != nil {
 		// flag.CommandLine is set for ExitOnError
-		if err == flag.ErrHelp {
+		if errors.Is(err, flag.ErrHelp) {
 			os.Exit(0)
 		}
 		os.Exit(2)

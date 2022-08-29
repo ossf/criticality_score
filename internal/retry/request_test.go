@@ -15,6 +15,7 @@
 package retry
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -69,7 +70,7 @@ func TestDoAfterDoneReturnsError(t *testing.T) {
 
 	// This Do() returns an error.
 	resp, err := req.Do()
-	if err != ErrorNoMoreAttempts {
+	if !errors.Is(err, ErrorNoMoreAttempts) {
 		t.Fatalf("Do() returned err %v; want %v", err, ErrorNoMoreAttempts)
 	}
 	if resp != nil {
