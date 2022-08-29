@@ -19,8 +19,9 @@ import (
 	"net"
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/sirupsen/logrus"
+
+	"github.com/ossf/criticality_score/internal/textvarflag"
 )
 
 var defaultIP = net.IPv4(192, 168, 0, 100)

@@ -25,8 +25,9 @@ import (
 	"time"
 
 	"github.com/google/go-github/v44/github"
-	"github.com/ossf/criticality_score/internal/retry"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/ossf/criticality_score/internal/retry"
 )
 
 const (

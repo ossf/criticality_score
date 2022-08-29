@@ -20,9 +20,10 @@ import (
 	"io"
 	"time"
 
+	"github.com/shurcooL/githubv4"
+
 	"github.com/ossf/criticality_score/internal/githubapi"
 	"github.com/ossf/criticality_score/internal/githubapi/pagination"
-	"github.com/shurcooL/githubv4"
 )
 
 type repoReleasesQuery struct {

@@ -21,6 +21,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v44/github"
+
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 

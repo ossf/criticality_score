@@ -19,8 +19,9 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ossf/criticality_score/cmd/scorer/algorithm"
 	"gopkg.in/yaml.v3"
+
+	"github.com/ossf/criticality_score/cmd/scorer/algorithm"
 )
 
 type Condition struct {

@@ -25,15 +25,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
+	sclog "github.com/ossf/scorecard/v4/log"
+	"github.com/shurcooL/githubv4"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
 	"github.com/ossf/criticality_score/internal/envflag"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
-	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	sclog "github.com/ossf/scorecard/v4/log"
-	"github.com/shurcooL/githubv4"
-	log "github.com/sirupsen/logrus"
 )
 
 const (

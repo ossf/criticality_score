@@ -19,9 +19,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ossf/criticality_score/internal/githubapi/pagination"
 	"github.com/shurcooL/githubv4"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/ossf/criticality_score/internal/githubapi/pagination"
 )
 
 // repo is part of the GitHub GraphQL query and includes the fields

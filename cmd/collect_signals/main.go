@@ -26,6 +26,10 @@ import (
 	"path"
 	"strings"
 
+	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
+	sclog "github.com/ossf/scorecard/v4/log"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/depsdev"
 	"github.com/ossf/criticality_score/cmd/collect_signals/github"
@@ -36,9 +40,6 @@ import (
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
-	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	sclog "github.com/ossf/scorecard/v4/log"
-	log "github.com/sirupsen/logrus"
 )
 
 const defaultLogLevel = log.InfoLevel

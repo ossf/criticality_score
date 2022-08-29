@@ -45,10 +45,11 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	_ "github.com/ossf/criticality_score/cmd/scorer/algorithm/wam"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
-	log "github.com/sirupsen/logrus"
 )
 
 const defaultLogLevel = log.InfoLevel
