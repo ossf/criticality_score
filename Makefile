@@ -12,9 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 IMAGE_NAME = criticality-score
+GOLANGCI_LINT := golangci-lint
 
 default: help
-
 
 .PHONY: help
 help:  ## Display this help
@@ -23,14 +23,23 @@ help:  ## Display this help
 			{ printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } \
 			/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-
 .PHONY: test
 test:  ## Run all tests
 	go test -race -covermode=atomic -coverprofile=unit-coverage.out './...'
 
+.PHONY: lint
+$(GOLANGCI_LINT): install/deps
+lint:  ## Run linter
+lint: $(GOLANGCI_LINT)
+	$(GOLANGCI_LINT) run -c .golangci.yml
 
 docker-targets = build/docker/enumerate-github
 .PHONY: build/docker $(docker-targets)
 build/docker: $(docker-targets)  ## Build all docker targets
 build/docker/enumerate-github:
 	DOCKER_BUILDKIT=1 docker build . -f cmd/enumerate_github/Dockerfile --tag $(IMAGE_NAME)-enumerate-github
+
+.PHONY: install/deps
+install/deps:  ## Installs all dependencies during development and building
+	@echo Installing tools from tools/tools.go
+	@cd tools; cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
