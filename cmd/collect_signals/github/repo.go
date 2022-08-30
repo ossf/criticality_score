@@ -19,9 +19,10 @@ import (
 	"net/url"
 	"time"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ossf/criticality_score/cmd/collect_signals/github/legacy"
 	"github.com/ossf/criticality_score/internal/githubapi"
-	log "github.com/sirupsen/logrus"
 )
 
 // repo implements the projectrepo.Repo interface for a GitHub repository.
@@ -35,7 +36,7 @@ type repo struct {
 	created   time.Time
 }
 
-// URL implements the projectrepo.Repo interface
+// URL implements the projectrepo.Repo interface.
 func (r *repo) URL() *url.URL {
 	return r.realURL
 }

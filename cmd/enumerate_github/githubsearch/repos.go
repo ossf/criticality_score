@@ -19,53 +19,54 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/ossf/criticality_score/internal/githubapi/pagination"
 	"github.com/shurcooL/githubv4"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/ossf/criticality_score/internal/githubapi/pagination"
 )
 
 // repo is part of the GitHub GraphQL query and includes the fields
 // that will be populated in a response.
 type repo struct {
+	URL            string
 	StargazerCount int
-	Url            string
 }
 
-// repoQuery is a GraphQL query for iterating over repositories in GitHub
+// repoQuery is a GraphQL query for iterating over repositories in GitHub.
 type repoQuery struct {
 	Search struct {
-		RepositoryCount int
-		Nodes           []struct {
+		Nodes []struct {
 			Repository repo `graphql:"...on Repository"`
 		}
 		PageInfo struct {
-			HasNextPage bool
 			EndCursor   string
+			HasNextPage bool
 		}
+		RepositoryCount int
 	} `graphql:"search(type: REPOSITORY, query: $query, first: $perPage, after: $endCursor)"`
 }
 
-// Total implements the pagination.PagedQuery interface
+// Total implements the pagination.PagedQuery interface.
 func (q *repoQuery) Total() int {
 	return q.Search.RepositoryCount
 }
 
-// Length implements the pagination.PagedQuery interface
+// Length implements the pagination.PagedQuery interface.
 func (q *repoQuery) Length() int {
 	return len(q.Search.Nodes)
 }
 
-// Get implements the pagination.PagedQuery interface
+// Get implements the pagination.PagedQuery interface.
 func (q *repoQuery) Get(i int) any {
 	return q.Search.Nodes[i].Repository
 }
 
-// HasNextPage implements the pagination.PagedQuery interface
+// HasNextPage implements the pagination.PagedQuery interface.
 func (q *repoQuery) HasNextPage() bool {
 	return q.Search.PageInfo.HasNextPage
 }
 
-// NextPageVars implements the pagination.PagedQuery interface
+// NextPageVars implements the pagination.PagedQuery interface.
 func (q *repoQuery) NextPageVars() map[string]any {
 	if q.Search.PageInfo.EndCursor == "" {
 		return map[string]any{
@@ -112,10 +113,11 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 //
 // The algorithm fails if the last star value plus overlap has the same or larger value as the
 // previous iteration.
-func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, emitter func(string)) error {
+func (re *Searcher) ReposByStars(baseQuery string, minStars, overlap int, emitter func(string)) error {
 	repos := make(map[string]empty)
 	maxStars := -1
 	stars := 0
+
 	for {
 		q := buildQuery(baseQuery, minStars, maxStars)
 		c, err := re.runRepoQuery(q)
@@ -136,9 +138,9 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			repo := obj.(repo)
 			seen++
 			stars = repo.StargazerCount
-			if _, ok := repos[repo.Url]; !ok {
-				repos[repo.Url] = empty{}
-				emitter(repo.Url)
+			if _, ok := repos[repo.URL]; !ok {
+				repos[repo.URL] = empty{}
+				emitter(repo.URL)
 			}
 		}
 		remaining := total - seen
@@ -151,11 +153,13 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			"query":           q,
 		}).Debug("Finished iterating through results")
 		newMaxStars := stars + overlap
-		if remaining <= 0 {
-			break
-		} else if maxStars == -1 || newMaxStars < maxStars {
+		switch {
+		case remaining <= 0:
+			// nothing remains, we are done.
+			return nil
+		case maxStars == -1, newMaxStars < maxStars:
 			maxStars = newMaxStars
-		} else {
+		default:
 			// the gap between "stars" and "maxStars" is less than "overlap", so we can't
 			// safely step any lower without skipping stars.
 			re.logger.WithFields(log.Fields{
@@ -168,5 +172,4 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars int, overlap int, em
 			return ErrorUnableToListAllResult
 		}
 	}
-	return nil
 }

@@ -47,18 +47,18 @@ func (f fileOpenerFunc) Open(filename string, flags int, perm os.FileMode) (*os.
 }
 
 type Opener struct {
+	fileOpener fileOpener
+	StdoutName string
+	forceFlag  string
 	force      bool
 	append     bool
-	forceFlag  string
-	fileOpener fileOpener
 	Perm       os.FileMode
-	StdoutName string
 }
 
 // CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.
-func CreateOpener(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) *Opener {
+func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) *Opener {
 	o := &Opener{
-		Perm:       0666,
+		Perm:       0o666,
 		StdoutName: "-",
 		fileOpener: fileOpenerFunc(os.OpenFile),
 		forceFlag:  forceFlag,
@@ -77,7 +77,7 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
 	}
 
-	// Seperate the path from the URL as options may be present in the query
+	// Separate the path from the URL as options may be present in the query
 	// string.
 	prefix := u.Path
 	u.Path = ""
@@ -107,26 +107,27 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 //     truncated.
 //   - if neither forceFlag nor appendFlag are set an error will be
 //     returned.
-func (o *Opener) Open(ctx context.Context, filename string) (wc io.WriteCloser, err error) {
+func (o *Opener) Open(ctx context.Context, filename string) (io.WriteCloser, error) {
 	if o.StdoutName != "" && filename == o.StdoutName {
-		wc = os.Stdout
+		return os.Stdout, nil
 	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
-		wc, err = o.openBlobStore(ctx, u)
-	} else if o.append {
-		wc, err = o.openFile(filename, os.O_APPEND)
-	} else if o.force {
-		wc, err = o.openFile(filename, os.O_TRUNC)
-	} else {
-		wc, err = o.openFile(filename, os.O_EXCL)
+		return o.openBlobStore(ctx, u)
 	}
-	return
+	switch {
+	case o.append:
+		return o.openFile(filename, os.O_APPEND)
+	case o.force:
+		return o.openFile(filename, os.O_TRUNC)
+	default:
+		return o.openFile(filename, os.O_EXCL)
+	}
 }
 
 var defaultOpener *Opener
 
 // DefineFlags is a wrapper around CreateOpener for updating a default instance
 // of Opener.
-func DefineFlags(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) {
+func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
 	defaultOpener = CreateOpener(fs, forceFlag, appendFlag, fileHelpName)
 }
 

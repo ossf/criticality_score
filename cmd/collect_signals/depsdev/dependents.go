@@ -27,8 +27,7 @@ import (
 )
 
 const (
-	dependentCountsTableName         = "dependent_counts"
-	packageVersionToProjectTableName = "package_version_to_project"
+	dependentCountsTableName = "dependent_counts"
 
 	snapshotQuery = "SELECT MAX(Time) AS SnapshotTime FROM `bigquery-public-data.deps_dev_v1.Snapshots`"
 )
@@ -143,7 +142,7 @@ func (c *dependents) Count(ctx context.Context, projectName, projectType string)
 	if err == nil {
 		return rec.DependentCount, true, nil
 	}
-	if errors.Is(err, NoResultError) {
+	if errors.Is(err, ErrorNoResults) {
 		return 0, false, nil
 	}
 	return 0, false, err

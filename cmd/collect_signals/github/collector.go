@@ -24,8 +24,7 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 )
 
-type RepoCollector struct {
-}
+type RepoCollector struct{}
 
 func (rc *RepoCollector) EmptySet() signal.Set {
 	return &signal.RepoSet{}
@@ -63,19 +62,19 @@ func (rc *RepoCollector) Collect(ctx context.Context, r projectrepo.Repo) (signa
 		s.OrgCount.Set(orgCount)
 	}
 	ghr.logger.Debug("Fetching releases")
-	if releaseCount, err := legacy.FetchReleaseCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacyReleaseLookback); err != nil {
+	releaseCount, err := legacy.FetchReleaseCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacyReleaseLookback)
+	if err != nil {
 		return nil, err
+	}
+	if releaseCount != 0 {
+		s.RecentReleaseCount.Set(releaseCount)
 	} else {
-		if releaseCount != 0 {
-			s.RecentReleaseCount.Set(releaseCount)
+		daysSinceCreated := int(now.Sub(ghr.createdAt()).Hours()) / 24
+		if daysSinceCreated > 0 {
+			t := (ghr.BasicData.Tags.TotalCount * legacyReleaseLookbackDays) / daysSinceCreated
+			s.RecentReleaseCount.Set(t)
 		} else {
-			daysSinceCreated := int(now.Sub(ghr.createdAt()).Hours()) / 24
-			if daysSinceCreated > 0 {
-				t := (ghr.BasicData.Tags.TotalCount * legacyReleaseLookbackDays) / daysSinceCreated
-				s.RecentReleaseCount.Set(t)
-			} else {
-				s.RecentReleaseCount.Set(0)
-			}
+			s.RecentReleaseCount.Set(0)
 		}
 	}
 	return s, nil
@@ -86,8 +85,7 @@ func (rc *RepoCollector) IsSupported(p projectrepo.Repo) bool {
 	return ok
 }
 
-type IssuesCollector struct {
-}
+type IssuesCollector struct{}
 
 func (ic *IssuesCollector) EmptySet() signal.Set {
 	return &signal.IssuesSet{}
@@ -125,12 +123,13 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 
 	ghr.logger.Debug("Fetching comment frequency")
 	comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback)
-	if errors.Is(err, legacy.TooManyResultsError) {
+	switch {
+	case errors.Is(err, legacy.ErrorTooManyResults):
 		ghr.logger.Debug("Comment count failed with too many result")
 		s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
-	} else if err != nil {
+	case err != nil:
 		return nil, err
-	} else {
+	default:
 		s.CommentFrequency.Set(legacy.Round(float64(comments)/float64(up), 2))
 	}
 	return s, nil

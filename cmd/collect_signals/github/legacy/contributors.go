@@ -16,10 +16,12 @@ package legacy
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v44/github"
+
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 
@@ -114,7 +116,8 @@ func errorTooManyContributors(err error) bool {
 	if err == nil {
 		return false
 	}
-	e, ok := err.(*github.ErrorResponse)
+	var e *github.ErrorResponse
+	ok := errors.As(err, &e)
 	if !ok {
 		return false
 	}

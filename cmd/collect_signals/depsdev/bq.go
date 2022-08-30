@@ -23,7 +23,7 @@ import (
 	"google.golang.org/api/iterator"
 )
 
-var NoResultError = errors.New("no results returned")
+var ErrorNoResults = errors.New("no results returned")
 
 type Dataset struct {
 	ds *bigquery.Dataset
@@ -61,8 +61,8 @@ func (b *bq) OneResultQuery(ctx context.Context, query string, params map[string
 		return err
 	}
 	err = it.Next(result)
-	if err == iterator.Done {
-		return NoResultError
+	if errors.Is(err, iterator.Done) {
+		return ErrorNoResults
 	}
 	if err != nil {
 		return err
@@ -129,6 +129,7 @@ func isNotFound(err error) bool {
 	if err == nil {
 		return false
 	}
-	apiErr, ok := err.(*googleapi.Error)
+	var apiErr *googleapi.Error
+	ok := errors.As(err, &apiErr)
 	return ok && apiErr.Code == 404
 }

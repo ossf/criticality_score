@@ -19,8 +19,8 @@ import (
 )
 
 type Distribution struct {
-	name        string
 	normalizeFn func(float64) float64
+	name        string
 }
 
 func (d *Distribution) String() string {

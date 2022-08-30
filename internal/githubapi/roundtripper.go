@@ -17,7 +17,7 @@ package githubapi
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -25,12 +25,13 @@ import (
 	"time"
 
 	"github.com/google/go-github/v44/github"
-	"github.com/ossf/criticality_score/internal/retry"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/ossf/criticality_score/internal/retry"
 )
 
 const (
-	githubErrorIdSearch = "\"error_500\""
+	githubErrorIDSearch = "\"error_500\""
 )
 
 var (
@@ -54,16 +55,16 @@ type strategies struct {
 }
 
 func respBodyContains(r *http.Response, search string) (bool, error) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil {
 		return false, err
 	}
 	return bytes.Contains(data, []byte(search)), nil
 }
 
-// ServerError implements retry.RetryStrategyFn
+// ServerError implements retry.RetryStrategyFn.
 func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode < 500 || 600 <= r.StatusCode {
 		return retry.NoRetry, nil
@@ -83,10 +84,9 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 		return retry.NoRetry, nil
 	}
 	return retry.RetryImmediate, nil
-
 }
 
-// ServerError400 implements retry.RetryStrategyFn
+// ServerError400 implements retry.RetryStrategyFn.
 func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode != http.StatusBadRequest {
 		return retry.NoRetry, nil
@@ -96,7 +96,7 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 		return retry.NoRetry, nil
 	}
 	s.logger.Debug("It's a text/html doc")
-	if isError, err := respBodyContains(r, githubErrorIdSearch); isError {
+	if isError, err := respBodyContains(r, githubErrorIDSearch); isError {
 		s.logger.Debug("Found target string - assuming 500.")
 		return retry.RetryImmediate, nil
 	} else {
@@ -104,16 +104,16 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 	}
 }
 
-// SecondaryRateLimit implements retry.RetryStrategyFn
+// SecondaryRateLimit implements retry.RetryStrategyFn.
 func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode != http.StatusForbidden {
 		return retry.NoRetry, nil
 	}
 	s.logger.Warn("403: forbidden detected")
 	errorResponse := &github.ErrorResponse{Response: r}
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil || data == nil {
 		s.logger.WithFields(
 			log.Fields{
@@ -141,7 +141,7 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	return retry.NoRetry, nil
 }
 
-// RetryAfter implements retry.RetryAfterFn
+// RetryAfter implements retry.RetryAfterFn.
 // TODO: move to retry once we're confident it is working.
 func (s *strategies) RetryAfter(r *http.Response) time.Duration {
 	if v := r.Header["Retry-After"]; len(v) > 0 {

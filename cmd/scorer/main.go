@@ -45,10 +45,11 @@ import (
 	"strconv"
 	"strings"
 
+	log "github.com/sirupsen/logrus"
+
 	_ "github.com/ossf/criticality_score/cmd/scorer/algorithm/wam"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
-	log "github.com/sirupsen/logrus"
 )
 
 const defaultLogLevel = log.InfoLevel
@@ -99,7 +100,7 @@ func makeOutHeader(header []string, resultColumn string) ([]string, error) {
 	return append(header, resultColumn), nil
 }
 
-func makeRecord(header []string, row []string) map[string]float64 {
+func makeRecord(header, row []string) map[string]float64 {
 	record := make(map[string]float64)
 	for i, k := range header {
 		raw := row[i]

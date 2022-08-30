@@ -20,9 +20,7 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 )
 
-var (
-	MarshalError = errors.New("failed to marshal value")
-)
+var ErrorMarshalFailure = errors.New("failed to marshal value")
 
 type RecordWriter interface {
 	// WriteSignalSet is used to output the value for a signal.Set for a record.
@@ -34,8 +32,6 @@ type RecordWriter interface {
 }
 
 type Writer interface {
-	//WriteAll([]signal.Set) error
-
 	// Record returns a RecordWriter that can be used to write a new record.
 	Record() RecordWriter
 }

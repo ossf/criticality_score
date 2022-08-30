@@ -18,30 +18,31 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"net/url"
 	"testing"
 	"time"
 
-	"github.com/ossf/criticality_score/internal/retry"
 	log "github.com/sirupsen/logrus"
+
+	"github.com/ossf/criticality_score/internal/retry"
 )
 
 const (
-	testAbuseRateLimitDocUrl     = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits"
-	testSecondaryRateLimitDocUrl = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#secondary-rate-limits"
+	testAbuseRateLimitDocURL     = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits"
+	testSecondaryRateLimitDocURL = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#secondary-rate-limits"
 )
 
 func newTestStrategies() *strategies {
 	logger := log.New()
-	logger.Out = ioutil.Discard
+	logger.Out = io.Discard
 	return &strategies{logger: logger}
 }
 
 type readerFn func(p []byte) (n int, err error)
 
-// Read implements the io.Reader interface
+// Read implements the io.Reader interface.
 func (r readerFn) Read(p []byte) (n int, err error) {
 	return r(p)
 }
@@ -141,7 +142,7 @@ func TestServerError400(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
-		Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
+		Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
 	}
 	s, err := newTestStrategies().ServerError400(r)
 	if err != nil {
@@ -156,7 +157,7 @@ func TestServerError400_NoMatchingString(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
-		Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(`<html><body>Web Page</body></html`))),
+		Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>Web Page</body></html`))),
 	}
 	s, err := newTestStrategies().ServerError400(r)
 	if err != nil {
@@ -172,7 +173,7 @@ func TestServerError400_BodyError(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
-		Body: ioutil.NopCloser(readerFn(func(b []byte) (int, error) {
+		Body: io.NopCloser(readerFn(func(b []byte) (int, error) {
 			return 0, want
 		})),
 	}
@@ -180,7 +181,7 @@ func TestServerError400_BodyError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ServerError() returned no error, want %v", want)
 	}
-	if err != want {
+	if !errors.Is(err, want) {
 		t.Fatalf("ServerError() errored %v, want %v", err, want)
 	}
 }
@@ -189,7 +190,7 @@ func TestServerError400_NotHTML(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/plain"}},
 		StatusCode: http.StatusBadRequest,
-		Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(`text doc`))),
+		Body:       io.NopCloser(bytes.NewBuffer([]byte(`text doc`))),
 	}
 	s, err := newTestStrategies().ServerError400(r)
 	if err != nil {
@@ -224,7 +225,7 @@ func TestServerError400_StatusCodes(t *testing.T) {
 			r := &http.Response{
 				Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 				StatusCode: test.statusCode,
-				Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
+				Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
 			}
 			s, err := newTestStrategies().ServerError400(r)
 			if err != nil {
@@ -240,8 +241,8 @@ func TestServerError400_StatusCodes(t *testing.T) {
 func TestSecondaryRateLimit(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body: ioutil.NopCloser(bytes.NewBuffer(
-			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocUrl)))),
+		Body: io.NopCloser(bytes.NewBuffer(
+			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
 	}
 	s, err := newTestStrategies().SecondaryRateLimit(r)
 	if err != nil {
@@ -255,8 +256,8 @@ func TestSecondaryRateLimit(t *testing.T) {
 func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body: ioutil.NopCloser(bytes.NewBuffer(
-			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocUrl)))),
+		Body: io.NopCloser(bytes.NewBuffer(
+			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocURL)))),
 	}
 	s, err := newTestStrategies().SecondaryRateLimit(r)
 	if err != nil {
@@ -270,7 +271,7 @@ func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 func TestSecondaryRateLimit_OtherUrl(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body:       ioutil.NopCloser(bytes.NewBuffer([]byte(`{"message": "test", "documentation_url": "https://example.org/"}`))),
+		Body:       io.NopCloser(bytes.NewBuffer([]byte(`{"message": "test", "documentation_url": "https://example.org/"}`))),
 	}
 	s, err := newTestStrategies().SecondaryRateLimit(r)
 	if err != nil {
@@ -285,7 +286,7 @@ func TestSecondaryRateLimit_BodyError(t *testing.T) {
 	want := errors.New("test error")
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body: ioutil.NopCloser(readerFn(func(b []byte) (int, error) {
+		Body: io.NopCloser(readerFn(func(b []byte) (int, error) {
 			return 0, want
 		})),
 	}
@@ -293,7 +294,7 @@ func TestSecondaryRateLimit_BodyError(t *testing.T) {
 	if err == nil {
 		t.Fatalf("ServerError() returned no error, want %v", want)
 	}
-	if err != want {
+	if !errors.Is(err, want) {
 		t.Fatalf("ServerError() errored %v, want %v", err, want)
 	}
 }
@@ -322,8 +323,8 @@ func TestSecondaryRateLimit_StatusCodes(t *testing.T) {
 		t.Run(fmt.Sprintf("status %d", test.statusCode), func(t *testing.T) {
 			r := &http.Response{
 				StatusCode: test.statusCode,
-				Body: ioutil.NopCloser(bytes.NewBuffer(
-					[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocUrl)))),
+				Body: io.NopCloser(bytes.NewBuffer(
+					[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
 			}
 			s, err := newTestStrategies().SecondaryRateLimit(r)
 			if err != nil {

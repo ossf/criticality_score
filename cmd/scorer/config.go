@@ -18,10 +18,10 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"io/ioutil"
+
+	"gopkg.in/yaml.v3"
 
 	"github.com/ossf/criticality_score/cmd/scorer/algorithm"
-	"gopkg.in/yaml.v3"
 )
 
 type Condition struct {
@@ -30,15 +30,15 @@ type Condition struct {
 }
 
 type Input struct {
-	Field        string            `yaml:"field"`
-	Weight       float64           `yaml:"weight"`
 	Bounds       *algorithm.Bounds `yaml:"bounds"`
-	Distribution string            `yaml:"distribution"`
 	Condition    *Condition        `yaml:"condition"`
+	Field        string            `yaml:"field"`
+	Distribution string            `yaml:"distribution"`
 	Tags         []string          `yaml:"tags"`
+	Weight       float64           `yaml:"weight"`
 }
 
-// Implements yaml.Unmarshaler interface
+// Implements yaml.Unmarshaler interface.
 func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	type RawInput Input
 	raw := &RawInput{
@@ -114,7 +114,7 @@ type Config struct {
 // If the data cannot be parsed an error will be returned.
 func LoadConfig(r io.Reader) (*Config, error) {
 	c := &Config{}
-	data, err := ioutil.ReadAll(r)
+	data, err := io.ReadAll(r)
 	if err != nil {
 		return nil, err
 	}

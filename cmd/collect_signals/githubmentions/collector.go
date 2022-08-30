@@ -27,6 +27,7 @@ import (
 	"strings"
 
 	"github.com/google/go-github/v44/github"
+
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 	"github.com/ossf/criticality_score/internal/githubapi"

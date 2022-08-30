@@ -39,7 +39,7 @@ func newTestOpener() *testOpener {
 	o := &testOpener{}
 	o.flag = flag.NewFlagSet("", flag.ContinueOnError)
 	o.opener = CreateOpener(o.flag, "force", "append", "FILE")
-	o.opener.Perm = 0567
+	o.opener.Perm = 0o567
 	o.opener.StdoutName = "-stdout-"
 	o.opener.fileOpener = fileOpenerFunc(func(filename string, flags int, perm os.FileMode) (*os.File, error) {
 		o.lastOpen = &openCall{
@@ -108,6 +108,7 @@ func TestOpenBucketUrlNoForceFlag(t *testing.T) {
 }
 
 func TestOpenFlagTest(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		name         string
 		args         []string
@@ -148,7 +149,7 @@ func TestOpenFlagTest(t *testing.T) {
 			if f == nil {
 				t.Fatal("Open() == nil, want a file")
 			}
-			assertLastOpen(t, o, "path/to/file", test.expectedFlag, 0567)
+			assertLastOpen(t, o, "path/to/file", test.expectedFlag, 0o567)
 		})
 	}
 
@@ -167,6 +168,7 @@ func TestOpenFlagTest(t *testing.T) {
 }
 
 func assertLastOpen(t *testing.T, o *testOpener, filename string, requireFlags int, perm os.FileMode) {
+	t.Helper()
 	if o.lastOpen == nil {
 		t.Fatalf("Open(...) not called, want call to Open(...)")
 	}

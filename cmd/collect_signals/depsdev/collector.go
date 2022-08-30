@@ -20,14 +20,17 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
-	log "github.com/sirupsen/logrus"
 )
 
-const defaultLocation = "US"
-const DefaultDatasetName = "depsdev_analysis"
+const (
+	defaultLocation    = "US"
+	DefaultDatasetName = "depsdev_analysis"
+)
 
 type depsDevSet struct {
 	DependentCount signal.Field[int] `signal:"dependent_count"`

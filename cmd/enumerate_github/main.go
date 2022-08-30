@@ -25,15 +25,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
+	sclog "github.com/ossf/scorecard/v4/log"
+	"github.com/shurcooL/githubv4"
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
 	"github.com/ossf/criticality_score/internal/envflag"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
-	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	sclog "github.com/ossf/scorecard/v4/log"
-	"github.com/shurcooL/githubv4"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
@@ -90,7 +91,7 @@ func (d *dateFlag) String() string {
 }
 
 func (d *dateFlag) Time() time.Time {
-	return (time.Time)(*d)
+	return time.Time(*d)
 }
 
 func init() {
@@ -254,6 +255,6 @@ func main() {
 
 	logger.WithFields(log.Fields{
 		"total_repos": totalRepos,
-		"duration":    time.Now().Sub(startTime).Truncate(time.Minute).String(),
+		"duration":    time.Since(startTime).Truncate(time.Minute).String(),
 	}).Info("Finished enumeration")
 }

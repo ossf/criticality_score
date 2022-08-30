@@ -18,9 +18,10 @@ import (
 	"context"
 	"net/url"
 
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/internal/githubapi"
-	log "github.com/sirupsen/logrus"
 )
 
 type factory struct {

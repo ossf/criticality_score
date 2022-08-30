@@ -15,7 +15,7 @@
 FROM golang@sha256:684d791f8fd1b28485ee32239d92cde7099d97c88c5ed2e955f65f4adcf35d0f AS base
 WORKDIR /src
 ENV CGO_ENABLED=0
-COPY go.* ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . ./
 
