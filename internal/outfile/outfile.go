@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"strings"
 
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/fileblob"
@@ -79,7 +80,7 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 
 	// Separate the path from the URL as options may be present in the query
 	// string.
-	prefix := u.Path
+	prefix := strings.TrimPrefix(u.Path, "/")
 	u.Path = ""
 	bucket := u.String()
 
