@@ -27,7 +27,7 @@ spec:
           containers:
           - name: enumerate-github
             image: gcr.io/openssf/criticality-score-enumerate-github:latest
-            args: ["gcs://ossf-criticality-score-url-data/[[runid]]/github.txt"]
+            args: ["gs://ossf-criticality-score-url-data/[[runid]]/github.txt"]
             imagePullPolicy: Always
             env:
             - name: GITHUB_AUTH_SERVER
@@ -42,7 +42,7 @@ spec:
               value: "2022-01-01"
             resources:
               limits:
-                memory: 1Gi
+                memory: 5Gi
               requests:
-                memory: 1Gi
+                memory: 2Gi
           restartPolicy: OnFailure
