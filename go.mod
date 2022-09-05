@@ -4,11 +4,13 @@ go 1.18
 
 require (
 	cloud.google.com/go/bigquery v1.32.0
+	github.com/blendle/zapdriver v1.3.1
 	github.com/google/go-github/v44 v44.1.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/ossf/scorecard/v4 v4.1.1-0.20220413163106-b00b31646ab4
 	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
 	github.com/sirupsen/logrus v1.8.1
+	go.uber.org/zap v1.23.0
 	gocloud.dev v0.26.0
 	google.golang.org/api v0.88.0
 	gopkg.in/yaml.v3 v3.0.1
@@ -37,7 +39,6 @@ require (
 	github.com/aws/aws-sdk-go-v2/service/sso v1.11.3 // indirect
 	github.com/aws/aws-sdk-go-v2/service/sts v1.16.3 // indirect
 	github.com/aws/smithy-go v1.11.2 // indirect
-	github.com/blendle/zapdriver v1.3.1 // indirect
 	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.0.4 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
@@ -59,7 +60,6 @@ require (
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
-	go.uber.org/zap v1.23.0 // indirect
 	golang.org/x/crypto v0.0.0-20220525230936-793ad666bf5e // indirect
 	golang.org/x/net v0.0.0-20220722155237-a158d28d115b // indirect
 	golang.org/x/oauth2 v0.0.0-20220622183110-fd043fe589d2 // indirect
