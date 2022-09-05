@@ -32,6 +32,8 @@ spec:
             env:
             - name: GITHUB_AUTH_SERVER
               value: "10.4.4.210:80"
+            - name: CRITICALITY_SCORE_LOG_ENV
+              value: "gcp"
             - name: CRITICALITY_SCORE_OUTFILE_FORCE
               value: "1"
             - name: CRITICALITY_SCORE_STARS_MIN
