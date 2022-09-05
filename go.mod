@@ -3,8 +3,9 @@ module github.com/ossf/criticality_score
 go 1.18
 
 require (
-	cloud.google.com/go/bigquery v1.32.0
+	cloud.google.com/go/bigquery v1.39.0
 	github.com/blendle/zapdriver v1.3.1
+	github.com/go-logr/zapr v1.2.3
 	github.com/google/go-github/v44 v44.1.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/ossf/scorecard/v4 v4.1.1-0.20220413163106-b00b31646ab4
@@ -12,7 +13,7 @@ require (
 	github.com/sirupsen/logrus v1.8.1
 	go.uber.org/zap v1.23.0
 	gocloud.dev v0.26.0
-	google.golang.org/api v0.88.0
+	google.golang.org/api v0.93.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -42,7 +43,6 @@ require (
 	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.0.4 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
-	github.com/go-logr/zapr v1.2.3 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
@@ -52,11 +52,9 @@ require (
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.1.0 // indirect
-	github.com/googleapis/gax-go/v2 v2.4.0 // indirect
-	github.com/googleapis/go-type-adapters v1.0.0 // indirect
+	github.com/googleapis/gax-go/v2 v2.5.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
-	github.com/stretchr/testify v1.8.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
@@ -67,7 +65,7 @@ require (
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/xerrors v0.0.0-20220609144429-65e65417b02f // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20220720214146-176da50484ac // indirect
+	google.golang.org/genproto v0.0.0-20220819153447-c7cd466b0e09 // indirect
 	google.golang.org/grpc v1.48.0 // indirect
-	google.golang.org/protobuf v1.28.0 // indirect
+	google.golang.org/protobuf v1.28.1 // indirect
 )
