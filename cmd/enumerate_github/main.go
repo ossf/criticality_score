@@ -25,13 +25,16 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-logr/zapr"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
 	"github.com/shurcooL/githubv4"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
 	"github.com/ossf/criticality_score/internal/envflag"
+	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
@@ -41,7 +44,7 @@ const (
 	githubDateFormat = "2006-01-02"
 	reposPerPage     = 100
 	oneDay           = time.Hour * 24
-	defaultLogLevel  = log.InfoLevel
+	defaultLogLevel  = zapcore.InfoLevel
 	runIDToken       = "[[runid]]"
 	runIDDateFormat  = "20060102-1504"
 )
@@ -57,10 +60,12 @@ var (
 	workersFlag         = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	startDateFlag       = dateFlag(epochDate)
 	endDateFlag         = dateFlag(time.Now().UTC().Truncate(oneDay))
-	logLevel            log.Level
+	logLevel            = defaultLogLevel
+	logEnv              log.Env
 
 	// Maps environment variables to the flags they correspond to.
 	envFlagMap = envflag.Map{
+		"CRITICALITY_SCORE_LOG_ENV":            "log-env",
 		"CRITICALITY_SCORE_LOG_LEVEL":          "log",
 		"CRITICALITY_SCORE_WORKERS":            "workers",
 		"CRITICALITY_SCORE_START_DATE":         "start",
@@ -97,7 +102,8 @@ func (d *dateFlag) Time() time.Time {
 func init() {
 	flag.Var(&startDateFlag, "start", "the start `date` to enumerate back to. Must be at or after 2008-01-01.")
 	flag.Var(&endDateFlag, "end", "the end `date` to enumerate from.")
-	textvarflag.TextVar(flag.CommandLine, &logLevel, "log", defaultLogLevel, "set the `level` of logging.")
+	flag.Var(&logLevel, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -112,7 +118,7 @@ func init() {
 
 // searchWorker waits for a query on the queries channel, starts a search with that query using s
 // and returns each repository on the results channel.
-func searchWorker(s *githubsearch.Searcher, logger *log.Entry, queries, results chan string) {
+func searchWorker(s *githubsearch.Searcher, logger *zap.Logger, queries, results chan string) {
 	for q := range queries {
 		total := 0
 		err := s.ReposByStars(q, *minStarsFlag, *starOverlapFlag, func(repo string) {
@@ -121,10 +127,10 @@ func searchWorker(s *githubsearch.Searcher, logger *log.Entry, queries, results 
 		})
 		if err != nil {
 			// TODO: this error handling is not at all graceful, and hard to recover from.
-			logger.WithFields(log.Fields{
-				"query": q,
-				"error": err,
-			}).Error("Enumeration failed for query")
+			logger.With(
+				zap.String("query", q),
+				zap.Error(err),
+			).Error("Enumeration failed for query")
 			if errors.Is(err, githubsearch.ErrorUnableToListAllResult) {
 				if *requireMinStarsFlag {
 					os.Exit(1)
@@ -133,31 +139,40 @@ func searchWorker(s *githubsearch.Searcher, logger *log.Entry, queries, results 
 				os.Exit(1)
 			}
 		}
-		logger.WithFields(log.Fields{
-			"query":      q,
-			"repo_count": total,
-		}).Info("Enumeration for query done")
+		logger.With(
+			zap.String("query", q),
+			zap.Int("repo_count", total),
+		).Info("Enumeration for query done")
 	}
 }
 
 func main() {
 	envflag.Parse(envFlagMap)
 
-	logger := log.New()
-	logger.SetLevel(logLevel)
+	logger, err := log.NewLogger(logEnv, logLevel)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
 
 	// roundtripper requires us to use the scorecard logger.
-	scLogger := sclog.NewLogrusLogger(logger)
+	innerLogger := zapr.NewLogger(logger)
+	scLogger := &sclog.Logger{Logger: &innerLogger}
 
-	// Ensure the -start date is not before the epoch.
+	// Warn if the -start date is before the epoch.
 	if startDateFlag.Time().Before(epochDate) {
-		logger.Errorf("-start date must be no earlier than %s", epochDate.Format(githubDateFormat))
-		os.Exit(2)
+		logger.With(
+			zap.String("start", startDateFlag.String()),
+			zap.String("epoch", epochDate.Format(githubDateFormat)),
+		).Warn("-start date is before epoch")
 	}
 
 	// Ensure -start is before -end
 	if endDateFlag.Time().Before(startDateFlag.Time()) {
-		logger.Error("-start date must be before -end date")
+		logger.With(
+			zap.String("start", startDateFlag.String()),
+			zap.String("end", endDateFlag.String()),
+		).Error("-start date must be before -end date")
 		os.Exit(2)
 	}
 
@@ -171,35 +186,33 @@ func main() {
 	// Expand runIDToken into the runID inside the output file's name.
 	if strings.Contains(outFilename, runIDToken) {
 		runID := time.Now().UTC().Format(runIDDateFormat)
-		logger.WithFields(log.Fields{
-			"run-id": runID,
-		}).Info("Using Run ID")
+		// Every future log message will have the run-id attached.
+		logger = logger.With(zap.String("run-id", runID))
+		logger.Info("Using Run ID")
 		outFilename = strings.ReplaceAll(outFilename, runIDToken, runID)
 	}
 
 	// Print a helpful message indicating the configuration we're using.
-	logger.WithFields(log.Fields{
-		"filename": outFilename,
-	}).Info("Preparing output file")
+	logger.With(
+		zap.String("filename", outFilename),
+	).Info("Preparing output file")
 
 	// Open the output file
 	out, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
 		// File failed to open
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to open output file")
+		logger.Error("Failed to open output file", zap.Error(err))
 		os.Exit(2)
 	}
 	defer out.Close()
 
-	logger.WithFields(log.Fields{
-		"start":        startDateFlag.String(),
-		"end":          endDateFlag.String(),
-		"min_stars":    *minStarsFlag,
-		"star_overlap": *starOverlapFlag,
-		"workers":      *workersFlag,
-	}).Info("Starting enumeration")
+	logger.With(
+		zap.String("start", startDateFlag.String()),
+		zap.String("end", endDateFlag.String()),
+		zap.Int("min_stars", *minStarsFlag),
+		zap.Int("star_overlap", *starOverlapFlag),
+		zap.Int("workers", *workersFlag),
+	).Info("Starting enumeration")
 
 	// Track how long it takes to enumerate the repositories
 	startTime := time.Now()
@@ -218,7 +231,7 @@ func main() {
 
 	// Start the worker goroutines to execute the search queries
 	wait := workerpool.WorkerPool(*workersFlag, func(i int) {
-		workerLogger := logger.WithFields(log.Fields{"worker": i})
+		workerLogger := logger.With(zap.Int("worker", i))
 		s := githubsearch.NewSearcher(ctx, client, workerLogger, githubsearch.PerPage(reposPerPage))
 		searchWorker(s, workerLogger, queries, results)
 	})
@@ -236,9 +249,9 @@ func main() {
 
 	// Work happens here. Iterate through the dates from today, until the start date.
 	for created := endDateFlag.Time(); !startDateFlag.Time().After(created); created = created.Add(-oneDay) {
-		logger.WithFields(log.Fields{
-			"created": created.Format(githubDateFormat),
-		}).Info("Scheduling day for enumeration")
+		logger.With(
+			zap.String("created", created.Format(githubDateFormat)),
+		).Info("Scheduling day for enumeration")
 		queries <- baseQuery + fmt.Sprintf(" created:%s", created.Format(githubDateFormat))
 	}
 	logger.Debug("Waiting for workers to finish")
@@ -253,8 +266,9 @@ func main() {
 	// Wait for the writer to be finished.
 	<-done
 
-	logger.WithFields(log.Fields{
-		"total_repos": totalRepos,
-		"duration":    time.Since(startTime).Truncate(time.Minute).String(),
-	}).Info("Finished enumeration")
+	logger.With(
+		zap.Int("total_repos", totalRepos),
+		zap.Duration("duration", time.Since(startTime).Truncate(time.Minute)),
+		zap.String("filename", outFilename),
+	).Info("Finished enumeration")
 }

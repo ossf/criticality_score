@@ -20,7 +20,7 @@ import (
 	"io"
 
 	"github.com/shurcooL/githubv4"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/internal/githubapi/pagination"
 )
@@ -89,9 +89,9 @@ func buildQuery(q string, minStars, maxStars int) string {
 }
 
 func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
-	re.logger.WithFields(log.Fields{
-		"query": q,
-	}).Debug("Searching GitHub")
+	re.logger.With(
+		zap.String("query", q),
+	).Debug("Searching GitHub")
 	vars := map[string]any{
 		"query":   githubv4.String(q),
 		"perPage": githubv4.Int(re.perPage),
@@ -144,14 +144,14 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars, overlap int, emitte
 			}
 		}
 		remaining := total - seen
-		re.logger.WithFields(log.Fields{
-			"total_available": total,
-			"total_returned":  seen,
-			"total_remaining": remaining,
-			"unique_repos":    len(repos),
-			"last_stars":      stars,
-			"query":           q,
-		}).Debug("Finished iterating through results")
+		re.logger.With(
+			zap.Int("total_available", total),
+			zap.Int("total_returned", seen),
+			zap.Int("total_remaining", remaining),
+			zap.Int("unique_repos", len(repos)),
+			zap.Int("last_stars", stars),
+			zap.String("query", q),
+		).Debug("Finished iterating through results")
 		newMaxStars := stars + overlap
 		switch {
 		case remaining <= 0:
@@ -162,13 +162,13 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars, overlap int, emitte
 		default:
 			// the gap between "stars" and "maxStars" is less than "overlap", so we can't
 			// safely step any lower without skipping stars.
-			re.logger.WithFields(log.Fields{
-				"error":     ErrorUnableToListAllResult,
-				"min_stars": minStars,
-				"stars":     stars,
-				"max_stars": maxStars,
-				"overlap":   overlap,
-			}).Error("Too many repositories for current range")
+			re.logger.With(
+				zap.Error(ErrorUnableToListAllResult),
+				zap.Int("min_stars", minStars),
+				zap.Int("stars", stars),
+				zap.Int("max_stars", maxStars),
+				zap.Int("overlap", overlap),
+			).Error("Too many repositories for current range")
 			return ErrorUnableToListAllResult
 		}
 	}
