@@ -37,7 +37,7 @@ spec:
             - name: CRITICALITY_SCORE_OUTFILE_FORCE
               value: "1"
             - name: CRITICALITY_SCORE_STARS_MIN
-              value: "100"
+              value: "50"
             - name: CRITICALITY_SCORE_START_DATE
               value: "2021-01-01"
             - name: CRITICALITY_SCORE_END_DATE
