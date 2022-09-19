@@ -8,6 +8,7 @@ import (
 )
 
 func TestTypeString(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		name       string
 		writerType repowriter.WriterType
@@ -28,6 +29,7 @@ func TestTypeString(t *testing.T) {
 }
 
 func TestTypeMarshalText(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		name       string
 		writerType repowriter.WriterType
@@ -57,6 +59,7 @@ func TestTypeMarshalText(t *testing.T) {
 }
 
 func TestTypeUnmarshalText(t *testing.T) {
+	//nolint:govet
 	tests := []struct {
 		input string
 		want  repowriter.WriterType

@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
 )
 
