@@ -33,6 +33,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
+	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
 	"github.com/ossf/criticality_score/internal/envflag"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
@@ -62,11 +63,13 @@ var (
 	endDateFlag         = dateFlag(time.Now().UTC().Truncate(oneDay))
 	logLevel            = defaultLogLevel
 	logEnv              log.Env
+	format              repowriter.WriterType
 
 	// Maps environment variables to the flags they correspond to.
 	envFlagMap = envflag.Map{
 		"CRITICALITY_SCORE_LOG_ENV":            "log-env",
 		"CRITICALITY_SCORE_LOG_LEVEL":          "log",
+		"CRITICALITY_SCORE_FORMAT":             "format",
 		"CRITICALITY_SCORE_WORKERS":            "workers",
 		"CRITICALITY_SCORE_START_DATE":         "start",
 		"CRITICALITY_SCORE_END_DATE":           "end",
@@ -103,6 +106,7 @@ func init() {
 	flag.Var(&startDateFlag, "start", "the start `date` to enumerate back to. Must be at or after 2008-01-01.")
 	flag.Var(&endDateFlag, "end", "the end `date` to enumerate from.")
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &format, "format", repowriter.WriterTypeText, "set output file `format`.")
 	textvarflag.TextVar(flag.CommandLine, &logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
 	flag.Usage = func() {
@@ -205,6 +209,7 @@ func main() {
 		os.Exit(2)
 	}
 	defer out.Close()
+	w := format.New(out)
 
 	logger.With(
 		zap.String("start", startDateFlag.String()),
@@ -241,7 +246,7 @@ func main() {
 	totalRepos := 0
 	go func() {
 		for repo := range results {
-			fmt.Fprintln(out, repo)
+			w.Write(repo)
 			totalRepos++
 		}
 		done <- true
