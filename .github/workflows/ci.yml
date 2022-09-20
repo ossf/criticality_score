@@ -22,6 +22,6 @@ jobs:
     - name: Run linter
       uses: github/super-linter@01d3218744765b55c3b5ffbb27e50961e50c33c5
       env:
-        VALIDATE_ALL_CODEBASE: false
+        VALIDATE_ALL_CODEBASE: true
         DEFAULT_BRANCH: main
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
