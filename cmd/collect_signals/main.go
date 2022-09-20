@@ -26,9 +26,11 @@ import (
 	"path"
 	"strings"
 
+	"github.com/go-logr/zapr"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/depsdev"
@@ -37,23 +39,26 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/githubapi"
+	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
 )
 
-const defaultLogLevel = log.InfoLevel
+const defaultLogLevel = zapcore.InfoLevel
 
 var (
 	gcpProjectFlag     = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
 	depsdevDisableFlag = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
 	depsdevDatasetFlag = flag.String("depsdev-dataset", depsdev.DefaultDatasetName, "the BigQuery dataset name to use.")
 	workersFlag        = flag.Int("workers", 1, "the total number of concurrent workers to use.")
-	logLevel           log.Level
+	logLevel           = defaultLogLevel
+	logEnv             log.Env
 )
 
 func init() {
-	textvarflag.TextVar(flag.CommandLine, &logLevel, "log", defaultLogLevel, "set the `level` of logging.")
+	flag.Var(&logLevel, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -67,17 +72,15 @@ func init() {
 	}
 }
 
-func handleRepo(ctx context.Context, logger *log.Entry, u *url.URL, out result.Writer) {
+func handleRepo(ctx context.Context, logger *zap.Logger, u *url.URL, out result.Writer) {
 	r, err := projectrepo.Resolve(ctx, u)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Warning("Failed to create project")
+		logger.With(zap.Error(err)).Warn("Failed to create project")
 		// TODO: we should have an error that indicates that the URL/Project
 		// should be skipped/ignored.
 		return // TODO: add a flag to continue or abort on failure
 	}
-	logger = logger.WithField("canonical_url", r.URL().String())
+	logger = logger.With(zap.String("canonical_url", r.URL().String()))
 
 	// TODO: p.URL() should be checked to see if it has already been processed.
 
@@ -85,25 +88,25 @@ func handleRepo(ctx context.Context, logger *log.Entry, u *url.URL, out result.W
 	logger.Info("Collecting")
 	ss, err := collector.Collect(ctx, r)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to collect signals for project")
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to collect signals for project")
 		os.Exit(1) // TODO: add a flag to continue or abort on failure
 	}
 
 	rec := out.Record()
 	for _, s := range ss {
 		if err := rec.WriteSignalSet(s); err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to write signal set")
+			logger.With(
+				zap.Error(err),
+			).Error("Failed to write signal set")
 			os.Exit(1) // TODO: add a flag to continue or abort on failure
 		}
 	}
 	if err := rec.Done(); err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to complete record")
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to complete record")
 		os.Exit(1) // TODO: add a flag to continue or abort on failure
 	}
 }
@@ -111,11 +114,15 @@ func handleRepo(ctx context.Context, logger *log.Entry, u *url.URL, out result.W
 func main() {
 	flag.Parse()
 
-	logger := log.New()
-	logger.SetLevel(logLevel)
+	logger, err := log.NewLogger(logEnv, logLevel)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
 
 	// roundtripper requires us to use the scorecard logger.
-	scLogger := sclog.NewLogrusLogger(logger)
+	innerLogger := zapr.NewLogger(logger)
+	scLogger := &sclog.Logger{Logger: &innerLogger}
 
 	if flag.NArg() < 2 {
 		logger.Error("Must have at least one input file and an output file specified.")
@@ -134,15 +141,15 @@ func main() {
 			readers = append(readers, os.Stdin)
 			continue
 		}
-		logger.WithFields(log.Fields{
-			"filename": inFilename,
-		}).Debug("Reading from file")
+		logger.With(
+			zap.String("filename", inFilename),
+		).Debug("Reading from file")
 		f, err := os.Open(inFilename)
 		if err != nil {
-			logger.WithFields(log.Fields{
-				"error":    err,
-				"filename": inFilename,
-			}).Error("Failed to open an input file")
+			logger.With(
+				zap.String("filename", inFilename),
+				zap.Error(err),
+			).Error("Failed to open an input file")
 			os.Exit(2)
 		}
 		defer f.Close()
@@ -154,10 +161,10 @@ func main() {
 	outFilename := flag.Args()[lastArg]
 	w, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error":    err,
-			"filename": outFilename,
-		}).Error("Failed to open file for output")
+		logger.With(
+			zap.String("filename", outFilename),
+			zap.Error(err),
+		).Error("Failed to open file for output")
 		os.Exit(2)
 	}
 	defer w.Close()
@@ -188,9 +195,9 @@ func main() {
 	} else {
 		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
 		if err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to create deps.dev collector")
+			logger.With(
+				zap.Error(err),
+			).Error("Failed to create deps.dev collector")
 			os.Exit(2)
 		}
 		logger.Info("deps.dev signal collector enabled")
@@ -203,9 +210,9 @@ func main() {
 	// Start the workers that process a channel of repo urls.
 	repos := make(chan *url.URL)
 	wait := workerpool.WorkerPool(*workersFlag, func(worker int) {
-		innerLogger := logger.WithField("worker", worker)
+		innerLogger := logger.With(zap.Int("worker", worker))
 		for u := range repos {
-			handleRepo(ctx, innerLogger.WithField("url", u.String()), u, out)
+			handleRepo(ctx, innerLogger.With(zap.String("url", u.String())), u, out)
 		}
 	})
 
@@ -216,23 +223,23 @@ func main() {
 
 		u, err := url.Parse(strings.TrimSpace(line))
 		if err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-				"url":   line,
-			}).Error("Failed to parse project url")
+			logger.With(
+				zap.String("url", line),
+				zap.Error(err),
+			).Error("Failed to parse project url")
 			os.Exit(1) // TODO: add a flag to continue or abort on failure
 		}
-		logger.WithFields(log.Fields{
-			"url": u.String(),
-		}).Debug("Parsed project url")
+		logger.With(
+			zap.String("url", u.String()),
+		).Debug("Parsed project url")
 
 		// Send the url to the workers
 		repos <- u
 	}
 	if err := scanner.Err(); err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed while reading input")
+		logger.With(
+			zap.Error(err),
+		).Error("Failed while reading input")
 		os.Exit(2)
 	}
 	// Close the repos channel to indicate that there is no more input.
