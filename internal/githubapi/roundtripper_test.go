@@ -24,8 +24,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ossf/criticality_score/internal/retry"
 	"go.uber.org/zap/zaptest"
+
+	"github.com/ossf/criticality_score/internal/retry"
 )
 
 const (
