@@ -45,23 +45,27 @@ import (
 	"strconv"
 	"strings"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
+	"go.uber.org/zap/zapcore"
 
 	_ "github.com/ossf/criticality_score/cmd/scorer/algorithm/wam"
+	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/textvarflag"
 )
 
-const defaultLogLevel = log.InfoLevel
+const defaultLogLevel = zapcore.InfoLevel
 
 var (
 	configFlag     = flag.String("config", "", "the filename of the config (required)")
 	columnNameFlag = flag.String("column", "", "the name of the output column")
-	logLevel       log.Level
+	logLevel       = defaultLogLevel
+	logEnv         log.Env
 )
 
 func init() {
-	textvarflag.TextVar(flag.CommandLine, &logLevel, "log", defaultLogLevel, "set the `level` of logging.")
+	flag.Var(&logLevel, "log", "set the `level` of logging.")
+	textvarflag.TextVar(flag.CommandLine, &logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE") // TODO: add the ability to disable "append"
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -117,8 +121,11 @@ func makeRecord(header, row []string) map[string]float64 {
 func main() {
 	flag.Parse()
 
-	logger := log.New()
-	logger.SetLevel(logLevel)
+	logger, err := log.NewLogger(logEnv, logLevel)
+	if err != nil {
+		panic(err)
+	}
+	defer logger.Sync()
 
 	if flag.NArg() != 2 {
 		logger.Error("Must have an input file and an output file specified")
@@ -133,15 +140,15 @@ func main() {
 		logger.Info("Reading from stdin")
 		r = csv.NewReader(os.Stdin)
 	} else {
-		logger.WithFields(log.Fields{
-			"filename": inFilename,
-		}).Debug("Reading from file")
+		logger.With(
+			zap.String("filename", inFilename),
+		).Debug("Reading from file")
 		f, err := os.Open(inFilename)
 		if err != nil {
-			logger.WithFields(log.Fields{
-				"error":    err,
-				"filename": inFilename,
-			}).Error("Failed to open input file")
+			logger.With(
+				zap.Error(err),
+				zap.String("filename", inFilename),
+			).Error("Failed to open input file")
 			os.Exit(2)
 		}
 		defer f.Close()
@@ -151,10 +158,10 @@ func main() {
 	// Open the out-file for writing
 	f, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error":    err,
-			"filename": outFilename,
-		}).Error("Failed to open file for output")
+		logger.With(
+			zap.Error(err),
+			zap.String("filename", outFilename),
+		).Error("Failed to open file for output")
 		os.Exit(2)
 	}
 	defer f.Close()
@@ -169,49 +176,49 @@ func main() {
 
 	cf, err := os.Open(*configFlag)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error":    err,
-			"filename": configFlag,
-		}).Error("Failed to open config file")
+		logger.With(
+			zap.Error(err),
+			zap.String("filename", *configFlag),
+		).Error("Failed to open config file")
 		os.Exit(2)
 	}
 	c, err := LoadConfig(cf)
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error":    err,
-			"filename": configFlag,
-		}).Error("Failed to parse config file")
+		logger.With(
+			zap.Error(err),
+			zap.String("filename", *configFlag),
+		).Error("Failed to parse config file")
 		os.Exit(2)
 	}
 	a, err := c.Algorithm()
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error":     err,
-			"algorithm": c.Name,
-		}).Error("Failed to get the algorithm")
+		logger.With(
+			zap.Error(err),
+			zap.String("algorithm", c.Name),
+		).Error("Failed to get the algorithm")
 		os.Exit(2)
 	}
 
 	inHeader, err := r.Read()
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to read CSV header row")
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to read CSV header row")
 		os.Exit(2)
 	}
 
 	// Generate and output the CSV header row
 	outHeader, err := makeOutHeader(inHeader, generateColumnName())
 	if err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to generate output header row")
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to generate output header row")
 		os.Exit(2)
 	}
 	if err := w.Write(outHeader); err != nil {
-		logger.WithFields(log.Fields{
-			"error": err,
-		}).Error("Failed to write CSV header row")
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to write CSV header row")
 		os.Exit(2)
 	}
 
@@ -222,9 +229,9 @@ func main() {
 			break
 		}
 		if err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to read CSV row")
+			logger.With(
+				zap.Error(err),
+			).Error("Failed to read CSV row")
 			os.Exit(2)
 		}
 		record := makeRecord(inHeader, row)
@@ -237,9 +244,9 @@ func main() {
 	t := pq.Len()
 	for i := 0; i < t; i++ {
 		if err := w.Write(pq.PopRow()); err != nil {
-			logger.WithFields(log.Fields{
-				"error": err,
-			}).Error("Failed to write CSV header row")
+			logger.With(
+				zap.Error(err),
+			).Error("Failed to write CSV header row")
 			os.Exit(2)
 		}
 	}

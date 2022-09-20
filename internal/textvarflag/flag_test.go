@@ -19,8 +19,6 @@ import (
 	"net"
 	"testing"
 
-	"github.com/sirupsen/logrus"
-
 	"github.com/ossf/criticality_score/internal/textvarflag"
 )
 
@@ -48,7 +46,7 @@ func TestFlagSet(t *testing.T) {
 		t.Fatalf("Parse() == %v, want nil", err)
 	}
 	if expect := net.IPv4(127, 0, 0, 1); !expect.Equal(ip) {
-		t.Fatalf("ip == %v, want %v", ip, logrus.FatalLevel)
+		t.Fatalf("ip == %v, want %v", ip, expect)
 	}
 }
 
