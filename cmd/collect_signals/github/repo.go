@@ -19,7 +19,7 @@ import (
 	"net/url"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/github/legacy"
 	"github.com/ossf/criticality_score/internal/githubapi"
@@ -29,7 +29,7 @@ import (
 type repo struct {
 	client  *githubapi.Client
 	origURL *url.URL
-	logger  *log.Entry
+	logger  *zap.Logger
 
 	BasicData *basicRepoData
 	realURL   *url.URL

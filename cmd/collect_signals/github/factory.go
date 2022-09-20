@@ -18,7 +18,7 @@ import (
 	"context"
 	"net/url"
 
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/internal/githubapi"
@@ -26,10 +26,10 @@ import (
 
 type factory struct {
 	client *githubapi.Client
-	logger *log.Logger
+	logger *zap.Logger
 }
 
-func NewRepoFactory(client *githubapi.Client, logger *log.Logger) projectrepo.Factory {
+func NewRepoFactory(client *githubapi.Client, logger *zap.Logger) projectrepo.Factory {
 	return &factory{
 		client: client,
 		logger: logger,
@@ -40,7 +40,7 @@ func (f *factory) New(ctx context.Context, u *url.URL) (projectrepo.Repo, error)
 	p := &repo{
 		client:  f.client,
 		origURL: u,
-		logger:  f.logger.WithField("url", u),
+		logger:  f.logger.With(zap.String("url", u.String())),
 	}
 	if err := p.init(ctx); err != nil {
 		return nil, err

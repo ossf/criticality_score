@@ -24,9 +24,8 @@ import (
 	"testing"
 	"time"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/ossf/criticality_score/internal/retry"
+	"go.uber.org/zap/zaptest"
 )
 
 const (
@@ -34,10 +33,9 @@ const (
 	testSecondaryRateLimitDocURL = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#secondary-rate-limits"
 )
 
-func newTestStrategies() *strategies {
-	logger := log.New()
-	logger.Out = io.Discard
-	return &strategies{logger: logger}
+func newTestStrategies(t *testing.T) *strategies {
+	t.Helper()
+	return &strategies{logger: zaptest.NewLogger(t)}
 }
 
 type readerFn func(p []byte) (n int, err error)
@@ -49,27 +47,27 @@ func (r readerFn) Read(p []byte) (n int, err error) {
 
 func TestRetryAfter(t *testing.T) {
 	r := &http.Response{Header: http.Header{http.CanonicalHeaderKey("Retry-After"): {"123"}}}
-	if d := newTestStrategies().RetryAfter(r); d != 123*time.Second {
+	if d := newTestStrategies(t).RetryAfter(r); d != 123*time.Second {
 		t.Fatalf("RetryAfter() == %d, want %v", d, 123*time.Second)
 	}
 }
 
 func TestRetryAfter_NoHeader(t *testing.T) {
-	if d := newTestStrategies().RetryAfter(&http.Response{}); d != 0 {
+	if d := newTestStrategies(t).RetryAfter(&http.Response{}); d != 0 {
 		t.Fatalf("RetryAfter() == %d, want 0", d)
 	}
 }
 
 func TestRetryAfter_InvalidTime(t *testing.T) {
 	r := &http.Response{Header: http.Header{http.CanonicalHeaderKey("Retry-After"): {"junk"}}}
-	if d := newTestStrategies().RetryAfter(r); d != 0 {
+	if d := newTestStrategies(t).RetryAfter(r); d != 0 {
 		t.Fatalf("RetryAfter() == %d, want 0", d)
 	}
 }
 
 func TestRetryAfter_ZeroTime(t *testing.T) {
 	r := &http.Response{Header: http.Header{http.CanonicalHeaderKey("Retry-After"): {"0"}}}
-	if d := newTestStrategies().RetryAfter(r); d != 0 {
+	if d := newTestStrategies(t).RetryAfter(r); d != 0 {
 		t.Fatalf("RetryAfter() == %d, want 0", d)
 	}
 }
@@ -80,7 +78,7 @@ func TestServerError(t *testing.T) {
 		Request:    &http.Request{URL: u},
 		StatusCode: http.StatusInternalServerError,
 	}
-	s, err := newTestStrategies().ServerError(r)
+	s, err := newTestStrategies(t).ServerError(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -95,7 +93,7 @@ func TestServerError_IssueComments(t *testing.T) {
 		Request:    &http.Request{URL: u},
 		StatusCode: http.StatusInternalServerError,
 	}
-	s, err := newTestStrategies().ServerError(r)
+	s, err := newTestStrategies(t).ServerError(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -130,7 +128,7 @@ func TestServerError_StatusCodes(t *testing.T) {
 				Request:    &http.Request{URL: u},
 				StatusCode: test.statusCode,
 			}
-			s, _ := newTestStrategies().ServerError(r)
+			s, _ := newTestStrategies(t).ServerError(r)
 			if s != test.strategy {
 				t.Fatalf("ServerError() == %v, want %v", s, test.strategy)
 			}
@@ -144,7 +142,7 @@ func TestServerError400(t *testing.T) {
 		StatusCode: http.StatusBadRequest,
 		Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
 	}
-	s, err := newTestStrategies().ServerError400(r)
+	s, err := newTestStrategies(t).ServerError400(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -159,7 +157,7 @@ func TestServerError400_NoMatchingString(t *testing.T) {
 		StatusCode: http.StatusBadRequest,
 		Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>Web Page</body></html`))),
 	}
-	s, err := newTestStrategies().ServerError400(r)
+	s, err := newTestStrategies(t).ServerError400(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -177,7 +175,7 @@ func TestServerError400_BodyError(t *testing.T) {
 			return 0, want
 		})),
 	}
-	_, err := newTestStrategies().ServerError400(r)
+	_, err := newTestStrategies(t).ServerError400(r)
 	if err == nil {
 		t.Fatalf("ServerError() returned no error, want %v", want)
 	}
@@ -192,7 +190,7 @@ func TestServerError400_NotHTML(t *testing.T) {
 		StatusCode: http.StatusBadRequest,
 		Body:       io.NopCloser(bytes.NewBuffer([]byte(`text doc`))),
 	}
-	s, err := newTestStrategies().ServerError400(r)
+	s, err := newTestStrategies(t).ServerError400(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -227,7 +225,7 @@ func TestServerError400_StatusCodes(t *testing.T) {
 				StatusCode: test.statusCode,
 				Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
 			}
-			s, err := newTestStrategies().ServerError400(r)
+			s, err := newTestStrategies(t).ServerError400(r)
 			if err != nil {
 				t.Fatalf("ServerError() errored %v, want no error", err)
 			}
@@ -244,7 +242,7 @@ func TestSecondaryRateLimit(t *testing.T) {
 		Body: io.NopCloser(bytes.NewBuffer(
 			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
 	}
-	s, err := newTestStrategies().SecondaryRateLimit(r)
+	s, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -259,7 +257,7 @@ func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 		Body: io.NopCloser(bytes.NewBuffer(
 			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocURL)))),
 	}
-	s, err := newTestStrategies().SecondaryRateLimit(r)
+	s, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -273,7 +271,7 @@ func TestSecondaryRateLimit_OtherUrl(t *testing.T) {
 		StatusCode: http.StatusForbidden,
 		Body:       io.NopCloser(bytes.NewBuffer([]byte(`{"message": "test", "documentation_url": "https://example.org/"}`))),
 	}
-	s, err := newTestStrategies().SecondaryRateLimit(r)
+	s, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err != nil {
 		t.Fatalf("ServerError() errored %v, want no error", err)
 	}
@@ -290,7 +288,7 @@ func TestSecondaryRateLimit_BodyError(t *testing.T) {
 			return 0, want
 		})),
 	}
-	_, err := newTestStrategies().SecondaryRateLimit(r)
+	_, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err == nil {
 		t.Fatalf("ServerError() returned no error, want %v", want)
 	}
@@ -326,7 +324,7 @@ func TestSecondaryRateLimit_StatusCodes(t *testing.T) {
 				Body: io.NopCloser(bytes.NewBuffer(
 					[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
 			}
-			s, err := newTestStrategies().SecondaryRateLimit(r)
+			s, err := newTestStrategies(t).SecondaryRateLimit(r)
 			if err != nil {
 				t.Fatalf("ServerError() errored %v, want no error", err)
 			}

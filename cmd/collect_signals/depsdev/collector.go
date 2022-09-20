@@ -20,7 +20,7 @@ import (
 	"strings"
 
 	"cloud.google.com/go/bigquery"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
@@ -41,7 +41,7 @@ func (s *depsDevSet) Namespace() signal.Namespace {
 }
 
 type depsDevCollector struct {
-	logger     *log.Logger
+	logger     *zap.Logger
 	dependents *dependents
 }
 
@@ -60,7 +60,7 @@ func (c *depsDevCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 	if t == "" {
 		return &s, nil
 	}
-	c.logger.WithField("url", r.URL().String()).Debug("Fetching deps.dev dependent count")
+	c.logger.With(zap.String("url", r.URL().String())).Debug("Fetching deps.dev dependent count")
 	deps, found, err := c.dependents.Count(ctx, n, t)
 	if err != nil {
 		return nil, err
@@ -76,7 +76,7 @@ func (c *depsDevCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 // TODO add options to configure the dataset:
 //   - force dataset re-creation (-update-strategy = always,stale,weekly,monthly,never)
 //   - force dataset destruction (-depsdev-destroy-data)
-func NewCollector(ctx context.Context, logger *log.Logger, projectID, datasetName string) (collector.Collector, error) {
+func NewCollector(ctx context.Context, logger *zap.Logger, projectID, datasetName string) (collector.Collector, error) {
 	if projectID == "" {
 		projectID = bigquery.DetectProjectID
 	}

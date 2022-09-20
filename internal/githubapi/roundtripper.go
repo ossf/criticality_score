@@ -25,7 +25,7 @@ import (
 	"time"
 
 	"github.com/google/go-github/v44/github"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/internal/retry"
 )
@@ -39,7 +39,7 @@ var (
 	issueCommentsRe = regexp.MustCompile("^repos/[^/]+/[^/]+/issues/comments$")
 )
 
-func NewRoundTripper(rt http.RoundTripper, logger *log.Logger) http.RoundTripper {
+func NewRoundTripper(rt http.RoundTripper, logger *zap.Logger) http.RoundTripper {
 	s := &strategies{logger: logger}
 	return retry.NewRoundTripper(rt,
 		retry.InitialDelay(2*time.Minute),
@@ -51,7 +51,7 @@ func NewRoundTripper(rt http.RoundTripper, logger *log.Logger) http.RoundTripper
 }
 
 type strategies struct {
-	logger *log.Logger
+	logger *zap.Logger
 }
 
 func respBodyContains(r *http.Response, search string) (bool, error) {
@@ -69,7 +69,7 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 	if r.StatusCode < 500 || 600 <= r.StatusCode {
 		return retry.NoRetry, nil
 	}
-	s.logger.WithField("status", r.Status).Warn("5xx: detected")
+	s.logger.With(zap.String("status", r.Status)).Warn("5xx: detected")
 	path := strings.Trim(r.Request.URL.Path, "/")
 	if issuesRe.MatchString(path) {
 		s.logger.Warn("Ignoring /repos/X/Y/issues url.")
@@ -115,11 +115,10 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	r.Body.Close()
 	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil || data == nil {
-		s.logger.WithFields(
-			log.Fields{
-				"error":    err,
-				"data_nil": (data == nil),
-			}).Warn("ReadAll failed.")
+		s.logger.With(
+			zap.Error(err),
+			zap.Bool("data_nil", data == nil),
+		).Warn("ReadAll failed.")
 		return retry.NoRetry, err
 	}
 	// Don't error check the unmarshall - if there is an error and the parsing
@@ -128,10 +127,10 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	// will cause the response to be processed again by go-github with an error
 	// being generated there.
 	json.Unmarshal(data, errorResponse)
-	s.logger.WithFields(log.Fields{
-		"url":     errorResponse.DocumentationURL,
-		"message": errorResponse.Message,
-	}).Warn("Error response data")
+	s.logger.With(
+		zap.String("url", errorResponse.DocumentationURL),
+		zap.String("message", errorResponse.Message),
+	).Warn("Error response data")
 	if strings.HasSuffix(errorResponse.DocumentationURL, "#abuse-rate-limits") ||
 		strings.HasSuffix(errorResponse.DocumentationURL, "#secondary-rate-limits") {
 		s.logger.Warn("Secondary rate limit hit.")

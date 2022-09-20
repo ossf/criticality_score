@@ -22,7 +22,7 @@ import (
 	"time"
 
 	"cloud.google.com/go/bigquery"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 	_ "google.golang.org/api/bigquery/v2"
 )
 
@@ -66,14 +66,14 @@ FROM ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
 WHERE ProjectName = @projectname AND ProjectType = @projecttype;
 `
 
-func NewDependents(ctx context.Context, client *bigquery.Client, logger *log.Logger, datasetName string) (*dependents, error) {
+func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Logger, datasetName string) (*dependents, error) {
 	b := &bq{client: client}
 	c := &dependents{
 		b: b,
-		logger: logger.WithFields(log.Fields{
-			"project_id": b.Project(),
-			"dataset":    datasetName,
-		}),
+		logger: logger.With(
+			zap.String("project_id", b.Project()),
+			zap.String("dataset", datasetName),
+		),
 		datasetName: datasetName,
 	}
 	var err error
@@ -113,7 +113,7 @@ func NewDependents(ctx context.Context, client *bigquery.Client, logger *log.Log
 
 type dependents struct {
 	b            bqAPI
-	logger       *log.Entry
+	logger       *zap.Logger
 	snapshotTime time.Time
 	countQuery   string
 	datasetName  string
