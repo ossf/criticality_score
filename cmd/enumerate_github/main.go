@@ -37,7 +37,6 @@ import (
 	"github.com/ossf/criticality_score/internal/envflag"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
-	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
 )
 
@@ -106,8 +105,8 @@ func init() {
 	flag.Var(&startDateFlag, "start", "the start `date` to enumerate back to. Must be at or after 2008-01-01.")
 	flag.Var(&endDateFlag, "end", "the end `date` to enumerate from.")
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
-	textvarflag.TextVar(flag.CommandLine, &format, "format", repowriter.WriterTypeText, "set output file `format`.")
-	textvarflag.TextVar(flag.CommandLine, &logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
+	flag.TextVar(&format, "format", repowriter.WriterTypeText, "set output file `format`.")
+	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])

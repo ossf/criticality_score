@@ -41,7 +41,6 @@ import (
 	"github.com/ossf/criticality_score/internal/githubapi"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
-	"github.com/ossf/criticality_score/internal/textvarflag"
 	"github.com/ossf/criticality_score/internal/workerpool"
 )
 
@@ -58,7 +57,7 @@ var (
 
 func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
-	textvarflag.TextVar(flag.CommandLine, &logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
+	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
 	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
