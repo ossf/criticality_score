@@ -17,8 +17,8 @@ kind: CronJob
 metadata:
   name: criticality-score-enumerate-github
 spec:
-  # Initially, run this daily at 23:00UTC for >=100 stars across 2021.
-  schedule: "0 23 * * *"
+  # Run twice weekly, on Sunday and Wednesday, at 23:00UTC for >=20 stars.
+  schedule: "0 23 * * 0,3"
   concurrencyPolicy: "Forbid"
   jobTemplate:
     spec:
@@ -27,7 +27,7 @@ spec:
           containers:
           - name: enumerate-github
             image: gcr.io/openssf/criticality-score-enumerate-github:latest
-            args: ["gs://ossf-criticality-score-url-data/[[runid]]/github.txt"]
+            args: ["gs://ossf-criticality-score-url-data/[[runid]]/github.csv"]
             imagePullPolicy: Always
             env:
             - name: GITHUB_AUTH_SERVER
@@ -37,11 +37,11 @@ spec:
             - name: CRITICALITY_SCORE_OUTFILE_FORCE
               value: "1"
             - name: CRITICALITY_SCORE_STARS_MIN
-              value: "50"
+              value: "20"
             - name: CRITICALITY_SCORE_START_DATE
-              value: "2021-01-01"
-            - name: CRITICALITY_SCORE_END_DATE
-              value: "2022-01-01"
+              value: "2008-01-01"
+            - name: CRITICALITY_SCORE_FORMAT
+              value: "scorecard"
             resources:
               limits:
                 memory: 5Gi
