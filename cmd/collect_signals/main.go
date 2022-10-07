@@ -62,7 +62,7 @@ func init() {
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_FILE... OUT_FILE\n\n", cmdName)
+		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_FILE OUT_FILE\n\n", cmdName)
 		fmt.Fprintf(w, "Collects signals for each project repository listed.\n")
 		fmt.Fprintf(w, "IN_FILE must be either a file or - to read from stdin.\n")
 		fmt.Fprintf(w, "OUT_FILE must be either be a file or - to write to stdout.\n")
@@ -129,17 +129,13 @@ func main() {
 	}
 	lastArg := flag.NArg() - 1
 
-	// Open all the in-files for reading
-	var readers []io.Reader
-	consumingStdin := false
-	for _, inFilename := range flag.Args()[:lastArg] {
-		if inFilename == "-" && !consumingStdin {
-			logger.Info("Reading from stdin")
-			// Only add stdin once.
-			consumingStdin = true
-			readers = append(readers, os.Stdin)
-			continue
-		}
+	// Open the in-file for reading
+	var r io.Reader
+	inFilename := flag.Args()[lastArg-1]
+	if inFilename == "-" {
+		logger.Info("Reading from stdin")
+		r = os.Stdin
+	} else {
 		logger.With(
 			zap.String("filename", inFilename),
 		).Debug("Reading from file")
@@ -152,9 +148,8 @@ func main() {
 			os.Exit(2)
 		}
 		defer f.Close()
-		readers = append(readers, f)
+		r = f
 	}
-	r := io.MultiReader(readers...)
 
 	// Open the out-file for writing
 	outFilename := flag.Args()[lastArg]
