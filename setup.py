@@ -19,14 +19,14 @@ with open('README.md', 'r') as fh:
 
 setuptools.setup(
     name='criticality_score',
-    version='1.0.7',
+    version='1.0.8',
     author='Abhishek Arya',
     author_email='',
     description='Gives criticality score for an open source project',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/ossf/criticality-score',
-    packages=setuptools.find_packages(),
+    packages=setuptools.find_packages(include=["criticality_score"]),
     classifiers=[
         'Programming Language :: Python :: 3',
         'License :: OSI Approved :: Apache Software License',
