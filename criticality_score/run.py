@@ -24,6 +24,7 @@ import sys
 import threading
 import time
 import urllib
+import warnings
 
 import github
 import gitlab
@@ -31,7 +32,18 @@ import requests
 
 from .defaults import *  # pylint: disable=wildcard-import
 
+
 logger = logging.getLogger()
+
+_DEPRECATION_MESSAGE = """
+The python version of criticality-score is deprecated and will
+no longer receive updates.
+
+A Go version exists and is under active development and should be used instead.
+See https://github.com/ossf/criticality_score for more details.
+"""
+warnings.simplefilter("always", DeprecationWarning)
+warnings.warn(_DEPRECATION_MESSAGE, DeprecationWarning)
 
 _CACHED_GITHUB_TOKEN = None
 _CACHED_GITHUB_TOKEN_OBJ = None
