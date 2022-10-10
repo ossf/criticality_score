@@ -30,25 +30,11 @@ import (
 	_ "gocloud.dev/blob/s3blob"
 )
 
-// fileOpener wraps a method for opening files.
-//
-// This allows tests to fake the behavior of os.OpenFile() to avoid hitting
-// the filesystem.
-type fileOpener interface {
-	Open(string, int, os.FileMode) (*os.File, error)
-}
-
-// fileOpenerFunc allows a function to implement the openFileWrapper interface.
-//
-// This is convenient for wrapping os.OpenFile().
-type fileOpenerFunc func(string, int, os.FileMode) (*os.File, error)
-
-func (f fileOpenerFunc) Open(filename string, flags int, perm os.FileMode) (*os.File, error) {
-	return f(filename, flags, perm)
-}
+// fileOpenFunc makes it possible to mock os.OpenFile() for testing.
+type fileOpenFunc func(string, int, os.FileMode) (*os.File, error)
 
 type Opener struct {
-	fileOpener fileOpener
+	fileOpener fileOpenFunc
 	StdoutName string
 	forceFlag  string
 	force      bool
@@ -61,7 +47,7 @@ func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) 
 	o := &Opener{
 		Perm:       0o666,
 		StdoutName: "-",
-		fileOpener: fileOpenerFunc(os.OpenFile),
+		fileOpener: os.OpenFile,
 		forceFlag:  forceFlag,
 	}
 	fs.BoolVar(&(o.force), forceFlag, false, fmt.Sprintf("overwrites %s if it already exists and -%s is not set.", fileHelpName, appendFlag))
@@ -70,7 +56,7 @@ func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) 
 }
 
 func (o *Opener) openFile(filename string, extraFlags int) (io.WriteCloser, error) {
-	return o.fileOpener.Open(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
+	return o.fileOpener(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
 }
 
 func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser, error) {
@@ -133,6 +119,8 @@ func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
 }
 
 // Open is a wrapper around Opener.Open for the default instance of Opener.
+//
+// Must only be called after DefineFlags.
 func Open(ctx context.Context, filename string) (io.WriteCloser, error) {
 	return defaultOpener.Open(ctx, filename)
 }

@@ -41,7 +41,7 @@ func newTestOpener() *testOpener {
 	o.opener = CreateOpener(o.flag, "force", "append", "FILE")
 	o.opener.Perm = 0o567
 	o.opener.StdoutName = "-stdout-"
-	o.opener.fileOpener = fileOpenerFunc(func(filename string, flags int, perm os.FileMode) (*os.File, error) {
+	o.opener.fileOpener = func(filename string, flags int, perm os.FileMode) (*os.File, error) {
 		o.lastOpen = &openCall{
 			filename: filename,
 			flags:    flags,
@@ -52,7 +52,7 @@ func newTestOpener() *testOpener {
 		} else {
 			return &os.File{}, nil
 		}
-	})
+	}
 	return o
 }
 

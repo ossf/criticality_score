@@ -19,7 +19,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -39,6 +38,7 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/workerpool"
@@ -123,36 +123,25 @@ func main() {
 	innerLogger := zapr.NewLogger(logger)
 	scLogger := &sclog.Logger{Logger: &innerLogger}
 
-	if flag.NArg() < 2 {
-		logger.Error("Must have at least one input file and an output file specified.")
+	if flag.NArg() != 2 {
+		logger.Error("Must have one input file and one output file specified.")
 		os.Exit(2)
 	}
-	lastArg := flag.NArg() - 1
+	inFilename := flag.Args()[0]
+	outFilename := flag.Args()[1]
 
 	// Open the in-file for reading
-	var r io.Reader
-	inFilename := flag.Args()[lastArg-1]
-	if inFilename == "-" {
-		logger.Info("Reading from stdin")
-		r = os.Stdin
-	} else {
+	r, err := infile.Open(context.Background(), inFilename)
+	if err != nil {
 		logger.With(
 			zap.String("filename", inFilename),
-		).Debug("Reading from file")
-		f, err := os.Open(inFilename)
-		if err != nil {
-			logger.With(
-				zap.String("filename", inFilename),
-				zap.Error(err),
-			).Error("Failed to open an input file")
-			os.Exit(2)
-		}
-		defer f.Close()
-		r = f
+			zap.Error(err),
+		).Error("Failed to open an input file")
+		os.Exit(2)
 	}
+	defer r.Close()
 
 	// Open the out-file for writing
-	outFilename := flag.Args()[lastArg]
 	w, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
 		logger.With(
