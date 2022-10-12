@@ -110,6 +110,26 @@ func handleRepo(ctx context.Context, logger *zap.Logger, u *url.URL, out result.
 	}
 }
 
+func initCollectors(ctx context.Context, logger *zap.Logger, ghClient *githubapi.Client) error {
+	collector.Register(&github.RepoCollector{})
+	collector.Register(&github.IssuesCollector{})
+	collector.Register(githubmentions.NewCollector(ghClient))
+
+	if *depsdevDisableFlag {
+		// deps.dev collection has been disabled, so skip it.
+		logger.Warn("deps.dev signal collection is disabled.")
+	} else {
+		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
+		if err != nil {
+			return fmt.Errorf("init deps.dev collector: %w", err)
+		}
+		logger.Info("deps.dev signal collector enabled")
+		collector.Register(ddcollector)
+	}
+
+	return nil
+}
+
 func main() {
 	flag.Parse()
 
@@ -168,23 +188,12 @@ func main() {
 	projectrepo.Register(github.NewRepoFactory(ghClient, logger))
 
 	// Register all the collectors that are supported.
-	collector.Register(&github.RepoCollector{})
-	collector.Register(&github.IssuesCollector{})
-	collector.Register(githubmentions.NewCollector(ghClient))
-
-	if *depsdevDisableFlag {
-		// deps.dev collection has been disabled, so skip it.
-		logger.Warn("deps.dev signal collection is disabled.")
-	} else {
-		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
-		if err != nil {
-			logger.With(
-				zap.Error(err),
-			).Error("Failed to create deps.dev collector")
-			os.Exit(2)
-		}
-		logger.Info("deps.dev signal collector enabled")
-		collector.Register(ddcollector)
+	err = initCollectors(ctx, logger, ghClient)
+	if err != nil {
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to initalize collectors")
+		os.Exit(2)
 	}
 
 	// Prepare the output writer
