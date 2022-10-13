@@ -169,7 +169,7 @@ func main() {
 	if err != nil {
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to initalize sources")
+		).Error("Failed to initialize sources")
 		os.Exit(2)
 	}
 
