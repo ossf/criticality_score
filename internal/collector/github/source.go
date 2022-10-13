@@ -19,7 +19,7 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/github/legacy"
+	"github.com/ossf/criticality_score/internal/collector/github/legacy"
 	"github.com/ossf/criticality_score/internal/collector/projectrepo"
 	"github.com/ossf/criticality_score/internal/collector/signal"
 )

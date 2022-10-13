@@ -21,7 +21,7 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/github/legacy"
+	"github.com/ossf/criticality_score/internal/collector/github/legacy"
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 
