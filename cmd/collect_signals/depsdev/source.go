@@ -22,7 +22,6 @@ import (
 	"cloud.google.com/go/bigquery"
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
 	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 )
@@ -76,7 +75,7 @@ func (c *depsDevSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set
 // TODO add options to configure the dataset:
 //   - force dataset re-creation (-update-strategy = always,stale,weekly,monthly,never)
 //   - force dataset destruction (-depsdev-destroy-data)
-func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName string) (collector.Source, error) {
+func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName string) (signal.Source, error) {
 	if projectID == "" {
 		projectID = bigquery.DetectProjectID
 	}

@@ -45,7 +45,7 @@ type Source struct {
 	client *githubapi.Client
 }
 
-func NewSource(c *githubapi.Client) *Source {
+func NewSource(c *githubapi.Client) signal.Source {
 	return &Source{
 		client: c,
 	}

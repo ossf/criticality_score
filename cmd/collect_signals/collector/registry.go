@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+// Package collector defines a registry for using signal sources together.
 package collector
 
 import (
@@ -28,7 +29,7 @@ type empty struct{}
 var globalRegistry = NewRegistry()
 
 type Registry struct {
-	ss []Source
+	ss []signal.Source
 }
 
 // NewRegistry creates a new instance of Registry.
@@ -37,7 +38,7 @@ func NewRegistry() *Registry {
 }
 
 // containsSource returns true if c has already been registered.
-func (r *Registry) containsSource(s Source) bool {
+func (r *Registry) containsSource(s signal.Source) bool {
 	for _, regS := range r.ss {
 		if regS == s {
 			return true
@@ -52,7 +53,7 @@ func (r *Registry) containsSource(s Source) bool {
 // Source has already been added.
 //
 // The order which Sources are added is preserved.
-func (r *Registry) Register(s Source) {
+func (r *Registry) Register(s signal.Source) {
 	validateSource(s)
 	if r.containsSource(s) {
 		panic(fmt.Sprintf("source %s has already been registered", s.EmptySet().Namespace()))
@@ -63,11 +64,11 @@ func (r *Registry) Register(s Source) {
 	r.ss = append(r.ss, s)
 }
 
-func (r *Registry) sourcesForRepository(repo projectrepo.Repo) []Source {
+func (r *Registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
 	// Check for duplicates using a map to preserve the insertion order
 	// of the sources.
 	exists := make(map[signal.Namespace]empty)
-	var res []Source
+	var res []signal.Source
 	for _, s := range r.ss {
 		if !s.IsSupported(repo) {
 			continue
@@ -122,7 +123,7 @@ func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal
 // calls to Collect().
 //
 // See Registry.Register().
-func Register(s Source) {
+func Register(s signal.Source) {
 	globalRegistry.Register(s)
 }
 
@@ -142,7 +143,7 @@ func Collect(ctx context.Context, r projectrepo.Repo) ([]signal.Set, error) {
 	return globalRegistry.Collect(ctx, r)
 }
 
-func validateSource(s Source) {
+func validateSource(s signal.Source) {
 	// TODO - ensure a source with the same Namespace as another use
 	// the same signal.Set
 }
