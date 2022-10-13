@@ -20,8 +20,8 @@ import (
 	"time"
 
 	"github.com/ossf/criticality_score/cmd/collect_signals/github/legacy"
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 )
 
 type RepoSource struct{}

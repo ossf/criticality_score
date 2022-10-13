@@ -22,8 +22,8 @@ import (
 	"cloud.google.com/go/bigquery"
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 )
 
 const (

@@ -28,8 +28,8 @@ import (
 
 	"github.com/google/go-github/v47/github"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 

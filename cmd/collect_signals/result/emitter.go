@@ -17,7 +17,7 @@ package result
 import (
 	"errors"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 )
 
 var ErrorMarshalFailure = errors.New("failed to marshal value")
