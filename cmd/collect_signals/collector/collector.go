@@ -12,8 +12,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package collector defines the interface for signal collectors and a registry
-// for using the collectors together.
+// Package collector defines the interface for signal sources and a registry
+// for using the sources together.
 package collector
 
 import (
@@ -23,19 +23,18 @@ import (
 	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
 )
 
-// A Collector is used to collect a set of signals for a given
-// project repository.
-type Collector interface {
+// A Source is used to get a set of signals for a given project repository.
+type Source interface {
 	// EmptySet returns an empty instance of a signal Set that can be used for
-	// determining the namespace and signals supported by the Collector.
+	// determining the namespace and signals supported by the Source.
 	EmptySet() signal.Set
 
-	// IsSupported returns true if the Collector supports the supplied Repo.
+	// IsSupported returns true if the Source supports the supplied Repo.
 	IsSupported(projectrepo.Repo) bool
 
-	// Collect gathers and returns a Set of signals for the given project repo.
+	// Get gathers and returns a Set of signals for the given project repo.
 	//
 	// An error is returned if it is unable to successfully gather the signals,
 	// or if the context is cancelled.
-	Collect(context.Context, projectrepo.Repo) (signal.Set, error)
+	Get(context.Context, projectrepo.Repo) (signal.Set, error)
 }

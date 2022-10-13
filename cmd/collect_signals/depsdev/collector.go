@@ -40,21 +40,21 @@ func (s *depsDevSet) Namespace() signal.Namespace {
 	return signal.Namespace("depsdev")
 }
 
-type depsDevCollector struct {
+type depsDevSource struct {
 	logger     *zap.Logger
 	dependents *dependents
 }
 
-func (c *depsDevCollector) EmptySet() signal.Set {
+func (c *depsDevSource) EmptySet() signal.Set {
 	return &depsDevSet{}
 }
 
-func (c *depsDevCollector) IsSupported(r projectrepo.Repo) bool {
+func (c *depsDevSource) IsSupported(r projectrepo.Repo) bool {
 	_, t := parseRepoURL(r.URL())
 	return t != ""
 }
 
-func (c *depsDevCollector) Collect(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (c *depsDevSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
 	var s depsDevSet
 	n, t := parseRepoURL(r.URL())
 	if t == "" {
@@ -71,12 +71,12 @@ func (c *depsDevCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 	return &s, nil
 }
 
-// NewCollector creates a new Collector for gathering data from deps.dev.
+// NewSource creates a new Source for gathering data from deps.dev.
 //
 // TODO add options to configure the dataset:
 //   - force dataset re-creation (-update-strategy = always,stale,weekly,monthly,never)
 //   - force dataset destruction (-depsdev-destroy-data)
-func NewCollector(ctx context.Context, logger *zap.Logger, projectID, datasetName string) (collector.Collector, error) {
+func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName string) (collector.Source, error) {
 	if projectID == "" {
 		projectID = bigquery.DetectProjectID
 	}
@@ -92,7 +92,7 @@ func NewCollector(ctx context.Context, logger *zap.Logger, projectID, datasetNam
 		return nil, err
 	}
 
-	return &depsDevCollector{
+	return &depsDevSource{
 		logger:     logger,
 		dependents: dependents,
 	}, nil

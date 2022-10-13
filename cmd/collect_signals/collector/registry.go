@@ -28,7 +28,7 @@ type empty struct{}
 var globalRegistry = NewRegistry()
 
 type Registry struct {
-	cs []Collector
+	ss []Source
 }
 
 // NewRegistry creates a new instance of Registry.
@@ -36,66 +36,65 @@ func NewRegistry() *Registry {
 	return &Registry{}
 }
 
-// containsCollector returns true if c has already been registered.
-func (r *Registry) containsCollector(c Collector) bool {
-	for _, regC := range r.cs {
-		if regC == c {
+// containsSource returns true if c has already been registered.
+func (r *Registry) containsSource(s Source) bool {
+	for _, regS := range r.ss {
+		if regS == s {
 			return true
 		}
 	}
 	return false
 }
 
-// Register adds the Collector c to the registry to be used when Collect is
-// called.
+// Register adds the Source s to the registry to be used when Collect is called.
 //
-// This method may panic if the Collector's signal Set is not valid, or if the
-// Collector has already been added.
+// This method may panic if the Source's signal Set is not valid, or if the
+// Source has already been added.
 //
-// The order which Collectors are added is preserved.
-func (r *Registry) Register(c Collector) {
-	validateCollector(c)
-	if r.containsCollector(c) {
-		panic(fmt.Sprintf("collector %s has already been registered", c.EmptySet().Namespace()))
+// The order which Sources are added is preserved.
+func (r *Registry) Register(s Source) {
+	validateSource(s)
+	if r.containsSource(s) {
+		panic(fmt.Sprintf("source %s has already been registered", s.EmptySet().Namespace()))
 	}
-	if err := signal.ValidateSet(c.EmptySet()); err != nil {
+	if err := signal.ValidateSet(s.EmptySet()); err != nil {
 		panic(err)
 	}
-	r.cs = append(r.cs, c)
+	r.ss = append(r.ss, s)
 }
 
-func (r *Registry) collectorsForRepository(repo projectrepo.Repo) []Collector {
+func (r *Registry) sourcesForRepository(repo projectrepo.Repo) []Source {
 	// Check for duplicates using a map to preserve the insertion order
-	// of the collectors.
+	// of the sources.
 	exists := make(map[signal.Namespace]empty)
-	var res []Collector
-	for _, c := range r.cs {
-		if !c.IsSupported(repo) {
+	var res []Source
+	for _, s := range r.ss {
+		if !s.IsSupported(repo) {
 			continue
 		}
-		if _, ok := exists[c.EmptySet().Namespace()]; ok {
-			// This key'd collector already exists for this repo.
+		if _, ok := exists[s.EmptySet().Namespace()]; ok {
+			// This key'd source already exists for this repo.
 			panic("")
 		}
 		// Record that we have seen this key
-		exists[c.EmptySet().Namespace()] = empty{}
-		res = append(res, c)
+		exists[s.EmptySet().Namespace()] = empty{}
+		res = append(res, s)
 	}
 	return res
 }
 
 // EmptySets returns all the empty signal Sets for all the registered
-// Collectors.
+// Sources.
 //
 // This result can be used to determine all the signals that are defined.
 //
 // The order of each empty Set is the same as the order of registration. If two
-// Collectors return a Set with the same Namespace, only the first Set will be
+// Sources return a Set with the same Namespace, only the first Set will be
 // included.
 func (r *Registry) EmptySets() []signal.Set {
 	exists := make(map[signal.Namespace]empty)
 	var ss []signal.Set
-	for _, c := range r.cs {
+	for _, c := range r.ss {
 		// skip existing namespaces
 		if _, ok := exists[c.EmptySet().Namespace()]; ok {
 			continue
@@ -107,10 +106,10 @@ func (r *Registry) EmptySets() []signal.Set {
 
 // Collect will collect all the signals for the given repo.
 func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal.Set, error) {
-	cs := r.collectorsForRepository(repo)
+	cs := r.sourcesForRepository(repo)
 	var ss []signal.Set
 	for _, c := range cs {
-		s, err := c.Collect(ctx, repo)
+		s, err := c.Get(ctx, repo)
 		if err != nil {
 			return nil, err
 		}
@@ -119,15 +118,15 @@ func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal
 	return ss, nil
 }
 
-// Register registers the collector with the global registry for use during
+// Register registers the source with the global registry for use during
 // calls to Collect().
 //
 // See Registry.Register().
-func Register(c Collector) {
-	globalRegistry.Register(c)
+func Register(s Source) {
+	globalRegistry.Register(s)
 }
 
-// EmptySet returns all the empty signal Sets for all the Collectors registered
+// EmptySet returns all the empty signal Sets for all the Sources registered
 // with the global registry.
 //
 // See Registry.EmptySets().
@@ -135,7 +134,7 @@ func EmptySets() []signal.Set {
 	return globalRegistry.EmptySets()
 }
 
-// Collect collects all the signals for the given repo using the Collectors
+// Collect collects all the signals for the given repo using the Sources
 // registered with the global registry.
 //
 // See Registry.Collect().
@@ -143,7 +142,7 @@ func Collect(ctx context.Context, r projectrepo.Repo) ([]signal.Set, error) {
 	return globalRegistry.Collect(ctx, r)
 }
 
-func validateCollector(c Collector) {
-	// TODO - ensure a collector with the same Namespace as another use
+func validateSource(s Source) {
+	// TODO - ensure a source with the same Namespace as another use
 	// the same signal.Set
 }

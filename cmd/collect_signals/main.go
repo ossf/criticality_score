@@ -110,21 +110,21 @@ func handleRepo(ctx context.Context, logger *zap.Logger, u *url.URL, out result.
 	}
 }
 
-func initCollectors(ctx context.Context, logger *zap.Logger, ghClient *githubapi.Client) error {
-	collector.Register(&github.RepoCollector{})
-	collector.Register(&github.IssuesCollector{})
-	collector.Register(githubmentions.NewCollector(ghClient))
+func initSources(ctx context.Context, logger *zap.Logger, ghClient *githubapi.Client) error {
+	collector.Register(&github.RepoSource{})
+	collector.Register(&github.IssuesSource{})
+	collector.Register(githubmentions.NewSource(ghClient))
 
 	if *depsdevDisableFlag {
-		// deps.dev collection has been disabled, so skip it.
-		logger.Warn("deps.dev signal collection is disabled.")
+		// deps.dev collection source has been disabled, so skip it.
+		logger.Warn("deps.dev signal source is disabled.")
 	} else {
-		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
+		ddsource, err := depsdev.NewSource(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
 		if err != nil {
-			return fmt.Errorf("init deps.dev collector: %w", err)
+			return fmt.Errorf("init deps.dev source: %w", err)
 		}
-		logger.Info("deps.dev signal collector enabled")
-		collector.Register(ddcollector)
+		logger.Info("deps.dev signal source enabled")
+		collector.Register(ddsource)
 	}
 
 	return nil
@@ -164,12 +164,12 @@ func main() {
 	// Register all the Repo factories.
 	projectrepo.Register(github.NewRepoFactory(ghClient, logger))
 
-	// Register all the collectors that are supported.
-	err = initCollectors(ctx, logger, ghClient)
+	// Register all the sources that are supported.
+	err = initSources(ctx, logger, ghClient)
 	if err != nil {
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to initalize collectors")
+		).Error("Failed to initalize sources")
 		os.Exit(2)
 	}
 
