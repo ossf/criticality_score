@@ -143,34 +143,11 @@ func main() {
 	innerLogger := zapr.NewLogger(logger)
 	scLogger := &sclog.Logger{Logger: &innerLogger}
 
+	// Complete the validation of args
 	if flag.NArg() != 2 {
 		logger.Error("Must have one input file and one output file specified.")
 		os.Exit(2)
 	}
-	inFilename := flag.Args()[0]
-	outFilename := flag.Args()[1]
-
-	// Open the in-file for reading
-	r, err := infile.Open(context.Background(), inFilename)
-	if err != nil {
-		logger.With(
-			zap.String("filename", inFilename),
-			zap.Error(err),
-		).Error("Failed to open an input file")
-		os.Exit(2)
-	}
-	defer r.Close()
-
-	// Open the out-file for writing
-	w, err := outfile.Open(context.Background(), outFilename)
-	if err != nil {
-		logger.With(
-			zap.String("filename", outFilename),
-			zap.Error(err),
-		).Error("Failed to open file for output")
-		os.Exit(2)
-	}
-	defer w.Close()
 
 	ctx := context.Background()
 
@@ -195,6 +172,31 @@ func main() {
 		).Error("Failed to initalize collectors")
 		os.Exit(2)
 	}
+
+	inFilename := flag.Args()[0]
+	outFilename := flag.Args()[1]
+
+	// Open the in-file for reading
+	r, err := infile.Open(context.Background(), inFilename)
+	if err != nil {
+		logger.With(
+			zap.String("filename", inFilename),
+			zap.Error(err),
+		).Error("Failed to open an input file")
+		os.Exit(2)
+	}
+	defer r.Close()
+
+	// Open the out-file for writing
+	w, err := outfile.Open(context.Background(), outFilename)
+	if err != nil {
+		logger.With(
+			zap.String("filename", outFilename),
+			zap.Error(err),
+		).Error("Failed to open file for output")
+		os.Exit(2)
+	}
+	defer w.Close()
 
 	// Prepare the output writer
 	out := result.NewCsvWriter(w, collector.EmptySets())
