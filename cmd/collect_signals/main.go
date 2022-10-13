@@ -31,10 +31,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/depsdev"
 	"github.com/ossf/criticality_score/cmd/collect_signals/github"
 	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/collector"
+	"github.com/ossf/criticality_score/internal/collector/depsdev"
 	"github.com/ossf/criticality_score/internal/collector/githubmentions"
 	"github.com/ossf/criticality_score/internal/collector/projectrepo"
 	"github.com/ossf/criticality_score/internal/githubapi"
