@@ -16,6 +16,8 @@ package github
 
 import (
 	"context"
+	"errors"
+	"fmt"
 	"net/url"
 
 	"go.uber.org/zap"
@@ -37,15 +39,19 @@ func NewRepoFactory(client *githubapi.Client, logger *zap.Logger) projectrepo.Fa
 }
 
 func (f *factory) New(ctx context.Context, u *url.URL) (projectrepo.Repo, error) {
-	p := &repo{
+	r := &repo{
 		client:  f.client,
 		origURL: u,
 		logger:  f.logger.With(zap.String("url", u.String())),
 	}
-	if err := p.init(ctx); err != nil {
-		return nil, err
+	if err := r.init(ctx); err != nil {
+		if errors.Is(err, githubapi.ErrGraphQLNotFound) {
+			return nil, fmt.Errorf("%w: %s", projectrepo.ErrNoRepoFound, u)
+		} else {
+			return nil, err
+		}
 	}
-	return p, nil
+	return r, nil
 }
 
 func (f *factory) Match(u *url.URL) bool {

@@ -21,24 +21,30 @@ import (
 	"github.com/shurcooL/githubv4"
 )
 
+// Client provides simple access to GitHub's REST and GraphQL APIs.
 type Client struct {
 	restClient  *github.Client
 	graphClient *githubv4.Client
 }
 
+// NewClient creates a new instances of Client.
 func NewClient(client *http.Client) *Client {
-	c := &Client{
-		restClient:  github.NewClient(client),
-		graphClient: githubv4.NewClient(client),
-	}
+	// Wrap the Transport for the GraphQL client to produce more useful errors.
+	graphClient := *client // deref to copy the struct
+	graphClient.Transport = &graphQLRoundTripper{inner: client.Transport}
 
-	return c
+	return &Client{
+		restClient:  github.NewClient(client),
+		graphClient: githubv4.NewClient(&graphClient),
+	}
 }
 
+// Rest returns a client for communicating with GitHub's REST API.
 func (c *Client) Rest() *github.Client {
 	return c.restClient
 }
 
+// GraphQL returns a client for communicating with GitHub's GraphQL API.
 func (c *Client) GraphQL() *githubv4.Client {
 	return c.graphClient
 }
