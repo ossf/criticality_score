@@ -79,19 +79,10 @@ func handleRepo(ctx context.Context, logger *zap.Logger, c *collector.Collector,
 		os.Exit(1) // TODO: pass up the error
 	}
 
-	rec := out.Record()
-	for _, s := range ss {
-		if err := rec.WriteSignalSet(s); err != nil {
-			logger.With(
-				zap.Error(err),
-			).Error("Failed to write signal set")
-			os.Exit(1) // TODO: pass up the error
-		}
-	}
-	if err := rec.Done(); err != nil {
+	if err := out.WriteSignals(ss); err != nil {
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to complete record")
+		).Error("Failed to write signal set")
 		os.Exit(1) // TODO: pass up the error
 	}
 }
