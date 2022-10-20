@@ -29,11 +29,11 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/collector"
 	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/signalio"
 	"github.com/ossf/criticality_score/internal/workerpool"
 )
 
@@ -64,7 +64,7 @@ func init() {
 	}
 }
 
-func handleRepo(ctx context.Context, logger *zap.Logger, c *collector.Collector, u *url.URL, out result.Writer) {
+func handleRepo(ctx context.Context, logger *zap.Logger, c *collector.Collector, u *url.URL, out signalio.Writer) {
 	ss, err := c.Collect(ctx, u)
 	if err != nil {
 		if errors.Is(err, collector.ErrUncollectableRepo) {
@@ -150,7 +150,7 @@ func main() {
 	}
 
 	// Prepare the output writer
-	out := result.NewCsvWriter(w, c.EmptySets())
+	out := signalio.CsvWriter(w, c.EmptySets())
 
 	// Start the workers that process a channel of repo urls.
 	repos := make(chan *url.URL)

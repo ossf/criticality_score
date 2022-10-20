@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package result
+package signalio
 
 import (
 	"encoding/csv"
@@ -44,7 +44,7 @@ func headerFromSignalSets(sets []signal.Set) []string {
 	return hs
 }
 
-func NewCsvWriter(w io.Writer, emptySets []signal.Set) Writer {
+func CsvWriter(w io.Writer, emptySets []signal.Set) Writer {
 	return &csvWriter{
 		header: headerFromSignalSets(emptySets),
 		w:      csv.NewWriter(w),
