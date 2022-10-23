@@ -49,6 +49,7 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	_ "github.com/ossf/criticality_score/cmd/scorer/algorithm/wam"
+	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 )
@@ -135,27 +136,19 @@ func main() {
 
 	// Open the in-file for reading
 	var r *csv.Reader
-	if inFilename == "-" {
-		logger.Info("Reading from stdin")
-		r = csv.NewReader(os.Stdin)
-	} else {
+	fr, err := infile.Open(context.Background(), inFilename)
+	if err != nil {
 		logger.With(
+			zap.Error(err),
 			zap.String("filename", inFilename),
-		).Debug("Reading from file")
-		f, err := os.Open(inFilename)
-		if err != nil {
-			logger.With(
-				zap.Error(err),
-				zap.String("filename", inFilename),
-			).Error("Failed to open input file")
-			os.Exit(2)
-		}
-		defer f.Close()
-		r = csv.NewReader(f)
+		).Error("Failed to open input file")
+		os.Exit(2)
 	}
+	defer fr.Close()
+	r = csv.NewReader(fr)
 
 	// Open the out-file for writing
-	f, err := outfile.Open(context.Background(), outFilename)
+	fw, err := outfile.Open(context.Background(), outFilename)
 	if err != nil {
 		logger.With(
 			zap.Error(err),
@@ -163,8 +156,8 @@ func main() {
 		).Error("Failed to open file for output")
 		os.Exit(2)
 	}
-	defer f.Close()
-	w := csv.NewWriter(f)
+	defer fw.Close()
+	w := csv.NewWriter(fw)
 	defer w.Flush()
 
 	// Prepare the algorithm from the config file

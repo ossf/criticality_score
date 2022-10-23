@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/google/go-github/v44/github"
+	"github.com/google/go-github/v47/github"
 
 	"github.com/ossf/criticality_score/internal/githubapi"
 )

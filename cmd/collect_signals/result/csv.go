@@ -21,7 +21,7 @@ import (
 	"sync"
 	"time"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 )
 
 type csvWriter struct {

@@ -19,18 +19,18 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/github/legacy"
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/github/legacy"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 )
 
-type RepoCollector struct{}
+type RepoSource struct{}
 
-func (rc *RepoCollector) EmptySet() signal.Set {
+func (rc *RepoSource) EmptySet() signal.Set {
 	return &signal.RepoSet{}
 }
 
-func (rc *RepoCollector) Collect(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (rc *RepoSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
 	ghr, ok := r.(*repo)
 	if !ok {
 		return nil, errors.New("project is not a github project")
@@ -80,18 +80,18 @@ func (rc *RepoCollector) Collect(ctx context.Context, r projectrepo.Repo) (signa
 	return s, nil
 }
 
-func (rc *RepoCollector) IsSupported(p projectrepo.Repo) bool {
+func (rc *RepoSource) IsSupported(p projectrepo.Repo) bool {
 	_, ok := p.(*repo)
 	return ok
 }
 
-type IssuesCollector struct{}
+type IssuesSource struct{}
 
-func (ic *IssuesCollector) EmptySet() signal.Set {
+func (ic *IssuesSource) EmptySet() signal.Set {
 	return &signal.IssuesSet{}
 }
 
-func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (ic *IssuesSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
 	ghr, ok := r.(*repo)
 	if !ok {
 		return nil, errors.New("project is not a github project")
@@ -135,7 +135,7 @@ func (ic *IssuesCollector) Collect(ctx context.Context, r projectrepo.Repo) (sig
 	return s, nil
 }
 
-func (ic *IssuesCollector) IsSupported(r projectrepo.Repo) bool {
+func (ic *IssuesSource) IsSupported(r projectrepo.Repo) bool {
 	_, ok := r.(*repo)
 	return ok
 }

@@ -17,7 +17,7 @@ package githubapi
 import (
 	"errors"
 
-	"github.com/google/go-github/v44/github"
+	"github.com/google/go-github/v47/github"
 )
 
 // ErrorResponseStatusCode will unwrap a github.ErrorResponse and return the

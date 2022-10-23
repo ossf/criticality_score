@@ -216,26 +216,26 @@ Output:
 * Either JSON or CSV formatted records for each project in UTF-8, including
   the project url. The output will support direct loading into BigQuery.
 
-#### Signal Collectors
+#### Signal Sources
 
-Signal collection will be built around multiple signal _collectors_ that
-produce one or more _signals_ per repository.
+Signal collection will be built around multiple signal _sources_ that fetch
+one or more _signals_ per repository from an individual source of data.
 
-Signal collectors fall into one of three categories:
+Signal sources fall into one of three categories:
 
-* Source repository and hosting signal collectors (e.g. GitHub, Bitbucket,
+* Source repository and hosting signal sources (e.g. GitHub, Bitbucket,
   cGit)
-* Issue tracking signal collectors (e.g. GitHub, Bugzilla, JIRA)
-* Additional signal collectors (e.g deps.dev)
+* Issue tracking signal sources (e.g. GitHub, Bugzilla, JIRA)
+* Additional signal sources (e.g deps.dev)
 
-Each repository can have only one set of signals from a source repository
-collector and one set of signals from an issue tracking signal collector, but
-can have signals from many additional collectors.
+Each repository can have only one set of signals from a repository signal
+source and one set of signals from an issue tracking signal source, but
+can have signals from many additional sources.
 
 #### Repository Object
 
 During the collection process a repository object will be created and passed to
-each collector.
+each source.
 
 As each part of the collection process runs, data will be fetched for a
 repository. The repository object will serve as the interface for accessing
@@ -246,7 +246,7 @@ additional queries that need to be executed.
 
 The general process for collecting signals will do the following:
 
-* Initialize all the collectors
+* Initialize all the sources
 * For each repository URL
     * Gather basic data about the repository (e.g. stars, has it moved, urls)
         * It may have been removed, in which case the repository can be
@@ -254,10 +254,10 @@ The general process for collecting signals will do the following:
         * It may not be "interesting" (e.g. too few stars) and should be
           skipped.
         * It may have already been processed and should be skipped.
-    * Determine the set of collectors that apply to the repository.
-    * For each collector:
-        * Start collecting the signals for the current repository
-    * Wait for all collectors to complete
+    * Determine the set of sources that apply to the repository.
+    * For each source:
+        * Start fetching the signals for the current repository
+    * Wait for all sources to complete
     * Write the signals to the output.
 
 #### Signal Fields
@@ -265,22 +265,22 @@ The general process for collecting signals will do the following:
 ##### Naming
 
 Signal fields will fall under the general naming pattern of
-`[collector].[name]`.
+`[namespace].[name]`.
 
-Where `[collector]` and `[name]` are made up of one or more of the
+Where `[namespace]` and `[name]` are made up of one or more of the
 following:
 
 * Lowercase characters
 * Numbers
 * Underscores
 
-The following restrictions further apply to `[collector]` names:
+The following restrictions further apply to `[namespace]` names:
 
-* Source repository signal collectors must use the `repo` collector name
-* Issue tracking signal collectors must use the `issues` collector name
+* Source repository signal sources must use the `repo` namespace
+* Issue tracking signal sources must use the `issues` namespace
 * Signals matching the original set in the Python implementation can also use
-  the `legacy` collector name
-* Additional collectors can use any other valid name.
+  the `legacy` namespace
+* Additional sources can use any other valid namespace.
 
 Finally, `[name]` names must include the unit value if it is not implied by
 the type, and any time constraints.

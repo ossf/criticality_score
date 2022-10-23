@@ -26,10 +26,10 @@ import (
 	"net/url"
 	"strings"
 
-	"github.com/google/go-github/v44/github"
+	"github.com/google/go-github/v47/github"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
-	"github.com/ossf/criticality_score/cmd/collect_signals/signal"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 
@@ -41,25 +41,25 @@ func (s *mentionSet) Namespace() signal.Namespace {
 	return signal.Namespace("github_mentions")
 }
 
-type Collector struct {
+type Source struct {
 	client *githubapi.Client
 }
 
-func NewCollector(c *githubapi.Client) *Collector {
-	return &Collector{
+func NewSource(c *githubapi.Client) signal.Source {
+	return &Source{
 		client: c,
 	}
 }
 
-func (c *Collector) EmptySet() signal.Set {
+func (c *Source) EmptySet() signal.Set {
 	return &mentionSet{}
 }
 
-func (c *Collector) IsSupported(r projectrepo.Repo) bool {
+func (c *Source) IsSupported(r projectrepo.Repo) bool {
 	return true
 }
 
-func (c *Collector) Collect(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (c *Source) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
 	s := &mentionSet{}
 	if c, err := c.githubSearchTotalCommitMentions(ctx, r.URL()); err != nil {
 		return nil, err
@@ -69,7 +69,7 @@ func (c *Collector) Collect(ctx context.Context, r projectrepo.Repo) (signal.Set
 	return s, nil
 }
 
-func (c *Collector) githubSearchTotalCommitMentions(ctx context.Context, u *url.URL) (int, error) {
+func (c *Source) githubSearchTotalCommitMentions(ctx context.Context, u *url.URL) (int, error) {
 	repoName := strings.Trim(u.Path, "/")
 	opts := &github.SearchOptions{
 		ListOptions: github.ListOptions{PerPage: 1},

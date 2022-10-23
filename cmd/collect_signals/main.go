@@ -19,7 +19,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -32,13 +31,14 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
-	"github.com/ossf/criticality_score/cmd/collect_signals/depsdev"
-	"github.com/ossf/criticality_score/cmd/collect_signals/github"
-	"github.com/ossf/criticality_score/cmd/collect_signals/githubmentions"
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
 	"github.com/ossf/criticality_score/cmd/collect_signals/result"
+	"github.com/ossf/criticality_score/internal/collector"
+	"github.com/ossf/criticality_score/internal/collector/depsdev"
+	"github.com/ossf/criticality_score/internal/collector/github"
+	"github.com/ossf/criticality_score/internal/collector/githubmentions"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
 	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/workerpool"
@@ -62,7 +62,7 @@ func init() {
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_FILE... OUT_FILE\n\n", cmdName)
+		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_FILE OUT_FILE\n\n", cmdName)
 		fmt.Fprintf(w, "Collects signals for each project repository listed.\n")
 		fmt.Fprintf(w, "IN_FILE must be either a file or - to read from stdin.\n")
 		fmt.Fprintf(w, "OUT_FILE must be either be a file or - to write to stdout.\n")
@@ -110,6 +110,26 @@ func handleRepo(ctx context.Context, logger *zap.Logger, u *url.URL, out result.
 	}
 }
 
+func initSources(ctx context.Context, logger *zap.Logger, ghClient *githubapi.Client) error {
+	collector.Register(&github.RepoSource{})
+	collector.Register(&github.IssuesSource{})
+	collector.Register(githubmentions.NewSource(ghClient))
+
+	if *depsdevDisableFlag {
+		// deps.dev collection source has been disabled, so skip it.
+		logger.Warn("deps.dev signal source is disabled.")
+	} else {
+		ddsource, err := depsdev.NewSource(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
+		if err != nil {
+			return fmt.Errorf("init deps.dev source: %w", err)
+		}
+		logger.Info("deps.dev signal source enabled")
+		collector.Register(ddsource)
+	}
+
+	return nil
+}
+
 func main() {
 	flag.Parse()
 
@@ -123,50 +143,11 @@ func main() {
 	innerLogger := zapr.NewLogger(logger)
 	scLogger := &sclog.Logger{Logger: &innerLogger}
 
-	if flag.NArg() < 2 {
-		logger.Error("Must have at least one input file and an output file specified.")
+	// Complete the validation of args
+	if flag.NArg() != 2 {
+		logger.Error("Must have one input file and one output file specified.")
 		os.Exit(2)
 	}
-	lastArg := flag.NArg() - 1
-
-	// Open all the in-files for reading
-	var readers []io.Reader
-	consumingStdin := false
-	for _, inFilename := range flag.Args()[:lastArg] {
-		if inFilename == "-" && !consumingStdin {
-			logger.Info("Reading from stdin")
-			// Only add stdin once.
-			consumingStdin = true
-			readers = append(readers, os.Stdin)
-			continue
-		}
-		logger.With(
-			zap.String("filename", inFilename),
-		).Debug("Reading from file")
-		f, err := os.Open(inFilename)
-		if err != nil {
-			logger.With(
-				zap.String("filename", inFilename),
-				zap.Error(err),
-			).Error("Failed to open an input file")
-			os.Exit(2)
-		}
-		defer f.Close()
-		readers = append(readers, f)
-	}
-	r := io.MultiReader(readers...)
-
-	// Open the out-file for writing
-	outFilename := flag.Args()[lastArg]
-	w, err := outfile.Open(context.Background(), outFilename)
-	if err != nil {
-		logger.With(
-			zap.String("filename", outFilename),
-			zap.Error(err),
-		).Error("Failed to open file for output")
-		os.Exit(2)
-	}
-	defer w.Close()
 
 	ctx := context.Background()
 
@@ -183,25 +164,39 @@ func main() {
 	// Register all the Repo factories.
 	projectrepo.Register(github.NewRepoFactory(ghClient, logger))
 
-	// Register all the collectors that are supported.
-	collector.Register(&github.RepoCollector{})
-	collector.Register(&github.IssuesCollector{})
-	collector.Register(githubmentions.NewCollector(ghClient))
-
-	if *depsdevDisableFlag {
-		// deps.dev collection has been disabled, so skip it.
-		logger.Warn("deps.dev signal collection is disabled.")
-	} else {
-		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
-		if err != nil {
-			logger.With(
-				zap.Error(err),
-			).Error("Failed to create deps.dev collector")
-			os.Exit(2)
-		}
-		logger.Info("deps.dev signal collector enabled")
-		collector.Register(ddcollector)
+	// Register all the sources that are supported.
+	err = initSources(ctx, logger, ghClient)
+	if err != nil {
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to initialize sources")
+		os.Exit(2)
 	}
+
+	inFilename := flag.Args()[0]
+	outFilename := flag.Args()[1]
+
+	// Open the in-file for reading
+	r, err := infile.Open(context.Background(), inFilename)
+	if err != nil {
+		logger.With(
+			zap.String("filename", inFilename),
+			zap.Error(err),
+		).Error("Failed to open an input file")
+		os.Exit(2)
+	}
+	defer r.Close()
+
+	// Open the out-file for writing
+	w, err := outfile.Open(context.Background(), outFilename)
+	if err != nil {
+		logger.With(
+			zap.String("filename", outFilename),
+			zap.Error(err),
+		).Error("Failed to open file for output")
+		os.Exit(2)
+	}
+	defer w.Close()
 
 	// Prepare the output writer
 	out := result.NewCsvWriter(w, collector.EmptySets())
