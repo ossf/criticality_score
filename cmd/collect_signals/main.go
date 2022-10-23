@@ -107,6 +107,23 @@ func main() {
 	// Bump the # idle conns per host
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = *workersFlag * 5
 
+	opts := []collector.Option{
+		collector.EnableAllSources(),
+		collector.GCPProject(*gcpProjectFlag),
+		collector.GCPDatasetName(*depsdevDatasetFlag),
+	}
+	if *depsdevDisableFlag {
+		opts = append(opts, collector.DisableSource(collector.SourceTypeDepsDev))
+	}
+
+	c, err := collector.New(ctx, logger, opts...)
+	if err != nil {
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to create collector")
+		os.Exit(2)
+	}
+
 	inFilename := flag.Args()[0]
 	outFilename := flag.Args()[1]
 
@@ -131,23 +148,6 @@ func main() {
 		os.Exit(2)
 	}
 	defer w.Close()
-
-	opts := []collector.Option{
-		collector.EnableAllSources(),
-		collector.GCPProject(*gcpProjectFlag),
-		collector.GCPDatasetName(*depsdevDatasetFlag),
-	}
-	if *depsdevDisableFlag {
-		opts = append(opts, collector.DisableSource(collector.SourceTypeDepsDev))
-	}
-
-	c, err := collector.New(ctx, logger, opts...)
-	if err != nil {
-		logger.With(
-			zap.Error(err),
-		).Error("Failed to create collector")
-		os.Exit(2)
-	}
 
 	// Prepare the output writer
 	out := signalio.CsvWriter(w, c.EmptySets())
