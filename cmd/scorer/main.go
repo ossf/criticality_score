@@ -42,16 +42,15 @@ import (
 	"os"
 	"path"
 	"regexp"
-	"strconv"
 	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	_ "github.com/ossf/criticality_score/cmd/scorer/algorithm/wam"
 	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/scorer"
 )
 
 const defaultLogLevel = zapcore.InfoLevel
@@ -104,15 +103,10 @@ func makeOutHeader(header []string, resultColumn string) ([]string, error) {
 	return append(header, resultColumn), nil
 }
 
-func makeRecord(header, row []string) map[string]float64 {
-	record := make(map[string]float64)
+func makeRecord(header, row []string) map[string]string {
+	record := make(map[string]string)
 	for i, k := range header {
-		raw := row[i]
-		v, err := strconv.ParseFloat(raw, 64)
-		if err != nil {
-			// Failed to parse raw into a float, ignore the field
-			continue
-		}
+		v := row[i]
 		record[k] = v
 	}
 	return record
@@ -174,21 +168,15 @@ func main() {
 		).Error("Failed to open config file")
 		os.Exit(2)
 	}
-	c, err := LoadConfig(cf)
+
+	s, err := scorer.FromConfig(cf)
 	if err != nil {
 		logger.With(
 			zap.Error(err),
 			zap.String("filename", *configFlag),
-		).Error("Failed to parse config file")
+		).Error("Failed to initialize scorer")
 		os.Exit(2)
-	}
-	a, err := c.Algorithm()
-	if err != nil {
-		logger.With(
-			zap.Error(err),
-			zap.String("algorithm", c.Name),
-		).Error("Failed to get the algorithm")
-		os.Exit(2)
+
 	}
 
 	inHeader, err := r.Read()
@@ -227,7 +215,7 @@ func main() {
 			os.Exit(2)
 		}
 		record := makeRecord(inHeader, row)
-		score := a.Score(record)
+		score := s.ScoreRaw(record)
 		row = append(row, fmt.Sprintf("%.5f", score))
 		pq.PushRow(row, score)
 	}

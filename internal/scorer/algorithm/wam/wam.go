@@ -18,7 +18,7 @@
 package wam
 
 import (
-	"github.com/ossf/criticality_score/cmd/scorer/algorithm"
+	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
 
 type WeighetedArithmeticMean struct {
