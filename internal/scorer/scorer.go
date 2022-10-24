@@ -17,17 +17,21 @@ package scorer
 import (
 	"fmt"
 	"io"
+	"path"
+	"regexp"
 	"strconv"
+	"strings"
 
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 	_ "github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
 
 type Scorer struct {
-	a algorithm.Algorithm
+	name string
+	a    algorithm.Algorithm
 }
 
-func FromConfig(r io.Reader) (*Scorer, error) {
+func FromConfig(name string, r io.Reader) (*Scorer, error) {
 	cfg, err := LoadConfig(r)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
@@ -37,7 +41,8 @@ func FromConfig(r io.Reader) (*Scorer, error) {
 		return nil, fmt.Errorf("create algorithm: %w", err)
 	}
 	return &Scorer{
-		a: a,
+		name: name,
+		a:    a,
 	}, nil
 }
 
@@ -53,4 +58,20 @@ func (s *Scorer) ScoreRaw(raw map[string]string) float64 {
 		record[k] = v
 	}
 	return s.a.Score(record)
+}
+
+func (s *Scorer) Name() string {
+	return s.name
+}
+
+func NameFromFilepath(filepath string) string {
+	// Get the name of the file used, without the path
+	f := path.Base(filepath)
+	ext := path.Ext(f)
+	// Strip the extension and convert to lowercase
+	f = strings.ToLower(strings.TrimSuffix(f, ext))
+	// Change any non-alphanumeric character into an underscore
+	f = regexp.MustCompile("[^a-z0-9_]").ReplaceAllString(f, "_")
+	// Append "_score" to the end
+	return f + "_score"
 }

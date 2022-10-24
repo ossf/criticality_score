@@ -48,7 +48,7 @@ fail.
 #### Scoring flags
 
 - `-config string` the name of a YAML config file to use for calculating the
-  score. Required.
+  score. Defaults to the original set of weights and scores.
 - `-column string` the name of the column to store the score in. Defaults to
   the name of the config file with `_score` appended (e.g. `config.yml` becomes
   `config_score`).

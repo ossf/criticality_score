@@ -41,8 +41,6 @@ import (
 	"io"
 	"os"
 	"path"
-	"regexp"
-	"strings"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -83,15 +81,7 @@ func generateColumnName() string {
 		// If we have the column name, just use it as the name
 		return *columnNameFlag
 	}
-	// Get the name of the config file used, without the path
-	f := path.Base(*configFlag)
-	ext := path.Ext(f)
-	// Strip the extension and convert to lowercase
-	f = strings.ToLower(strings.TrimSuffix(f, ext))
-	// Change any non-alphanumeric character into an underscore
-	f = regexp.MustCompile("[^a-z0-9_]").ReplaceAllString(f, "_")
-	// Append "_score" to the end
-	return f + "_score"
+	return scorer.NameFromFilepath(*configFlag)
 }
 
 func makeOutHeader(header []string, resultColumn string) ([]string, error) {
@@ -154,28 +144,29 @@ func main() {
 	w := csv.NewWriter(fw)
 	defer w.Flush()
 
-	// Prepare the algorithm from the config file
+	var s *scorer.Scorer
 	if *configFlag == "" {
-		logger.Error("Must have a config file set")
-		os.Exit(2)
-	}
+		s = scorer.FromDefaultConfig()
+	} else {
+		// Prepare the scorer from the config file
+		cf, err := os.Open(*configFlag)
+		if err != nil {
+			logger.With(
+				zap.Error(err),
+				zap.String("filename", *configFlag),
+			).Error("Failed to open config file")
+			os.Exit(2)
+		}
+		defer cf.Close()
 
-	cf, err := os.Open(*configFlag)
-	if err != nil {
-		logger.With(
-			zap.Error(err),
-			zap.String("filename", *configFlag),
-		).Error("Failed to open config file")
-		os.Exit(2)
-	}
-
-	s, err := scorer.FromConfig(cf)
-	if err != nil {
-		logger.With(
-			zap.Error(err),
-			zap.String("filename", *configFlag),
-		).Error("Failed to initialize scorer")
-		os.Exit(2)
+		s, err = scorer.FromConfig(generateColumnName(), cf)
+		if err != nil {
+			logger.With(
+				zap.Error(err),
+				zap.String("filename", *configFlag),
+			).Error("Failed to initialize scorer")
+			os.Exit(2)
+		}
 	}
 
 	inHeader, err := r.Read()
@@ -187,7 +178,7 @@ func main() {
 	}
 
 	// Generate and output the CSV header row
-	outHeader, err := makeOutHeader(inHeader, generateColumnName())
+	outHeader, err := makeOutHeader(inHeader, s.Name())
 	if err != nil {
 		logger.With(
 			zap.Error(err),
