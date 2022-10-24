@@ -176,7 +176,6 @@ func main() {
 			zap.String("filename", *configFlag),
 		).Error("Failed to initialize scorer")
 		os.Exit(2)
-
 	}
 
 	inHeader, err := r.Read()
