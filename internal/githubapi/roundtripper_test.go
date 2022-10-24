@@ -15,13 +15,16 @@
 package githubapi
 
 import (
-	"bytes"
+	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
+	"strings"
 	"testing"
+	"testing/iotest"
 	"time"
 
 	"go.uber.org/zap/zaptest"
@@ -141,7 +144,7 @@ func TestServerError400(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
-		Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
+		Body:       io.NopCloser(strings.NewReader(`<html><body>This is <span id="error_500">an error</span></body></html>`)),
 	}
 	s, err := newTestStrategies(t).ServerError400(r)
 	if err != nil {
@@ -156,7 +159,7 @@ func TestServerError400_NoMatchingString(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
-		Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>Web Page</body></html`))),
+		Body:       io.NopCloser(strings.NewReader(`<html><body>Web Page</body></html`)),
 	}
 	s, err := newTestStrategies(t).ServerError400(r)
 	if err != nil {
@@ -189,7 +192,7 @@ func TestServerError400_NotHTML(t *testing.T) {
 	r := &http.Response{
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/plain"}},
 		StatusCode: http.StatusBadRequest,
-		Body:       io.NopCloser(bytes.NewBuffer([]byte(`text doc`))),
+		Body:       io.NopCloser(strings.NewReader(`text doc`)),
 	}
 	s, err := newTestStrategies(t).ServerError400(r)
 	if err != nil {
@@ -224,7 +227,7 @@ func TestServerError400_StatusCodes(t *testing.T) {
 			r := &http.Response{
 				Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 				StatusCode: test.statusCode,
-				Body:       io.NopCloser(bytes.NewBuffer([]byte(`<html><body>This is <span id="error_500">an error</span></body></html>`))),
+				Body:       io.NopCloser(strings.NewReader(`<html><body>This is <span id="error_500">an error</span></body></html>`)),
 			}
 			s, err := newTestStrategies(t).ServerError400(r)
 			if err != nil {
@@ -240,8 +243,8 @@ func TestServerError400_StatusCodes(t *testing.T) {
 func TestSecondaryRateLimit(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body: io.NopCloser(bytes.NewBuffer(
-			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
+		Body: io.NopCloser(strings.NewReader(
+			fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL))),
 	}
 	s, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err != nil {
@@ -255,8 +258,8 @@ func TestSecondaryRateLimit(t *testing.T) {
 func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body: io.NopCloser(bytes.NewBuffer(
-			[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocURL)))),
+		Body: io.NopCloser(strings.NewReader(
+			fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocURL))),
 	}
 	s, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err != nil {
@@ -270,7 +273,7 @@ func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 func TestSecondaryRateLimit_OtherUrl(t *testing.T) {
 	r := &http.Response{
 		StatusCode: http.StatusForbidden,
-		Body:       io.NopCloser(bytes.NewBuffer([]byte(`{"message": "test", "documentation_url": "https://example.org/"}`))),
+		Body:       io.NopCloser(strings.NewReader(`{"message": "test", "documentation_url": "https://example.org/"}`)),
 	}
 	s, err := newTestStrategies(t).SecondaryRateLimit(r)
 	if err != nil {
@@ -322,8 +325,8 @@ func TestSecondaryRateLimit_StatusCodes(t *testing.T) {
 		t.Run(fmt.Sprintf("status %d", test.statusCode), func(t *testing.T) {
 			r := &http.Response{
 				StatusCode: test.statusCode,
-				Body: io.NopCloser(bytes.NewBuffer(
-					[]byte(fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL)))),
+				Body: io.NopCloser(strings.NewReader(
+					fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL))),
 			}
 			s, err := newTestStrategies(t).SecondaryRateLimit(r)
 			if err != nil {
@@ -333,5 +336,191 @@ func TestSecondaryRateLimit_StatusCodes(t *testing.T) {
 				t.Fatalf("ServerError() == %v, want %v", s, test.strategy)
 			}
 		})
+	}
+}
+
+type testRoundTripperFunc func(*http.Request) (*http.Response, error)
+
+func (t testRoundTripperFunc) RoundTrip(r *http.Request) (*http.Response, error) {
+	return t(r)
+}
+
+func TestGraphQLRoundTripper_InnerError(t *testing.T) {
+	want := errors.New("inner error")
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return nil, want
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); !errors.Is(err, want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+}
+
+func TestGraphQLRoundTripper_Non200Response(t *testing.T) {
+	want := &http.Response{
+		StatusCode: http.StatusBadRequest,
+		Body:       io.NopCloser(strings.NewReader("")),
+	}
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return want, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if resp, err := rt.RoundTrip(r); err != nil {
+		t.Fatalf("RoundTrip() returned %v, want no error", err)
+	} else if resp != want {
+		t.Fatalf("RoundTrip() = %v, want %v", resp, want)
+	}
+}
+
+func TestGraphQLRoundTripper_BodyReadError(t *testing.T) {
+	want := errors.New("read failed")
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(iotest.ErrReader(want)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); !errors.Is(err, want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+}
+
+func TestGraphQLRoundTripper_JSONUnmarshalError(t *testing.T) {
+	var want *json.SyntaxError
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader("{")),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); !errors.As(err, &want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+}
+
+func TestGraphQLRoundTripper_NoErrors(t *testing.T) {
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":{}}`)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); err != nil {
+		t.Fatalf("RoundTrip() returned %v, want no errors", err)
+	}
+}
+
+func TestGraphQLRoundTripper_EmptyErrors(t *testing.T) {
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":null, "errors":[]}`)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); err != nil {
+		t.Fatalf("RoundTrip() returned %v, want no errors", err)
+	}
+}
+
+func TestGraphQLRoundTripper_OneError(t *testing.T) {
+	var want *GraphQLErrors
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":null, "errors":[{"message":"test", "type":"test"}]}`)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); !errors.As(err, &want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+	if n := len(want.Errors()); n != 1 {
+		t.Fatalf("len(Errors) = %d; want 1", n)
+	}
+}
+
+func TestGraphQLRoundTripper_MultipleErrors(t *testing.T) {
+	var want *GraphQLErrors
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":null, "errors":[{"message":"test", "type":"test"}, {"message": "test2", "type":"test"}]}`)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); !errors.As(err, &want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+	if n := len(want.Errors()); n != 2 {
+		t.Fatalf("len(Errors) = %d; want 2", n)
+	}
+}
+
+func TestGraphQLRoundTripper_OneErrorNotFound(t *testing.T) {
+	want := ErrGraphQLNotFound
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":null, "errors":[{"message":"test", "type":"NOT_FOUND"}]}`)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	if _, err := rt.RoundTrip(r); !errors.Is(err, want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+}
+
+func TestGraphQLRoundTripper_MultipleErrors_OneNotFound(t *testing.T) {
+	var want *GraphQLErrors
+	rt := &graphQLRoundTripper{inner: testRoundTripperFunc(func(r *http.Request) (*http.Response, error) {
+		return &http.Response{
+			StatusCode: http.StatusOK,
+			Body:       io.NopCloser(strings.NewReader(`{"data":null, "errors":[{"message":"test", "type":"NOT_FOUND"}, {"message": "test2", "type":"test"}]}`)),
+		}, nil
+	})}
+	r, err := http.NewRequestWithContext(context.Background(), "GET", "http://example.com", strings.NewReader(""))
+	if err != nil {
+		t.Fatalf("NewRequest() failed with %v", err)
+	}
+	_, err = rt.RoundTrip(r)
+	if !errors.As(err, &want) {
+		t.Fatalf("RoundTrip() returned %v, want %v", err, want)
+	}
+	if errors.Is(err, ErrGraphQLNotFound) {
+		t.Fatalf("RoundTrip() returned %v is %v", err, ErrGraphQLNotFound)
+	}
+	if !want.HasType(gitHubGraphQLNotFoundType) {
+		t.Fatalf("HasType(%v) returned false, want true", gitHubGraphQLNotFoundType)
 	}
 }

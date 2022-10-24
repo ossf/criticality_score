@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package result
+package signalio
 
 import (
 	"encoding/csv"
@@ -44,18 +44,27 @@ func headerFromSignalSets(sets []signal.Set) []string {
 	return hs
 }
 
-func NewCsvWriter(w io.Writer, emptySets []signal.Set) Writer {
+func CsvWriter(w io.Writer, emptySets []signal.Set) Writer {
 	return &csvWriter{
 		header: headerFromSignalSets(emptySets),
 		w:      csv.NewWriter(w),
 	}
 }
 
-func (w *csvWriter) Record() RecordWriter {
-	return &csvRecord{
-		values: make(map[string]string),
-		sink:   w,
+// WriteSignals implements the Writer interface.
+func (w *csvWriter) WriteSignals(signals []signal.Set) error {
+	values := make(map[string]string)
+	for _, s := range signals {
+		// Get all of the signal data from the set and serialize it.
+		for k, v := range signal.SetAsMap(s, true) {
+			if s, err := marshalValue(v); err != nil {
+				return fmt.Errorf("failed to write field %s: %w", k, err)
+			} else {
+				values[k] = s
+			}
+		}
 	}
+	return w.writeRecord(values)
 }
 
 func (w *csvWriter) maybeWriteHeader() error {
@@ -75,13 +84,13 @@ func (w *csvWriter) maybeWriteHeader() error {
 	return w.w.Write(w.header)
 }
 
-func (w *csvWriter) writeRecord(c *csvRecord) error {
+func (w *csvWriter) writeRecord(values map[string]string) error {
 	if err := w.maybeWriteHeader(); err != nil {
 		return err
 	}
 	var rec []string
 	for _, k := range w.header {
-		rec = append(rec, c.values[k])
+		rec = append(rec, values[k])
 	}
 	// Grab the lock when we're ready to write the record to prevent
 	// concurrent writes to w.
@@ -92,27 +101,6 @@ func (w *csvWriter) writeRecord(c *csvRecord) error {
 	}
 	w.w.Flush()
 	return w.w.Error()
-}
-
-type csvRecord struct {
-	values map[string]string
-	sink   *csvWriter
-}
-
-func (r *csvRecord) WriteSignalSet(s signal.Set) error {
-	data := signal.SetAsMap(s, true)
-	for k, v := range data {
-		if s, err := marshalValue(v); err != nil {
-			return fmt.Errorf("failed to write field %s: %w", k, err)
-		} else {
-			r.values[k] = s
-		}
-	}
-	return nil
-}
-
-func (r *csvRecord) Done() error {
-	return r.sink.writeRecord(r)
 }
 
 func marshalValue(value any) (string, error) {

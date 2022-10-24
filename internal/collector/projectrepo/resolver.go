@@ -17,14 +17,17 @@ package projectrepo
 import (
 	"context"
 	"errors"
+	"fmt"
 	"net/url"
 )
 
-// ErrorNotFound is returned when there is no factory that can be used for a
-// given URL.
-var ErrorNotFound = errors.New("factory not found for url")
+// ErrNoFactoryFound is returned when there is no factory that can be used for
+// a given URL.
+var ErrNoFactoryFound = errors.New("factory not found")
 
-var globalResolver = &Resolver{}
+// ErrNoRepoFound is returned when a factory cannot create a Repo for a given
+// URL.
+var ErrNoRepoFound = errors.New("repo not found")
 
 // Resolver is used to resolve a Repo url against a set of Factory instances
 // registered with the resolver.
@@ -56,17 +59,7 @@ func (r *Resolver) Register(f Factory) {
 func (r *Resolver) Resolve(ctx context.Context, u *url.URL) (Repo, error) {
 	f := r.findFactory(u)
 	if f == nil {
-		return nil, ErrorNotFound
+		return nil, fmt.Errorf("%w: %s", ErrNoFactoryFound, u)
 	}
 	return f.New(ctx, u)
-}
-
-// Register the factory f with the global resolver.
-func Register(f Factory) {
-	globalResolver.Register(f)
-}
-
-// Resolve the given url u with the global resolver.
-func Resolve(ctx context.Context, u *url.URL) (Repo, error) {
-	return globalResolver.Resolve(ctx, u)
 }

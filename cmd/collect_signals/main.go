@@ -17,6 +17,7 @@ package main
 import (
 	"bufio"
 	"context"
+	"errors"
 	"flag"
 	"fmt"
 	"net/http"
@@ -25,22 +26,14 @@ import (
 	"path"
 	"strings"
 
-	"github.com/go-logr/zapr"
-	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	sclog "github.com/ossf/scorecard/v4/log"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/result"
 	"github.com/ossf/criticality_score/internal/collector"
-	"github.com/ossf/criticality_score/internal/collector/depsdev"
-	"github.com/ossf/criticality_score/internal/collector/github"
-	"github.com/ossf/criticality_score/internal/collector/githubmentions"
-	"github.com/ossf/criticality_score/internal/collector/projectrepo"
-	"github.com/ossf/criticality_score/internal/githubapi"
 	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/signalio"
 	"github.com/ossf/criticality_score/internal/workerpool"
 )
 
@@ -49,7 +42,7 @@ const defaultLogLevel = zapcore.InfoLevel
 var (
 	gcpProjectFlag     = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
 	depsdevDisableFlag = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
-	depsdevDatasetFlag = flag.String("depsdev-dataset", depsdev.DefaultDatasetName, "the BigQuery dataset name to use.")
+	depsdevDatasetFlag = flag.String("depsdev-dataset", collector.DefaultGCPDatasetName, "the BigQuery dataset name to use.")
 	workersFlag        = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	logLevel           = defaultLogLevel
 	logEnv             log.Env
@@ -71,63 +64,27 @@ func init() {
 	}
 }
 
-func handleRepo(ctx context.Context, logger *zap.Logger, u *url.URL, out result.Writer) {
-	r, err := projectrepo.Resolve(ctx, u)
+func handleRepo(ctx context.Context, logger *zap.Logger, c *collector.Collector, u *url.URL, out signalio.Writer) {
+	ss, err := c.Collect(ctx, u)
 	if err != nil {
-		logger.With(zap.Error(err)).Warn("Failed to create project")
-		// TODO: we should have an error that indicates that the URL/Project
-		// should be skipped/ignored.
-		return // TODO: add a flag to continue or abort on failure
-	}
-	logger = logger.With(zap.String("canonical_url", r.URL().String()))
-
-	// TODO: p.URL() should be checked to see if it has already been processed.
-
-	// Collect the signals for the given project
-	logger.Info("Collecting")
-	ss, err := collector.Collect(ctx, r)
-	if err != nil {
-		logger.With(
-			zap.Error(err),
-		).Error("Failed to collect signals for project")
-		os.Exit(1) // TODO: add a flag to continue or abort on failure
-	}
-
-	rec := out.Record()
-	for _, s := range ss {
-		if err := rec.WriteSignalSet(s); err != nil {
+		if errors.Is(err, collector.ErrUncollectableRepo) {
 			logger.With(
 				zap.Error(err),
-			).Error("Failed to write signal set")
-			os.Exit(1) // TODO: add a flag to continue or abort on failure
+			).Warn("Repo cannot be collected")
+			return
 		}
-	}
-	if err := rec.Done(); err != nil {
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to complete record")
-		os.Exit(1) // TODO: add a flag to continue or abort on failure
-	}
-}
-
-func initSources(ctx context.Context, logger *zap.Logger, ghClient *githubapi.Client) error {
-	collector.Register(&github.RepoSource{})
-	collector.Register(&github.IssuesSource{})
-	collector.Register(githubmentions.NewSource(ghClient))
-
-	if *depsdevDisableFlag {
-		// deps.dev collection source has been disabled, so skip it.
-		logger.Warn("deps.dev signal source is disabled.")
-	} else {
-		ddsource, err := depsdev.NewSource(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
-		if err != nil {
-			return fmt.Errorf("init deps.dev source: %w", err)
-		}
-		logger.Info("deps.dev signal source enabled")
-		collector.Register(ddsource)
+		).Error("Failed to collect signals for repo")
+		os.Exit(1) // TODO: pass up the error
 	}
 
-	return nil
+	if err := out.WriteSignals(ss); err != nil {
+		logger.With(
+			zap.Error(err),
+		).Error("Failed to write signal set")
+		os.Exit(1) // TODO: pass up the error
+	}
 }
 
 func main() {
@@ -138,10 +95,6 @@ func main() {
 		panic(err)
 	}
 	defer logger.Sync()
-
-	// roundtripper requires us to use the scorecard logger.
-	innerLogger := zapr.NewLogger(logger)
-	scLogger := &sclog.Logger{Logger: &innerLogger}
 
 	// Complete the validation of args
 	if flag.NArg() != 2 {
@@ -154,22 +107,20 @@ func main() {
 	// Bump the # idle conns per host
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = *workersFlag * 5
 
-	// Prepare a client for communicating with GitHub's GraphQLv4 API and Restv3 API
-	rt := githubapi.NewRoundTripper(roundtripper.NewTransport(ctx, scLogger), logger)
-	httpClient := &http.Client{
-		Transport: rt,
+	opts := []collector.Option{
+		collector.EnableAllSources(),
+		collector.GCPProject(*gcpProjectFlag),
+		collector.GCPDatasetName(*depsdevDatasetFlag),
 	}
-	ghClient := githubapi.NewClient(httpClient)
+	if *depsdevDisableFlag {
+		opts = append(opts, collector.DisableSource(collector.SourceTypeDepsDev))
+	}
 
-	// Register all the Repo factories.
-	projectrepo.Register(github.NewRepoFactory(ghClient, logger))
-
-	// Register all the sources that are supported.
-	err = initSources(ctx, logger, ghClient)
+	c, err := collector.New(ctx, logger, opts...)
 	if err != nil {
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to initialize sources")
+		).Error("Failed to create collector")
 		os.Exit(2)
 	}
 
@@ -199,14 +150,14 @@ func main() {
 	defer w.Close()
 
 	// Prepare the output writer
-	out := result.NewCsvWriter(w, collector.EmptySets())
+	out := signalio.CsvWriter(w, c.EmptySets())
 
 	// Start the workers that process a channel of repo urls.
 	repos := make(chan *url.URL)
 	wait := workerpool.WorkerPool(*workersFlag, func(worker int) {
 		innerLogger := logger.With(zap.Int("worker", worker))
 		for u := range repos {
-			handleRepo(ctx, innerLogger.With(zap.String("url", u.String())), u, out)
+			handleRepo(ctx, innerLogger.With(zap.String("url", u.String())), c, u, out)
 		}
 	})
 
