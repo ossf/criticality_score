@@ -1,19 +1,16 @@
-# Signal Collector
+# Criticality Score tool
 
-This tool is used to collect signal data for a set of project repositories for
-generating a criticality score.
+This tool is used to collect signal data for one or more project repositories
+and generates a criticality score.
 
 The input of this tool could by the output of the `enumerate_github` tool.
-
-The output of this tool is used as an input for the `scorer` tool, or for input
-into a data analysis system such as BigQuery. 
 
 ## Example
 
 ```shell
 $ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here
 $ gcloud login --update-adc  # Sign-in to GCP
-$ collect_signals \
+$ criticality_score \
     -workers=1 \
     github_projects.txt \
     signals.csv
@@ -22,13 +19,13 @@ $ collect_signals \
 ## Install
 
 ```shell
-$ go install github.com/ossf/criticality_score/cmd/collect_signals
+$ go install github.com/ossf/criticality_score/cmd/criticality_score
 ```
 
 ## Usage
 
 ```shell
-$ collect_signals [FLAGS]... IN_FILE OUT_FILE
+$ criticality_score [FLAGS]... IN_FILE OUT_FILE
 ```
 
 Project repository URLs are read from the specified `IN_FILE`. If `-` is passed
@@ -41,7 +38,7 @@ results will be written to STDOUT.
 
 ### Authentication
 
-`collect_signals` requires authentication to GitHub, and optionally Google Cloud Platform to run.
+`criticality_score` requires authentication to GitHub, and optionally Google Cloud Platform to run.
 
 #### GitHub Authentication
 
@@ -170,7 +167,7 @@ If running with a single worker this process is fairly straightforward.
       correspond to entries in the output csv until there are no unprocessed
       repository urls interleaving processed urls. Delete the remaining urls
       above the unprocessed urls.
-1. Restart `collect_signals`:
+1. Restart `criticality_score`:
     - Use the new file as the input.
     - Either use a new file as the output, or specify `-append`.
 
@@ -196,14 +193,14 @@ Rather than installing the binary, use `go run` to run the command.
 For example:
 
 ```shell
-$ go run ./cmd/collect_signals [FLAGS]... IN_FILE... OUT_FILE
+$ go run ./cmd/criticality_score [FLAGS]... IN_FILE... OUT_FILE
 ```
 
 Pass in a single repo using echo to quickly test signal collection, for example:
 
 ```shell
 $ echo "https://github.com/django/django" | \
-    go run ./cmd/collect_signals \
+    go run ./cmd/criticality_score \
       -log=debug \
       - -
 ```
