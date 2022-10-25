@@ -22,7 +22,12 @@ import (
 
 var ErrorMarshalFailure = errors.New("failed to marshal value")
 
+type Field struct {
+	Key   string
+	Value any
+}
+
 type Writer interface {
 	// WriteSignals outputs the all the signals collector to storage.
-	WriteSignals([]signal.Set) error
+	WriteSignals([]signal.Set, ...Field) error
 }
