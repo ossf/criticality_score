@@ -22,6 +22,7 @@ import (
 
 var ErrorMarshalFailure = errors.New("failed to marshal value")
 
+//nolint:govet
 type Field struct {
 	Key   string
 	Value any

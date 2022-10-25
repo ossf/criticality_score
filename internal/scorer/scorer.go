@@ -28,8 +28,8 @@ import (
 )
 
 type Scorer struct {
-	name string
 	a    algorithm.Algorithm
+	name string
 }
 
 func FromConfig(name string, r io.Reader) (*Scorer, error) {
