@@ -35,7 +35,6 @@ import (
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/scorer"
 	"github.com/ossf/criticality_score/internal/signalio"
-	"github.com/ossf/criticality_score/internal/workerpool"
 )
 
 const defaultLogLevel = zapcore.InfoLevel
@@ -47,7 +46,6 @@ var (
 	scoringDisableFlag    = flag.Bool("scoring-disable", false, "disables the generation of scores.")
 	scoringConfigFlag     = flag.String("scoring-config", "", "path to a YAML file for configuring the scoring algorithm.")
 	scoringColumnNameFlag = flag.String("scoring-column", "", "manually specify the name for the column used to hold the score.")
-	workersFlag           = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	logLevel              = defaultLogLevel
 	logEnv                log.Env
 )
@@ -133,7 +131,7 @@ func main() {
 	ctx := context.Background()
 
 	// Bump the # idle conns per host
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = *workersFlag * 5
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 5
 
 	opts := []collector.Option{
 		collector.EnableAllSources(),
@@ -184,47 +182,7 @@ func main() {
 	}
 	out := signalio.CsvWriter(w, c.EmptySets(), extras...)
 
-	// Start the workers that process a channel of repo urls.
-	repos := make(chan *url.URL)
-	wait := workerpool.WorkerPool(*workersFlag, func(worker int) {
-		innerLogger := logger.With(zap.Int("worker", worker))
-		for u := range repos {
-			l := innerLogger.With(zap.String("url", u.String()))
-			ss, err := c.Collect(ctx, u)
-			if err != nil {
-				if errors.Is(err, collector.ErrUncollectableRepo) {
-					l.With(
-						zap.Error(err),
-					).Warn("Repo cannot be collected")
-					return
-				}
-				l.With(
-					zap.Error(err),
-				).Error("Failed to collect signals for repo")
-				os.Exit(1) // TODO: pass up the error
-			}
-
-			// If scoring is enabled, prepare the extra data to be output.
-			extras := []signalio.Field{}
-			if s != nil {
-				f := signalio.Field{
-					Key:   scoreColumnName,
-					Value: fmt.Sprintf("%.5f", s.Score(ss)),
-				}
-				extras = append(extras, f)
-			}
-
-			// Write the signals to storage.
-			if err := out.WriteSignals(ss, extras...); err != nil {
-				l.With(
-					zap.Error(err),
-				).Error("Failed to write signal set")
-				os.Exit(1) // TODO: pass up the error
-			}
-		}
-	})
-
-	// Read in each line from the input files
+	// Read in each line from the input files and process the urls
 	scanner := bufio.NewScanner(r)
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -237,12 +195,41 @@ func main() {
 			).Error("Failed to parse project url")
 			os.Exit(1) // TODO: add a flag to continue or abort on failure
 		}
-		logger.With(
-			zap.String("url", u.String()),
-		).Debug("Parsed project url")
 
-		// Send the url to the workers
-		repos <- u
+		l := logger.With(zap.String("url", u.String()))
+		l.Debug("Parsed project url")
+
+		ss, err := c.Collect(ctx, u)
+		if err != nil {
+			if errors.Is(err, collector.ErrUncollectableRepo) {
+				l.With(
+					zap.Error(err),
+				).Warn("Repo cannot be collected")
+				return
+			}
+			l.With(
+				zap.Error(err),
+			).Error("Failed to collect signals for repo")
+			os.Exit(1) // TODO: pass up the error
+		}
+
+		// If scoring is enabled, prepare the extra data to be output.
+		extras := []signalio.Field{}
+		if s != nil {
+			f := signalio.Field{
+				Key:   scoreColumnName,
+				Value: fmt.Sprintf("%.5f", s.Score(ss)),
+			}
+			extras = append(extras, f)
+		}
+
+		// Write the signals to storage.
+		if err := out.WriteSignals(ss, extras...); err != nil {
+			l.With(
+				zap.Error(err),
+			).Error("Failed to write signal set")
+			os.Exit(1) // TODO: pass up the error
+		}
 	}
 	if err := scanner.Err(); err != nil {
 		logger.With(
@@ -250,11 +237,6 @@ func main() {
 		).Error("Failed while reading input")
 		os.Exit(2)
 	}
-	// Close the repos channel to indicate that there is no more input.
-	close(repos)
-
-	// Wait until all the workers have finished.
-	wait()
 
 	// TODO: track metrics as we are running to measure coverage of data
 }
