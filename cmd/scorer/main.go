@@ -76,12 +76,12 @@ func init() {
 	}
 }
 
-func generateColumnName() string {
+func generateColumnName(s *scorer.Scorer) string {
 	if *columnNameFlag != "" {
 		// If we have the column name, just use it as the name
 		return *columnNameFlag
 	}
-	return scorer.NameFromFilepath(*configFlag)
+	return s.Name()
 }
 
 func makeOutHeader(header []string, resultColumn string) ([]string, error) {
@@ -159,7 +159,7 @@ func main() {
 		}
 		defer cf.Close()
 
-		s, err = scorer.FromConfig(generateColumnName(), cf)
+		s, err = scorer.FromConfig(scorer.NameFromFilepath(*configFlag), cf)
 		if err != nil {
 			logger.With(
 				zap.Error(err),
@@ -178,7 +178,7 @@ func main() {
 	}
 
 	// Generate and output the CSV header row
-	outHeader, err := makeOutHeader(inHeader, s.Name())
+	outHeader, err := makeOutHeader(inHeader, generateColumnName(s))
 	if err != nil {
 		logger.With(
 			zap.Error(err),
