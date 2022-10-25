@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 	_ "github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
@@ -44,6 +45,40 @@ func FromConfig(name string, r io.Reader) (*Scorer, error) {
 		name: name,
 		a:    a,
 	}, nil
+}
+
+func (s *Scorer) Score(signals []signal.Set) float64 {
+	record := make(map[string]float64)
+	for _, s := range signals {
+		// Get all of the signal data from the set and floatify it.
+		for k, v := range signal.SetAsMap(s, true) {
+			switch r := v.(type) {
+			case float64:
+				record[k] = r
+			case float32:
+				record[k] = float64(r)
+			case int:
+				record[k] = float64(r)
+			case int16:
+				record[k] = float64(r)
+			case int32:
+				record[k] = float64(r)
+			case int64:
+				record[k] = float64(r)
+			case uint:
+				record[k] = float64(r)
+			case uint16:
+				record[k] = float64(r)
+			case uint32:
+				record[k] = float64(r)
+			case uint64:
+				record[k] = float64(r)
+			case byte:
+				record[k] = float64(r)
+			}
+		}
+	}
+	return s.a.Score(record)
 }
 
 func (s *Scorer) ScoreRaw(raw map[string]string) float64 {
