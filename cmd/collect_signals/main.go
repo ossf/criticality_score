@@ -33,6 +33,7 @@ import (
 	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
+	"github.com/ossf/criticality_score/internal/scorer"
 	"github.com/ossf/criticality_score/internal/signalio"
 	"github.com/ossf/criticality_score/internal/workerpool"
 )
@@ -40,12 +41,15 @@ import (
 const defaultLogLevel = zapcore.InfoLevel
 
 var (
-	gcpProjectFlag     = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
-	depsdevDisableFlag = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
-	depsdevDatasetFlag = flag.String("depsdev-dataset", collector.DefaultGCPDatasetName, "the BigQuery dataset name to use.")
-	workersFlag        = flag.Int("workers", 1, "the total number of concurrent workers to use.")
-	logLevel           = defaultLogLevel
-	logEnv             log.Env
+	gcpProjectFlag        = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
+	depsdevDisableFlag    = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
+	depsdevDatasetFlag    = flag.String("depsdev-dataset", collector.DefaultGCPDatasetName, "the BigQuery dataset name to use.")
+	scoringDisableFlag    = flag.Bool("scoring-disable", false, "disables the generation of scores.")
+	scoringConfigFlag     = flag.String("scoring-config", "", "path to a YAML file for configuring the scoring algorithm.")
+	scoringColumnNameFlag = flag.String("scoring-column", "", "manually specify the name for the column used to hold the score.")
+	workersFlag           = flag.Int("workers", 1, "the total number of concurrent workers to use.")
+	logLevel              = defaultLogLevel
+	logEnv                log.Env
 )
 
 func init() {
@@ -64,27 +68,47 @@ func init() {
 	}
 }
 
-func handleRepo(ctx context.Context, logger *zap.Logger, c *collector.Collector, u *url.URL, out signalio.Writer) {
-	ss, err := c.Collect(ctx, u)
+func getScorer(logger *zap.Logger) *scorer.Scorer {
+	if *scoringDisableFlag {
+		logger.Info("Scoring disabled")
+		return nil
+	}
+	if *scoringConfigFlag == "" {
+		logger.Info("Preparing default scorer")
+		return scorer.FromDefaultConfig()
+	}
+	// Prepare the scorer from the config file
+	logger = logger.With(
+		zap.String("filename", *scoringConfigFlag),
+	)
+	logger.Info("Preparing scorer from config")
+	cf, err := os.Open(*scoringConfigFlag)
 	if err != nil {
-		if errors.Is(err, collector.ErrUncollectableRepo) {
-			logger.With(
-				zap.Error(err),
-			).Warn("Repo cannot be collected")
-			return
-		}
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to collect signals for repo")
-		os.Exit(1) // TODO: pass up the error
+		).Error("Failed to open scoring config file")
+		os.Exit(2)
 	}
+	defer cf.Close()
 
-	if err := out.WriteSignals(ss); err != nil {
+	s, err := scorer.FromConfig(scorer.NameFromFilepath(*scoringConfigFlag), cf)
+	if err != nil {
 		logger.With(
 			zap.Error(err),
-		).Error("Failed to write signal set")
-		os.Exit(1) // TODO: pass up the error
+		).Error("Failed to initialize scorer")
+		os.Exit(2)
 	}
+	return s
+}
+
+func generateScoreColumnName(s *scorer.Scorer) string {
+	if s == nil {
+		return ""
+	}
+	if *scoringColumnNameFlag != "" {
+		return *scoringColumnNameFlag
+	}
+	return s.Name()
 }
 
 func main() {
@@ -95,6 +119,10 @@ func main() {
 		panic(err)
 	}
 	defer logger.Sync()
+
+	// Prepare the scorer, if it is enabled.
+	s := getScorer(logger)
+	scoreColumnName := generateScoreColumnName(s)
 
 	// Complete the validation of args
 	if flag.NArg() != 2 {
@@ -150,14 +178,49 @@ func main() {
 	defer w.Close()
 
 	// Prepare the output writer
-	out := signalio.CsvWriter(w, c.EmptySets())
+	extras := []string{}
+	if s != nil {
+		extras = append(extras, scoreColumnName)
+	}
+	out := signalio.CsvWriter(w, c.EmptySets(), extras...)
 
 	// Start the workers that process a channel of repo urls.
 	repos := make(chan *url.URL)
 	wait := workerpool.WorkerPool(*workersFlag, func(worker int) {
 		innerLogger := logger.With(zap.Int("worker", worker))
 		for u := range repos {
-			handleRepo(ctx, innerLogger.With(zap.String("url", u.String())), c, u, out)
+			l := innerLogger.With(zap.String("url", u.String()))
+			ss, err := c.Collect(ctx, u)
+			if err != nil {
+				if errors.Is(err, collector.ErrUncollectableRepo) {
+					l.With(
+						zap.Error(err),
+					).Warn("Repo cannot be collected")
+					return
+				}
+				l.With(
+					zap.Error(err),
+				).Error("Failed to collect signals for repo")
+				os.Exit(1) // TODO: pass up the error
+			}
+
+			// If scoring is enabled, prepare the extra data to be output.
+			extras := []signalio.Field{}
+			if s != nil {
+				f := signalio.Field{
+					Key:   scoreColumnName,
+					Value: fmt.Sprintf("%.5f", s.Score(ss)),
+				}
+				extras = append(extras, f)
+			}
+
+			// Write the signals to storage.
+			if err := out.WriteSignals(ss, extras...); err != nil {
+				l.With(
+					zap.Error(err),
+				).Error("Failed to write signal set")
+				os.Exit(1) // TODO: pass up the error
+			}
 		}
 	})
 
