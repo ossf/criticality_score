@@ -14,7 +14,6 @@ into a data analysis system such as BigQuery.
 $ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here
 $ gcloud login --update-adc  # Sign-in to GCP
 $ collect_signals \
-    -workers=1 \
     github_projects.txt \
     signals.csv
 ```
@@ -124,7 +123,6 @@ If `FILE` exists and neither `-append` nor `-force` is set the command will fail
 #### Misc flags
 
 - `-log level` set the level of logging. Can be `debug`, `info` (default), `warn` or `error`.
-- `-workers int` the total number of concurrent workers to use. Default is `1`.
 - `-help` displays help text.
 
 ## Q&A
