@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package scorer
 
 import (
 	"errors"
@@ -21,7 +21,7 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/ossf/criticality_score/cmd/scorer/algorithm"
+	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
 
 type Condition struct {

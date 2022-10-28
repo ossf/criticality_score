@@ -12,23 +12,24 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signalio
+package scorer
 
 import (
-	"errors"
-
-	"github.com/ossf/criticality_score/internal/collector/signal"
+	"bytes"
+	_ "embed"
 )
 
-var ErrorMarshalFailure = errors.New("failed to marshal value")
+const defaultScoreName = "default_score"
 
-//nolint:govet
-type Field struct {
-	Key   string
-	Value any
-}
+//go:generate cp ../../config/scorer/original_pike.yml default_config.yml
+//go:embed default_config.yml
+var defaultConfigContent []byte
 
-type Writer interface {
-	// WriteSignals outputs the all the signals collector to storage.
-	WriteSignals([]signal.Set, ...Field) error
+func FromDefaultConfig() *Scorer {
+	r := bytes.NewReader(defaultConfigContent)
+	s, err := FromConfig(defaultScoreName, r)
+	if err != nil {
+		panic(err)
+	}
+	return s
 }
