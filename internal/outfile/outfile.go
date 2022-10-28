@@ -21,6 +21,7 @@ import (
 	"io"
 	"net/url"
 	"os"
+	"strings"
 
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/fileblob"
@@ -29,38 +30,24 @@ import (
 	_ "gocloud.dev/blob/s3blob"
 )
 
-// fileOpener wraps a method for opening files.
-//
-// This allows tests to fake the behavior of os.OpenFile() to avoid hitting
-// the filesystem.
-type fileOpener interface {
-	Open(string, int, os.FileMode) (*os.File, error)
-}
-
-// fileOpenerFunc allows a function to implement the openFileWrapper interface.
-//
-// This is convenient for wrapping os.OpenFile().
-type fileOpenerFunc func(string, int, os.FileMode) (*os.File, error)
-
-func (f fileOpenerFunc) Open(filename string, flags int, perm os.FileMode) (*os.File, error) {
-	return f(filename, flags, perm)
-}
+// fileOpenFunc makes it possible to mock os.OpenFile() for testing.
+type fileOpenFunc func(string, int, os.FileMode) (*os.File, error)
 
 type Opener struct {
+	fileOpener fileOpenFunc
+	StdoutName string
+	forceFlag  string
 	force      bool
 	append     bool
-	forceFlag  string
-	fileOpener fileOpener
 	Perm       os.FileMode
-	StdoutName string
 }
 
 // CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.
-func CreateOpener(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) *Opener {
+func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) *Opener {
 	o := &Opener{
-		Perm:       0666,
+		Perm:       0o666,
 		StdoutName: "-",
-		fileOpener: fileOpenerFunc(os.OpenFile),
+		fileOpener: os.OpenFile,
 		forceFlag:  forceFlag,
 	}
 	fs.BoolVar(&(o.force), forceFlag, false, fmt.Sprintf("overwrites %s if it already exists and -%s is not set.", fileHelpName, appendFlag))
@@ -69,7 +56,7 @@ func CreateOpener(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHel
 }
 
 func (o *Opener) openFile(filename string, extraFlags int) (io.WriteCloser, error) {
-	return o.fileOpener.Open(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
+	return o.fileOpener(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
 }
 
 func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser, error) {
@@ -77,9 +64,9 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
 	}
 
-	// Seperate the path from the URL as options may be present in the query
+	// Separate the path from the URL as options may be present in the query
 	// string.
-	prefix := u.Path
+	prefix := strings.TrimPrefix(u.Path, "/")
 	u.Path = ""
 	bucket := u.String()
 
@@ -107,30 +94,33 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 //     truncated.
 //   - if neither forceFlag nor appendFlag are set an error will be
 //     returned.
-func (o *Opener) Open(ctx context.Context, filename string) (wc io.WriteCloser, err error) {
+func (o *Opener) Open(ctx context.Context, filename string) (io.WriteCloser, error) {
 	if o.StdoutName != "" && filename == o.StdoutName {
-		wc = os.Stdout
+		return os.Stdout, nil
 	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
-		wc, err = o.openBlobStore(ctx, u)
-	} else if o.append {
-		wc, err = o.openFile(filename, os.O_APPEND)
-	} else if o.force {
-		wc, err = o.openFile(filename, os.O_TRUNC)
-	} else {
-		wc, err = o.openFile(filename, os.O_EXCL)
+		return o.openBlobStore(ctx, u)
 	}
-	return
+	switch {
+	case o.append:
+		return o.openFile(filename, os.O_APPEND)
+	case o.force:
+		return o.openFile(filename, os.O_TRUNC)
+	default:
+		return o.openFile(filename, os.O_EXCL)
+	}
 }
 
 var defaultOpener *Opener
 
 // DefineFlags is a wrapper around CreateOpener for updating a default instance
 // of Opener.
-func DefineFlags(fs *flag.FlagSet, forceFlag string, appendFlag string, fileHelpName string) {
+func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
 	defaultOpener = CreateOpener(fs, forceFlag, appendFlag, fileHelpName)
 }
 
 // Open is a wrapper around Opener.Open for the default instance of Opener.
+//
+// Must only be called after DefineFlags.
 func Open(ctx context.Context, filename string) (io.WriteCloser, error) {
 	return defaultOpener.Open(ctx, filename)
 }

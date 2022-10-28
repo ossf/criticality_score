@@ -19,7 +19,7 @@ import (
 	"errors"
 
 	"github.com/shurcooL/githubv4"
-	log "github.com/sirupsen/logrus"
+	"go.uber.org/zap"
 )
 
 // empty is a convenience wrapper for the empty struct.
@@ -30,12 +30,17 @@ var ErrorUnableToListAllResult = errors.New("unable to list all results")
 type Searcher struct {
 	ctx     context.Context
 	client  *githubv4.Client
-	logger  *log.Entry
+	logger  *zap.Logger
 	perPage int
 }
 
-type Option interface{ set(*Searcher) }
-type option func(*Searcher)      // option implements Option.
+type Option interface {
+	set(*Searcher)
+}
+
+// option implements Option.
+type option func(*Searcher)
+
 func (o option) set(s *Searcher) { o(s) }
 
 // PerPage will set how many results will per requested per page for each search query.
@@ -43,7 +48,7 @@ func PerPage(perPage int) Option {
 	return option(func(s *Searcher) { s.perPage = perPage })
 }
 
-func NewSearcher(ctx context.Context, client *githubv4.Client, logger *log.Entry, options ...Option) *Searcher {
+func NewSearcher(ctx context.Context, client *githubv4.Client, logger *zap.Logger, options ...Option) *Searcher {
 	s := &Searcher{
 		ctx:     ctx,
 		client:  client,

@@ -1,0 +1,79 @@
+# Copyright 2022 Criticality Score Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# The original set of weights defined for the criticality score project using
+# Rob Pike's algorithm as implemented in the original Python project.
+algorithm: weighted_arithmetic_mean
+
+inputs:
+  - field: legacy.created_since
+    weight: 1
+    bounds:
+      upper: 120
+    distribution: zipfian
+
+  - field: legacy.updated_since
+    weight: 1
+    bounds:
+      upper: 120
+      smaller_is_better: yes
+    distribution: zipfian
+
+  - field: legacy.contributor_count
+    weight: 2
+    bounds:
+      upper: 5000
+    distribution: zipfian
+
+  - field: legacy.org_count
+    weight: 1
+    bounds:
+      upper: 10
+    distribution: zipfian
+
+  - field: legacy.commit_frequency
+    weight: 1
+    bounds:
+      upper: 1000
+    distribution: zipfian
+
+  - field: legacy.recent_release_count
+    weight: 0.5
+    bounds:
+      upper: 26
+    distribution: zipfian
+
+  - field: legacy.updated_issues_count
+    weight: 0.5
+    bounds:
+      upper: 5000
+    distribution: zipfian
+
+  - field: legacy.closed_issues_count
+    weight: 0.5
+    bounds:
+      upper: 5000
+    distribution: zipfian
+
+  - field: legacy.issue_comment_frequency
+    weight: 1
+    bounds:
+      upper: 15
+    distribution: zipfian
+
+  - field: legacy.github_mention_count
+    weight: 2
+    bounds:
+      upper: 500000
+    distribution: zipfian

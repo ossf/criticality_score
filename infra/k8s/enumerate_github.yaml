@@ -1,0 +1,50 @@
+# Copyright 2022 Criticality Score Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: criticality-score-enumerate-github
+spec:
+  # Run twice weekly, on Sunday and Wednesday, at 23:00UTC for >=20 stars.
+  schedule: "0 23 * * 0,3"
+  concurrencyPolicy: "Forbid"
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: enumerate-github
+            image: gcr.io/openssf/criticality-score-enumerate-github:latest
+            args: ["gs://ossf-criticality-score-url-data/[[runid]]/github.csv"]
+            imagePullPolicy: Always
+            env:
+            - name: GITHUB_AUTH_SERVER
+              value: "10.4.4.210:80"
+            - name: CRITICALITY_SCORE_LOG_ENV
+              value: "gcp"
+            - name: CRITICALITY_SCORE_OUTFILE_FORCE
+              value: "1"
+            - name: CRITICALITY_SCORE_STARS_MIN
+              value: "20"
+            - name: CRITICALITY_SCORE_START_DATE
+              value: "2008-01-01"
+            - name: CRITICALITY_SCORE_FORMAT
+              value: "scorecard"
+            resources:
+              limits:
+                memory: 5Gi
+              requests:
+                memory: 2Gi
+          restartPolicy: OnFailure

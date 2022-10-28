@@ -28,11 +28,11 @@ $ go install github.com/ossf/criticality_score/cmd/collect_signals
 ## Usage
 
 ```shell
-$ collect_signals [FLAGS]... IN_FILE... OUT_FILE
+$ collect_signals [FLAGS]... IN_FILE OUT_FILE
 ```
 
-Project repository URLs are read from each `IN_FILE` specified. If `-` is passed
-in as an `IN_FILE` URLs will read from STDIN, along with any other files specified.
+Project repository URLs are read from the specified `IN_FILE`. If `-` is passed
+in as an `IN_FILE` URLs will read from STDIN.
 
 Results are written in CSV format to `OUT_FILE`. If `OUT_FILE` is `-` the
 results will be written to STDOUT.

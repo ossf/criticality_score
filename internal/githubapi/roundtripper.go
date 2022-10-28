@@ -17,20 +17,21 @@ package githubapi
 import (
 	"bytes"
 	"encoding/json"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v44/github"
+	"github.com/google/go-github/v47/github"
+	"go.uber.org/zap"
+
 	"github.com/ossf/criticality_score/internal/retry"
-	log "github.com/sirupsen/logrus"
 )
 
 const (
-	githubErrorIdSearch = "\"error_500\""
+	githubErrorIDSearch = "\"error_500\""
 )
 
 var (
@@ -38,7 +39,7 @@ var (
 	issueCommentsRe = regexp.MustCompile("^repos/[^/]+/[^/]+/issues/comments$")
 )
 
-func NewRoundTripper(rt http.RoundTripper, logger *log.Logger) http.RoundTripper {
+func NewRetryRoundTripper(rt http.RoundTripper, logger *zap.Logger) http.RoundTripper {
 	s := &strategies{logger: logger}
 	return retry.NewRoundTripper(rt,
 		retry.InitialDelay(2*time.Minute),
@@ -50,25 +51,25 @@ func NewRoundTripper(rt http.RoundTripper, logger *log.Logger) http.RoundTripper
 }
 
 type strategies struct {
-	logger *log.Logger
+	logger *zap.Logger
 }
 
 func respBodyContains(r *http.Response, search string) (bool, error) {
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	defer r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil {
 		return false, err
 	}
 	return bytes.Contains(data, []byte(search)), nil
 }
 
-// ServerError implements retry.RetryStrategyFn
+// ServerError implements retry.RetryStrategyFn.
 func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode < 500 || 600 <= r.StatusCode {
 		return retry.NoRetry, nil
 	}
-	s.logger.WithField("status", r.Status).Warn("5xx: detected")
+	s.logger.With(zap.String("status", r.Status)).Warn("5xx: detected")
 	path := strings.Trim(r.Request.URL.Path, "/")
 	if issuesRe.MatchString(path) {
 		s.logger.Warn("Ignoring /repos/X/Y/issues url.")
@@ -83,10 +84,9 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 		return retry.NoRetry, nil
 	}
 	return retry.RetryImmediate, nil
-
 }
 
-// ServerError400 implements retry.RetryStrategyFn
+// ServerError400 implements retry.RetryStrategyFn.
 func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode != http.StatusBadRequest {
 		return retry.NoRetry, nil
@@ -96,7 +96,7 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 		return retry.NoRetry, nil
 	}
 	s.logger.Debug("It's a text/html doc")
-	if isError, err := respBodyContains(r, githubErrorIdSearch); isError {
+	if isError, err := respBodyContains(r, githubErrorIDSearch); isError {
 		s.logger.Debug("Found target string - assuming 500.")
 		return retry.RetryImmediate, nil
 	} else {
@@ -104,22 +104,21 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 	}
 }
 
-// SecondaryRateLimit implements retry.RetryStrategyFn
+// SecondaryRateLimit implements retry.RetryStrategyFn.
 func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, error) {
 	if r.StatusCode != http.StatusForbidden {
 		return retry.NoRetry, nil
 	}
 	s.logger.Warn("403: forbidden detected")
 	errorResponse := &github.ErrorResponse{Response: r}
-	data, err := ioutil.ReadAll(r.Body)
+	data, err := io.ReadAll(r.Body)
 	r.Body.Close()
-	r.Body = ioutil.NopCloser(bytes.NewBuffer(data))
+	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil || data == nil {
-		s.logger.WithFields(
-			log.Fields{
-				"error":    err,
-				"data_nil": (data == nil),
-			}).Warn("ReadAll failed.")
+		s.logger.With(
+			zap.Error(err),
+			zap.Bool("data_nil", data == nil),
+		).Warn("ReadAll failed.")
 		return retry.NoRetry, err
 	}
 	// Don't error check the unmarshall - if there is an error and the parsing
@@ -128,10 +127,10 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	// will cause the response to be processed again by go-github with an error
 	// being generated there.
 	json.Unmarshal(data, errorResponse)
-	s.logger.WithFields(log.Fields{
-		"url":     errorResponse.DocumentationURL,
-		"message": errorResponse.Message,
-	}).Warn("Error response data")
+	s.logger.With(
+		zap.String("url", errorResponse.DocumentationURL),
+		zap.String("message", errorResponse.Message),
+	).Warn("Error response data")
 	if strings.HasSuffix(errorResponse.DocumentationURL, "#abuse-rate-limits") ||
 		strings.HasSuffix(errorResponse.DocumentationURL, "#secondary-rate-limits") {
 		s.logger.Warn("Secondary rate limit hit.")
@@ -141,7 +140,7 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	return retry.NoRetry, nil
 }
 
-// RetryAfter implements retry.RetryAfterFn
+// RetryAfter implements retry.RetryAfterFn.
 // TODO: move to retry once we're confident it is working.
 func (s *strategies) RetryAfter(r *http.Response) time.Duration {
 	if v := r.Header["Retry-After"]; len(v) > 0 {
@@ -153,4 +152,46 @@ func (s *strategies) RetryAfter(r *http.Response) time.Duration {
 		return time.Duration(retryAfterSeconds) * time.Second
 	}
 	return 0
+}
+
+// graphQLRoundTripper is used to make GraphQL errors produced by the GitHub
+// GraphQL accessible.
+//
+// This allows the detection of NOT_FOUND responses, so we can accurately
+// tell the difference between an error due to connectivity or server
+// issues and a repository not existing.
+type graphQLRoundTripper struct {
+	inner http.RoundTripper
+}
+
+// RoundTrip implements the http.RoundTripper interface.
+func (rt *graphQLRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	resp, err := rt.inner.RoundTrip(r)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return resp, err
+	}
+	// Read the body in and close it.
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		// TODO: Do we need to do something with this error?
+		return nil, err
+	}
+
+	var out struct {
+		Data   *json.RawMessage
+		Errors []GraphQLError
+	}
+	err = json.Unmarshal(body, &out)
+	if err != nil {
+		// TODO: Do we need to do something with this error?
+		return nil, err
+	}
+	if len(out.Errors) > 0 {
+		return nil, &GraphQLErrors{errors: out.Errors}
+	}
+
+	// Reset the body so that others can read it as well.
+	resp.Body = io.NopCloser(bytes.NewBuffer(body))
+	return resp, nil
 }

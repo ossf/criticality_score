@@ -12,10 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM golang@sha256:684d791f8fd1b28485ee32239d92cde7099d97c88c5ed2e955f65f4adcf35d0f AS base
+FROM golang@sha256:122f3484f844467ebe0674cf57272e61981770eb0bc7d316d1f0be281a88229f AS base
 WORKDIR /src
 ENV CGO_ENABLED=0
-COPY go.* ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . ./
 

@@ -25,9 +25,7 @@ const (
 	DefaultInitialDuration = 2 * time.Minute
 )
 
-var (
-	ErrorNoMoreAttempts = errors.New("request cannot by retried")
-)
+var ErrorNoMoreAttempts = errors.New("request cannot by retried")
 
 type RetryStrategy int
 
@@ -84,12 +82,12 @@ func DefaultBackoff(d time.Duration) time.Duration {
 }
 
 type Options struct {
-	maxRetries         int
-	initialDelay       time.Duration
 	backoff            BackoffFn
 	sleep              sleepFn
 	retryAfter         RetryAfterFn
 	retryStrategyFuncs []RetryStrategyFn
+	maxRetries         int
+	initialDelay       time.Duration
 }
 type Option interface {
 	Apply(*Options)

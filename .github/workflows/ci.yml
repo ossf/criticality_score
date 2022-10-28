@@ -1,0 +1,29 @@
+name: "Continuous Integration"
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions: read-all
+
+jobs:
+  run-tests:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+    - uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f
+      with:
+        go-version: 1.19
+    - name: Run tests
+      run: make test
+  run-linter:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
+    - uses: actions/setup-go@268d8c0ca0432bb2cf416faae41297df9d262d7f
+      with:
+        go-version: 1.19
+    - name: golangci-lint
+      uses: golangci/golangci-lint-action@537aa1903e5d359d0b27dbc19ddd22c5087f3fbc
