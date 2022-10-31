@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package collector defines a registry for using signal sources together.
 package collector
 
 import (
@@ -26,19 +25,17 @@ import (
 // empty is a convenience wrapper for the empty struct.
 type empty struct{}
 
-var globalRegistry = NewRegistry()
-
-type Registry struct {
+type registry struct {
 	ss []signal.Source
 }
 
-// NewRegistry creates a new instance of Registry.
-func NewRegistry() *Registry {
-	return &Registry{}
+// newRegistry creates a new instance of registry.
+func newRegistry() *registry {
+	return &registry{}
 }
 
 // containsSource returns true if c has already been registered.
-func (r *Registry) containsSource(s signal.Source) bool {
+func (r *registry) containsSource(s signal.Source) bool {
 	for _, regS := range r.ss {
 		if regS == s {
 			return true
@@ -53,7 +50,7 @@ func (r *Registry) containsSource(s signal.Source) bool {
 // Source has already been added.
 //
 // The order which Sources are added is preserved.
-func (r *Registry) Register(s signal.Source) {
+func (r *registry) Register(s signal.Source) {
 	validateSource(s)
 	if r.containsSource(s) {
 		panic(fmt.Sprintf("source %s has already been registered", s.EmptySet().Namespace()))
@@ -64,7 +61,7 @@ func (r *Registry) Register(s signal.Source) {
 	r.ss = append(r.ss, s)
 }
 
-func (r *Registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
+func (r *registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
 	// Check for duplicates using a map to preserve the insertion order
 	// of the sources.
 	exists := make(map[signal.Namespace]empty)
@@ -92,7 +89,7 @@ func (r *Registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
 // The order of each empty Set is the same as the order of registration. If two
 // Sources return a Set with the same Namespace, only the first Set will be
 // included.
-func (r *Registry) EmptySets() []signal.Set {
+func (r *registry) EmptySets() []signal.Set {
 	exists := make(map[signal.Namespace]empty)
 	var ss []signal.Set
 	for _, c := range r.ss {
@@ -106,7 +103,7 @@ func (r *Registry) EmptySets() []signal.Set {
 }
 
 // Collect will collect all the signals for the given repo.
-func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal.Set, error) {
+func (r *registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal.Set, error) {
 	cs := r.sourcesForRepository(repo)
 	var ss []signal.Set
 	for _, c := range cs {
@@ -117,30 +114,6 @@ func (r *Registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal
 		ss = append(ss, s)
 	}
 	return ss, nil
-}
-
-// Register registers the source with the global registry for use during
-// calls to Collect().
-//
-// See Registry.Register().
-func Register(s signal.Source) {
-	globalRegistry.Register(s)
-}
-
-// EmptySet returns all the empty signal Sets for all the Sources registered
-// with the global registry.
-//
-// See Registry.EmptySets().
-func EmptySets() []signal.Set {
-	return globalRegistry.EmptySets()
-}
-
-// Collect collects all the signals for the given repo using the Sources
-// registered with the global registry.
-//
-// See Registry.Collect().
-func Collect(ctx context.Context, r projectrepo.Repo) ([]signal.Set, error) {
-	return globalRegistry.Collect(ctx, r)
 }
 
 func validateSource(s signal.Source) {

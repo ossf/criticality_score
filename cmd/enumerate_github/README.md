@@ -2,7 +2,8 @@
 
 This tool is used to reliably enumerate projects on GitHub.
 
-The output of this tool is used as an input for the `collect_signals` tool. 
+The output of this tool is can be used as an input for the `criticality_score`
+tool, or for input for the `collect_signals` worker.
 
 ## Example
 

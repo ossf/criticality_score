@@ -28,8 +28,10 @@ type Repo interface {
 type Factory interface {
 	// New returns a new instance of Repo for the supplied URL.
 	//
-	// If the project is not valid for use, or there is an issue creating the
-	// the Project will be nil and an error will be returned.
+	// If the project can not be found, the error NoRepoFound will be returned.
+	//
+	// If the project is not valid for use, or there is any other issue creating
+	// the Repo, Repo will be nil and an error will be returned.
 	New(context.Context, *url.URL) (Repo, error)
 
 	// Match returns true if this factory can create a new instance of Repo

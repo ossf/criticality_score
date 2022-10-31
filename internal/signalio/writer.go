@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package result
+package signalio
 
 import (
 	"errors"
@@ -22,16 +22,13 @@ import (
 
 var ErrorMarshalFailure = errors.New("failed to marshal value")
 
-type RecordWriter interface {
-	// WriteSignalSet is used to output the value for a signal.Set for a record.
-	WriteSignalSet(signal.Set) error
-
-	// Done indicates that all the fields for the record have been written and
-	// record is complete.
-	Done() error
+//nolint:govet
+type Field struct {
+	Key   string
+	Value any
 }
 
 type Writer interface {
-	// Record returns a RecordWriter that can be used to write a new record.
-	Record() RecordWriter
+	// WriteSignals outputs the all the signals collector to storage.
+	WriteSignals([]signal.Set, ...Field) error
 }
