@@ -25,14 +25,14 @@ $ go install github.com/ossf/criticality_score/cmd/criticality_score
 ## Usage
 
 ```shell
-$ criticality_score [FLAGS]... IN_FILE OUT_FILE
+$ criticality_score [FLAGS]... IN_FILE
 ```
 
 Project repository URLs are read from the specified `IN_FILE`. If `-` is passed
 in as an `IN_FILE` URLs will read from STDIN.
 
-Results are written in CSV format to `OUT_FILE`. If `OUT_FILE` is `-` the
-results will be written to STDOUT.
+Results are written in CSV format the output. By default `stdout` is used for
+output.
 
 `FLAGS` are optional. See below for documentation.
 
@@ -104,6 +104,7 @@ See more on GCP
 
 #### Output flags
 
+- `-out FILE` specify the `FILE` to use for output. By default `stdout` is used.
 - `-append` appends output to `FILE` if it already exists.
 - `-force` overwrites `FILE` if it already exists and `-append` is not set.
 

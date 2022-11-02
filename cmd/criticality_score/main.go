@@ -52,10 +52,31 @@ var (
 	logEnv                log.Env
 )
 
+// INPUT
+// script REPO [REPO...]
+// script -file filepath
+// script (reads from STDIN)
+
+// changes:
+// IN_FILE -> -repos file
+// STDIN -> "dash" arg (consistency, and to ensure we have an arg to catch errors)
+// -> args = repos
+// alt 1: -repo X -repo X -repo X
+// alt 2: -repos X Y Z (i.e. flag changes bare args to be repos)
+// alt 3: implicit input file detection (if 1 arg and file with name exists use it)
+// alt 4: alt 3 + optional args that force the behavior if it is ambiguous
+
+// How does this affect scorer...
+// OUT_FILE -> -out file
+// IN_FILE -> arg  -- this is inconsistent
+
+// How does this affect enumeration
+// OUT_FILE -> -out file (no args)
+
 func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE")
+	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
@@ -153,7 +174,6 @@ func main() {
 	}
 
 	inFilename := flag.Args()[0]
-	outFilename := flag.Args()[1]
 
 	// Open the in-file for reading
 	r, err := infile.Open(context.Background(), inFilename)
@@ -167,10 +187,9 @@ func main() {
 	defer r.Close()
 
 	// Open the out-file for writing
-	w, err := outfile.Open(context.Background(), outFilename)
+	w, err := outfile.Open(context.Background())
 	if err != nil {
 		logger.With(
-			zap.String("filename", outFilename),
 			zap.Error(err),
 		).Error("Failed to open file for output")
 		os.Exit(2)

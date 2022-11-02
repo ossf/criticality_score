@@ -35,21 +35,21 @@ type fileOpenFunc func(string, int, os.FileMode) (*os.File, error)
 
 type Opener struct {
 	fileOpener fileOpenFunc
-	StdoutName string
+	filename   string
 	forceFlag  string
 	force      bool
 	append     bool
 	Perm       os.FileMode
 }
 
-// CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.
-func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) *Opener {
+// CreateOpener creates an Opener and defines the sepecified flags fileFlag, forceFlag and appendFlag.
+func CreateOpener(fs *flag.FlagSet, fileFlag, forceFlag, appendFlag, fileHelpName string) *Opener {
 	o := &Opener{
 		Perm:       0o666,
-		StdoutName: "-",
 		fileOpener: os.OpenFile,
 		forceFlag:  forceFlag,
 	}
+	fs.StringVar(&(o.filename), fileFlag, "", fmt.Sprintf("use the file `%s` for output. Defaults to stdout if not set.", fileHelpName))
 	fs.BoolVar(&(o.force), forceFlag, false, fmt.Sprintf("overwrites %s if it already exists and -%s is not set.", fileHelpName, appendFlag))
 	fs.BoolVar(&(o.append), appendFlag, false, fmt.Sprintf("appends to %s if it already exists.", fileHelpName))
 	return o
@@ -81,9 +81,9 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 	return w, nil
 }
 
-// Open opens and returns a file for output with the given filename.
+// Open opens and returns a file for output with the filename set by the fileFlag.ß
 //
-// If filename is equal to o.StdoutName, os.Stdout will be used.
+// If filename is empty/unset, os.Stdout will be used.
 // If filename does not exist, it will be created with the mode set in o.Perm.
 // If filename does exist, the behavior of this function will depend on the
 // flags:
@@ -94,19 +94,19 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 //     truncated.
 //   - if neither forceFlag nor appendFlag are set an error will be
 //     returned.
-func (o *Opener) Open(ctx context.Context, filename string) (io.WriteCloser, error) {
-	if o.StdoutName != "" && filename == o.StdoutName {
+func (o *Opener) Open(ctx context.Context) (io.WriteCloser, error) {
+	if o.filename == "" {
 		return os.Stdout, nil
-	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
+	} else if u, e := url.Parse(o.filename); e == nil && u.IsAbs() {
 		return o.openBlobStore(ctx, u)
 	}
 	switch {
 	case o.append:
-		return o.openFile(filename, os.O_APPEND)
+		return o.openFile(o.filename, os.O_APPEND)
 	case o.force:
-		return o.openFile(filename, os.O_TRUNC)
+		return o.openFile(o.filename, os.O_TRUNC)
 	default:
-		return o.openFile(filename, os.O_EXCL)
+		return o.openFile(o.filename, os.O_EXCL)
 	}
 }
 
@@ -114,13 +114,13 @@ var defaultOpener *Opener
 
 // DefineFlags is a wrapper around CreateOpener for updating a default instance
 // of Opener.
-func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
-	defaultOpener = CreateOpener(fs, forceFlag, appendFlag, fileHelpName)
+func DefineFlags(fs *flag.FlagSet, fileFlag, forceFlag, appendFlag, fileHelpName string) {
+	defaultOpener = CreateOpener(fs, fileFlag, forceFlag, appendFlag, fileHelpName)
 }
 
 // Open is a wrapper around Opener.Open for the default instance of Opener.
 //
 // Must only be called after DefineFlags.
-func Open(ctx context.Context, filename string) (io.WriteCloser, error) {
-	return defaultOpener.Open(ctx, filename)
+func Open(ctx context.Context) (io.WriteCloser, error) {
+	return defaultOpener.Open(ctx)
 }

@@ -72,6 +72,7 @@ var (
 		"CRITICALITY_SCORE_WORKERS":            "workers",
 		"CRITICALITY_SCORE_START_DATE":         "start",
 		"CRITICALITY_SCORE_END_DATE":           "end",
+		"CRITICALITY_SCORE_OUTFILE":            "out",
 		"CRITICALITY_SCORE_OUTFILE_FORCE":      "force",
 		"CRITICALITY_SCORE_QUERY":              "query",
 		"CRITICALITY_SCORE_STARS_MIN":          "min-stars",
@@ -107,13 +108,13 @@ func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&format, "format", repowriter.WriterTypeText, "set output file `format`.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
+	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... FILE\n\n", cmdName)
+		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]...\n\n", cmdName)
 		fmt.Fprintf(w, "Enumerates GitHub repositories between -start date and -end date, with -min-stars\n")
-		fmt.Fprintf(w, "or higher. Writes each repository URL on a separate line to FILE.\n")
+		fmt.Fprintf(w, "or higher. Writes each repository URL in the specified format.\n")
 		fmt.Fprintf(w, "\nFlags:\n")
 		flag.PrintDefaults()
 	}
@@ -201,7 +202,7 @@ func main() {
 	).Info("Preparing output file")
 
 	// Open the output file
-	out, err := outfile.Open(context.Background(), outFilename)
+	out, err := outfile.Open(context.Background())
 	if err != nil {
 		// File failed to open
 		logger.Error("Failed to open output file", zap.Error(err))

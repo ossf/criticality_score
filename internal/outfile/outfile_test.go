@@ -38,9 +38,8 @@ type testOpener struct {
 func newTestOpener() *testOpener {
 	o := &testOpener{}
 	o.flag = flag.NewFlagSet("", flag.ContinueOnError)
-	o.opener = CreateOpener(o.flag, "force", "append", "FILE")
+	o.opener = CreateOpener(o.flag, "out", "force", "append", "FILE")
 	o.opener.Perm = 0o567
-	o.opener.StdoutName = "-stdout-"
 	o.opener.fileOpener = func(filename string, flags int, perm os.FileMode) (*os.File, error) {
 		o.lastOpen = &openCall{
 			filename: filename,
@@ -74,7 +73,7 @@ func TestAppendFlagDefined(t *testing.T) {
 
 func TestOpenStdout(t *testing.T) {
 	o := newTestOpener()
-	f, err := o.opener.Open(context.Background(), "-stdout-")
+	f, err := o.opener.Open(context.Background())
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
@@ -85,8 +84,8 @@ func TestOpenStdout(t *testing.T) {
 
 func TestOpenBucketUrl(t *testing.T) {
 	o := newTestOpener()
-	o.flag.Parse([]string{"-force"})
-	f, err := o.opener.Open(context.Background(), "mem://bucket/prefix")
+	o.flag.Parse([]string{"-force", "-out=mem://bucket/prefix"})
+	f, err := o.opener.Open(context.Background())
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
@@ -100,8 +99,8 @@ func TestOpenBucketUrl(t *testing.T) {
 
 func TestOpenBucketUrlNoForceFlag(t *testing.T) {
 	o := newTestOpener()
-	o.flag.Parse([]string{})
-	_, err := o.opener.Open(context.Background(), "mem://bucket/prefix")
+	o.flag.Parse([]string{"-out=mem://bucket/prefix"})
+	_, err := o.opener.Open(context.Background())
 	if err == nil {
 		t.Fatalf("Open() == nil, want an error")
 	}
@@ -141,8 +140,8 @@ func TestOpenFlagTest(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			o := newTestOpener()
-			o.flag.Parse(test.args)
-			f, err := o.opener.Open(context.Background(), "path/to/file")
+			o.flag.Parse(append(test.args, "-out=path/to/file"))
+			f, err := o.opener.Open(context.Background())
 			if err != nil {
 				t.Fatalf("Open() == %v, want nil", err)
 			}
@@ -157,9 +156,9 @@ func TestOpenFlagTest(t *testing.T) {
 	for _, test := range tests {
 		t.Run(test.name+" error", func(t *testing.T) {
 			o := newTestOpener()
-			o.flag.Parse(test.args)
+			o.flag.Parse(append(test.args, "-out=path/to/file"))
 			o.openErr = errors.New("test error")
-			_, err := o.opener.Open(context.Background(), "path/to/file")
+			_, err := o.opener.Open(context.Background())
 			if err == nil {
 				t.Fatalf("Open() is nil, want %v", o.openErr)
 			}

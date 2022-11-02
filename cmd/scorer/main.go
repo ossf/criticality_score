@@ -63,7 +63,7 @@ var (
 func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE") // TODO: add the ability to disable "append"
+	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "OUT_FILE") // TODO: add the ability to disable "append"
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
@@ -116,7 +116,6 @@ func main() {
 		os.Exit(2)
 	}
 	inFilename := flag.Args()[0]
-	outFilename := flag.Args()[1]
 
 	// Open the in-file for reading
 	var r *csv.Reader
@@ -132,11 +131,10 @@ func main() {
 	r = csv.NewReader(fr)
 
 	// Open the out-file for writing
-	fw, err := outfile.Open(context.Background(), outFilename)
+	fw, err := outfile.Open(context.Background())
 	if err != nil {
 		logger.With(
 			zap.Error(err),
-			zap.String("filename", outFilename),
 		).Error("Failed to open file for output")
 		os.Exit(2)
 	}

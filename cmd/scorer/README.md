@@ -23,14 +23,14 @@ $ go install github.com/ossf/criticality_score/cmd/scorer
 ## Usage
 
 ```shell
-$ scorer [FLAGS]... IN_FILE OUT_FILE
+$ scorer [FLAGS]... IN_FILE
 ```
 
 Raw signals are read as CSV from `IN_FILE`. If `-` is passed in for `IN_FILE`
 raw signal data will read from STDIN rather than a file.
 
-Results are re-written in CSV format to `OUT_FILE`. If `OUT_FILE` is `-` the
-results will be written to STDOUT. Results are sorted in descending score order.
+Results are re-written in CSV format to the output in descending score order.
+By default `stdout` is used for output.
 
 The `-config` flag is required. All other `FLAGS` are optional.
 See below for documentation.
@@ -39,6 +39,7 @@ See below for documentation.
 
 #### Output flags
 
+- `-out FILE` specify the `FILE` to use for output. By default `stdout` is used.
 - `-append` appends output to `OUT_FILE` if it already exists.
 - `-force` overwrites `OUT_FILE` if it already exists and `-append` is not set.
 
