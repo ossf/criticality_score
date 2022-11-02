@@ -12,8 +12,8 @@ $ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here
 $ gcloud login --update-adc  # Sign-in to GCP
 $ criticality_score \
     -workers=1 \
-    github_projects.txt \
-    signals.csv
+    -out=signals.csv \
+    github_projects.txt
 ```
 
 ## Install
@@ -194,7 +194,7 @@ Rather than installing the binary, use `go run` to run the command.
 For example:
 
 ```shell
-$ go run ./cmd/criticality_score [FLAGS]... IN_FILE... OUT_FILE
+$ go run ./cmd/criticality_score [FLAGS]... IN_FILE...
 ```
 
 Pass in a single repo using echo to quickly test signal collection, for example:
@@ -203,5 +203,5 @@ Pass in a single repo using echo to quickly test signal collection, for example:
 $ echo "https://github.com/django/django" | \
     go run ./cmd/criticality_score \
       -log=debug \
-      - -
+      -
 ```

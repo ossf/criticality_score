@@ -10,8 +10,8 @@ The input of this tool is usually the output of the `collect_signals` tool.
 ```shell
 $ scorer \
     -config config/scorer/original_pike.yml \
-    raw_signals.txt \
-    scored_signals.txt
+    -out=scored_signals.txt \
+    raw_signals.txt
 ```
 
 ## Install
@@ -132,7 +132,7 @@ Rather than installing the binary, use `go run` to run the command.
 For example:
 
 ```shell
-$ go run ./cmd/scorer [FLAGS]... IN_FILE OUT_FILE
+$ go run ./cmd/scorer [FLAGS]... IN_FILE
 ```
 
 Use STDIN and STDOUT on a subset of data for fast iteration. For example:
@@ -140,5 +140,5 @@ Use STDIN and STDOUT on a subset of data for fast iteration. For example:
 ```shell
 $ head -10 raw_signals.csv | go run ./cmd/scorer \
     -config config/scorer/original_pike.yml \
-    - -
+    -
 ```
