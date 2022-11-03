@@ -15,7 +15,6 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"flag"
@@ -30,7 +29,6 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/ossf/criticality_score/internal/collector"
-	"github.com/ossf/criticality_score/internal/infile"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/scorer"
@@ -52,22 +50,28 @@ var (
 	logEnv                log.Env
 )
 
-func init() {
+// initFlags prepares any runtime flags, usage information and parses the flags.
+func initFlags() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "FILE")
+	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "OUTFILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_FILE OUT_FILE\n\n", cmdName)
-		fmt.Fprintf(w, "Collects signals for each project repository listed.\n")
-		fmt.Fprintf(w, "IN_FILE must be either a file or - to read from stdin.\n")
-		fmt.Fprintf(w, "OUT_FILE must be either be a file or - to write to stdout.\n")
+		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... {FILE|REPO...}\n\n", cmdName)
+		fmt.Fprintf(w, "Collects signals for a list of project repository urls.\n\n")
+		fmt.Fprintf(w, "FILE must be either a file or - to read from stdin. If FILE does not\n")
+		fmt.Fprintf(w, "exist it will be treated as a REPO.\n")
+		fmt.Fprintf(w, "Each REPO must be a project repository url.\n")
 		fmt.Fprintf(w, "\nFlags:\n")
 		flag.PrintDefaults()
 	}
+	flag.Parse()
 }
 
+// getScorer prepares a Scorer based on the flags passed to the command.
+//
+// nil will be returned if scoring is disabled.
 func getScorer(logger *zap.Logger) *scorer.Scorer {
 	if *scoringDisableFlag {
 		logger.Info("Scoring disabled")
@@ -112,7 +116,7 @@ func generateScoreColumnName(s *scorer.Scorer) string {
 }
 
 func main() {
-	flag.Parse()
+	initFlags()
 
 	logger, err := log.NewLogger(logEnv, logLevel)
 	if err != nil {
@@ -125,8 +129,8 @@ func main() {
 	scoreColumnName := generateScoreColumnName(s)
 
 	// Complete the validation of args
-	if flag.NArg() != 1 {
-		logger.Error("Must have an input file specified.")
+	if flag.NArg() == 0 {
+		logger.Error("An input file or at least one repo must be specified.")
 		os.Exit(2)
 	}
 
@@ -152,18 +156,15 @@ func main() {
 		os.Exit(2)
 	}
 
-	inFilename := flag.Args()[0]
-
-	// Open the in-file for reading
-	r, err := infile.Open(context.Background(), inFilename)
+	// Prepare the input for reading
+	inputIter, err := initInput(flag.Args())
 	if err != nil {
 		logger.With(
-			zap.String("filename", inFilename),
 			zap.Error(err),
-		).Error("Failed to open an input file")
+		).Error("Failed to prepare input")
 		os.Exit(2)
 	}
-	defer r.Close()
+	defer inputIter.Close()
 
 	// Open the out-file for writing
 	w, err := outfile.Open(context.Background())
@@ -222,10 +223,9 @@ func main() {
 		}
 	})
 
-	// Read in each line from the input files
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
+	// Read in each repo from the input
+	for inputIter.Next() {
+		line := inputIter.Item()
 
 		u, err := url.Parse(strings.TrimSpace(line))
 		if err != nil {
@@ -242,7 +242,7 @@ func main() {
 		// Send the url to the workers
 		repos <- u
 	}
-	if err := scanner.Err(); err != nil {
+	if err := inputIter.Err(); err != nil {
 		logger.With(
 			zap.Error(err),
 		).Error("Failed while reading input")

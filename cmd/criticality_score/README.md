@@ -25,11 +25,14 @@ $ go install github.com/ossf/criticality_score/cmd/criticality_score
 ## Usage
 
 ```shell
-$ criticality_score [FLAGS]... IN_FILE
+$ criticality_score [FLAGS]... {FILE|REPO...}
 ```
 
-Project repository URLs are read from the specified `IN_FILE`. If `-` is passed
-in as an `IN_FILE` URLs will read from STDIN.
+Project repository URLs are read either from the specified `FILE`, or from the
+command line arguments.
+If `-` is passed in as an `FILE` URLs will read from STDIN. If `FILE` does not
+exist it will be treated as a `REPO`.
+Each `REPO` is a project repository URLs.
 
 Results are written in CSV format to the output. By default `stdout` is used for
 output.
@@ -38,7 +41,8 @@ output.
 
 ### Authentication
 
-`criticality_score` requires authentication to GitHub, and optionally Google Cloud Platform to run.
+`criticality_score` requires authentication to GitHub, and optionally Google
+Cloud Platform to run.
 
 #### GitHub Authentication
 
@@ -104,11 +108,12 @@ See more on GCP
 
 #### Output flags
 
-- `-out FILE` specify the `FILE` to use for output. By default `stdout` is used.
-- `-append` appends output to `FILE` if it already exists.
-- `-force` overwrites `FILE` if it already exists and `-append` is not set.
+- `-out OUTFILE` specify the `OUTFILE` to use for output. By default `stdout` is used.
+- `-append` appends output to `OUTFILE` if it already exists.
+- `-force` overwrites `OUTFILE` if it already exists and `-append` is not set.
 
-If `FILE` exists and neither `-append` nor `-force` is set the command will fail.
+If `OUTFILE` exists and neither `-append` nor `-force` is set the command will
+fail.
 
 #### Google Cloud Platform flags
 
@@ -194,14 +199,13 @@ Rather than installing the binary, use `go run` to run the command.
 For example:
 
 ```shell
-$ go run ./cmd/criticality_score [FLAGS]... IN_FILE...
+$ go run ./cmd/criticality_score [FLAGS]... {FILE|REPO...}
 ```
 
-Pass in a single repo using echo to quickly test signal collection, for example:
+Pass in a single repo to quickly test signal collection, for example:
 
 ```shell
-$ echo "https://github.com/django/django" | \
-    go run ./cmd/criticality_score \
-      -log=debug \
-      -
+$ go run ./cmd/criticality_score \
+    -log=debug \
+    https://github.com/django/django
 ```
