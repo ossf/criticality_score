@@ -111,8 +111,8 @@ func main() {
 	}
 	defer logger.Sync()
 
-	if flag.NArg() != 2 {
-		logger.Error("Must have an input file and an output file specified")
+	if flag.NArg() != 1 {
+		logger.Error("Must have an input file specified.")
 		os.Exit(2)
 	}
 	inFilename := flag.Args()[0]

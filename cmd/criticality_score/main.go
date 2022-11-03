@@ -52,27 +52,6 @@ var (
 	logEnv                log.Env
 )
 
-// INPUT
-// script REPO [REPO...]
-// script -file filepath
-// script (reads from STDIN)
-
-// changes:
-// IN_FILE -> -repos file
-// STDIN -> "dash" arg (consistency, and to ensure we have an arg to catch errors)
-// -> args = repos
-// alt 1: -repo X -repo X -repo X
-// alt 2: -repos X Y Z (i.e. flag changes bare args to be repos)
-// alt 3: implicit input file detection (if 1 arg and file with name exists use it)
-// alt 4: alt 3 + optional args that force the behavior if it is ambiguous
-
-// How does this affect scorer...
-// OUT_FILE -> -out file
-// IN_FILE -> arg  -- this is inconsistent
-
-// How does this affect enumeration
-// OUT_FILE -> -out file (no args)
-
 func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
@@ -146,8 +125,8 @@ func main() {
 	scoreColumnName := generateScoreColumnName(s)
 
 	// Complete the validation of args
-	if flag.NArg() != 2 {
-		logger.Error("Must have one input file and one output file specified.")
+	if flag.NArg() != 1 {
+		logger.Error("Must have an input file specified.")
 		os.Exit(2)
 	}
 

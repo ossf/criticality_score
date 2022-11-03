@@ -123,8 +123,8 @@ func main() {
 	scoreColumnName := generateScoreColumnName(s)
 
 	// Complete the validation of args
-	if flag.NArg() != 2 {
-		logger.Error("Must have one input file and one output file specified.")
+	if flag.NArg() != 1 {
+		logger.Error("Must have an input file specified.")
 		os.Exit(2)
 	}
 
