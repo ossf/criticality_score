@@ -52,6 +52,7 @@ const (
 var (
 	// epochDate is the earliest date for which GitHub has data.
 	epochDate = time.Date(2008, 1, 1, 0, 0, 0, 0, time.UTC)
+	runID     = time.Now().UTC().Format(runIDDateFormat)
 
 	minStarsFlag        = flag.Int("min-stars", 10, "only enumerates repositories with this or more of stars.")
 	starOverlapFlag     = flag.Int("star-overlap", 5, "the number of stars to overlap between queries.")
@@ -72,6 +73,7 @@ var (
 		"CRITICALITY_SCORE_WORKERS":            "workers",
 		"CRITICALITY_SCORE_START_DATE":         "start",
 		"CRITICALITY_SCORE_END_DATE":           "end",
+		"CRITICALITY_SCORE_OUTFILE":            "out",
 		"CRITICALITY_SCORE_OUTFILE_FORCE":      "force",
 		"CRITICALITY_SCORE_QUERY":              "query",
 		"CRITICALITY_SCORE_STARS_MIN":          "min-stars",
@@ -107,13 +109,13 @@ func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&format, "format", repowriter.WriterTypeText, "set output file `format`.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "force", "append", "FILE")
+	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... FILE\n\n", cmdName)
+		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]...\n\n", cmdName)
 		fmt.Fprintf(w, "Enumerates GitHub repositories between -start date and -end date, with -min-stars\n")
-		fmt.Fprintf(w, "or higher. Writes each repository URL on a separate line to FILE.\n")
+		fmt.Fprintf(w, "or higher. Writes each repository URL in the specified format.\n")
 		fmt.Fprintf(w, "\nFlags:\n")
 		flag.PrintDefaults()
 	}
@@ -158,6 +160,17 @@ func main() {
 	}
 	defer logger.Sync()
 
+	// Set a FilenameTransform to expand the run-id token in a filename.
+	outfile.DefaultOpener.FilenameTransform = func(f string) string {
+		if !strings.Contains(f, runIDToken) {
+			return f
+		}
+		// Every future log message will have the run-id attached.
+		logger = logger.With(zap.String("run-id", runID))
+		logger.Info("Using Run ID")
+		return strings.ReplaceAll(f, runIDToken, runID)
+	}
+
 	// roundtripper requires us to use the scorecard logger.
 	innerLogger := zapr.NewLogger(logger)
 	scLogger := &sclog.Logger{Logger: &innerLogger}
@@ -179,29 +192,8 @@ func main() {
 		os.Exit(2)
 	}
 
-	// Ensure a non-flag argument (the output file) is specified.
-	if flag.NArg() != 1 {
-		logger.Error("An output file must be specified.")
-		os.Exit(2)
-	}
-	outFilename := flag.Arg(0)
-
-	// Expand runIDToken into the runID inside the output file's name.
-	if strings.Contains(outFilename, runIDToken) {
-		runID := time.Now().UTC().Format(runIDDateFormat)
-		// Every future log message will have the run-id attached.
-		logger = logger.With(zap.String("run-id", runID))
-		logger.Info("Using Run ID")
-		outFilename = strings.ReplaceAll(outFilename, runIDToken, runID)
-	}
-
-	// Print a helpful message indicating the configuration we're using.
-	logger.With(
-		zap.String("filename", outFilename),
-	).Info("Preparing output file")
-
 	// Open the output file
-	out, err := outfile.Open(context.Background(), outFilename)
+	out, err := outfile.Open(context.Background())
 	if err != nil {
 		// File failed to open
 		logger.Error("Failed to open output file", zap.Error(err))
@@ -273,6 +265,6 @@ func main() {
 	logger.With(
 		zap.Int("total_repos", totalRepos),
 		zap.Duration("duration", time.Since(startTime).Truncate(time.Minute)),
-		zap.String("filename", outFilename),
+		zap.String("filename", out.Name()),
 	).Info("Finished enumeration")
 }

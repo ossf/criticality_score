@@ -13,7 +13,7 @@ $ enumerate_github \
     -start 2008-01-01 \
     -min-stars=10 \
     -workers=1 \
-    github_projects.txt
+    -out=github_projects.txt
 ```
 
 ## Install
@@ -25,10 +25,11 @@ $ go install github.com/ossf/criticality_score/cmd/enumerate_github
 ## Usage
 
 ```shell
-$ enumerate_github [FLAGS]... FILE
+$ enumerate_github [FLAGS]...
 ```
 
-The URL for each repository is written to `FILE`. If `FILE` is `-` the results will be written to STDOUT.
+The URL for each repository is written to the output. By default `stdout` is used
+for output.
 
 `FLAGS` are optional. See below for documentation.
 
@@ -50,8 +51,13 @@ $ export GITHUB_TOKEN=ghp_abc,ghp_123
 
 #### Output flags
 
+- `-out FILE` specify the `FILE` to use for output. By default `stdout` is used.
 - `-append` appends output to `FILE` if it already exists.
 - `-force` overwrites `FILE` if it already exists and `-append` is not set.
+- `-format {text|scorecard}` indicates the format to use for output. `text` is
+  used by default and consists of one URL per line. `scorecard` outputs a CSV
+  file compatible with the [scorecard](https://github.com/ossf/scorecard)
+  project.
 
 If `FILE` exists and neither `-append` nor `-force` is set the command will fail.
 
@@ -119,7 +125,7 @@ Rather than installing the binary, use `go run` to run the command.
 For example:
 
 ```shell
-$ go run ./cmd/enumerate_github [FLAGS]... FILE
+$ go run ./cmd/enumerate_github [FLAGS]...
 ```
 
 Limiting the data allows for runs to be completed quickly. For example:
@@ -129,6 +135,5 @@ $ go run ./cmd/enumerate_github \
     -log=debug \
     -start=2022-06-14 \
     -end=2022-06-21 \
-    -min-stars=20 \
-    -
+    -min-stars=20
 ```

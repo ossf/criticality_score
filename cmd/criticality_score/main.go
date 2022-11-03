@@ -55,7 +55,7 @@ var (
 func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE")
+	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
@@ -125,8 +125,8 @@ func main() {
 	scoreColumnName := generateScoreColumnName(s)
 
 	// Complete the validation of args
-	if flag.NArg() != 2 {
-		logger.Error("Must have one input file and one output file specified.")
+	if flag.NArg() != 1 {
+		logger.Error("Must have an input file specified.")
 		os.Exit(2)
 	}
 
@@ -153,7 +153,6 @@ func main() {
 	}
 
 	inFilename := flag.Args()[0]
-	outFilename := flag.Args()[1]
 
 	// Open the in-file for reading
 	r, err := infile.Open(context.Background(), inFilename)
@@ -167,10 +166,9 @@ func main() {
 	defer r.Close()
 
 	// Open the out-file for writing
-	w, err := outfile.Open(context.Background(), outFilename)
+	w, err := outfile.Open(context.Background())
 	if err != nil {
 		logger.With(
-			zap.String("filename", outFilename),
 			zap.Error(err),
 		).Error("Failed to open file for output")
 		os.Exit(2)

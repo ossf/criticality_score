@@ -42,8 +42,8 @@ services:
 
   enumerate-github:
     image: criticality-score-enumerate-github:latest
-    command: s3://criticality_score/enumeration/[[runid]]/github.txt?endpoint=minio:9000&disableSSL=true&s3ForcePathStyle=true
     environment:
+      CRITICALITY_SCORE_OUTFILE: s3://criticality_score/enumeration/[[runid]]/github.txt?endpoint=minio:9000&disableSSL=true&s3ForcePathStyle=true
       CRITICALITY_SCORE_OUTFILE_FORCE: 1
       CRITICALITY_SCORE_STARS_MIN: ${CRITICALITY_SCORE_STARS_MIN:-100}
       CRITICALITY_SCORE_START_DATE: ${CRITICALITY_SCORE_START_DATE}
