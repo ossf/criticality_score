@@ -50,7 +50,7 @@ type writeCloserWrapper struct {
 	name string
 }
 
-// Name implements the NameWriteCloser interface
+// Name implements the NameWriteCloser interface.
 func (w *writeCloserWrapper) Name() string {
 	if w == nil {
 		return ""
@@ -59,12 +59,12 @@ func (w *writeCloserWrapper) Name() string {
 }
 
 type Opener struct {
+	FilenameTransform FilenameTransform
 	fileOpener        fileOpenFunc
 	filename          string
 	forceFlag         string
 	force             bool
 	append            bool
-	FilenameTransform FilenameTransform
 	Perm              os.FileMode
 }
 
