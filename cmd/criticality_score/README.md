@@ -31,7 +31,7 @@ $ criticality_score [FLAGS]... IN_FILE
 Project repository URLs are read from the specified `IN_FILE`. If `-` is passed
 in as an `IN_FILE` URLs will read from STDIN.
 
-Results are written in CSV format the output. By default `stdout` is used for
+Results are written in CSV format to the output. By default `stdout` is used for
 output.
 
 `FLAGS` are optional. See below for documentation.
