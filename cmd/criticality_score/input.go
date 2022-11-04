@@ -115,7 +115,7 @@ func initInput(args []string) (iterCloser[string], error) {
 		// If there is 1 arg, attempt to open it as a file.
 		fileOrRepo := args[0]
 		_, err := url.Parse(fileOrRepo)
-		notAUrl := err != nil
+		urlParseFailed := err != nil
 
 		// Open the in-file for reading
 		r, err := infile.Open(context.Background(), fileOrRepo)
@@ -124,7 +124,7 @@ func initInput(args []string) (iterCloser[string], error) {
 				r:       r,
 				scanner: bufio.NewScanner(r),
 			}, nil
-		} else if err != nil && (notAUrl || !errors.Is(err, os.ErrNotExist)) {
+		} else if err != nil && (urlParseFailed || !errors.Is(err, os.ErrNotExist)) {
 			// Only report errors if the file doesn't appear to be a URL, or if
 			// it doesn't exist.
 			return nil, err
