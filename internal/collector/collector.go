@@ -48,7 +48,7 @@ var ErrRepoNotFound = fmt.Errorf("%w: not found", ErrUncollectableRepo)
 var ErrUnsupportedURL = fmt.Errorf("%w: unsupported url", ErrUncollectableRepo)
 
 type Collector struct {
-	config   *Config
+	config   *config
 	logger   *zap.Logger
 	resolver *projectrepo.Resolver
 	registry *registry

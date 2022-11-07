@@ -21,8 +21,8 @@ require (
 	cloud.google.com/go v0.104.0 // indirect
 	cloud.google.com/go/compute v1.10.0 // indirect
 	cloud.google.com/go/iam v0.5.0 // indirect
+	cloud.google.com/go/pubsub v1.26.0 // indirect
 	cloud.google.com/go/storage v1.27.0 // indirect
-	github.com/Masterminds/semver/v3 v3.1.1 // indirect
 	github.com/aws/aws-sdk-go v1.43.31 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.16.2 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.1 // indirect
@@ -44,51 +44,23 @@ require (
 	github.com/benbjohnson/clock v1.1.0 // indirect
 	github.com/bombsimon/logrusr/v2 v2.0.1 // indirect
 	github.com/bradleyfalzon/ghinstallation/v2 v2.1.0 // indirect
-	github.com/caarlos0/env/v6 v6.10.0 // indirect
-	github.com/common-nighthawk/go-figure v0.0.0-20210622060536-734e95fb86be // indirect
-	github.com/containerd/stargz-snapshotter/estargz v0.12.1 // indirect
-	github.com/containerd/typeurl v1.0.2 // indirect
-	github.com/docker/cli v20.10.20+incompatible // indirect
-	github.com/docker/distribution v2.8.1+incompatible // indirect
-	github.com/docker/docker v20.10.20+incompatible // indirect
-	github.com/docker/docker-credential-helpers v0.7.0 // indirect
-	github.com/fatih/color v1.13.0 // indirect
 	github.com/go-logr/logr v1.2.3 // indirect
-	github.com/gogo/protobuf v1.3.2 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.1 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/mock v1.6.0 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
-	github.com/google/go-containerregistry v0.12.0 // indirect
 	github.com/google/go-github/v38 v38.1.0 // indirect
-	github.com/google/go-github/v41 v41.0.0 // indirect
 	github.com/google/go-github/v45 v45.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.0 // indirect
 	github.com/googleapis/gax-go/v2 v2.6.0 // indirect
-	github.com/h2non/filetype v1.1.3 // indirect
-	github.com/inconshreveable/mousetrap v1.0.1 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
-	github.com/klauspost/compress v1.15.11 // indirect
-	github.com/mattn/go-colorable v0.1.12 // indirect
-	github.com/mattn/go-isatty v0.0.14 // indirect
-	github.com/mattn/go-runewidth v0.0.13 // indirect
-	github.com/mitchellh/go-homedir v1.1.0 // indirect
-	github.com/moby/buildkit v0.10.3 // indirect
-	github.com/olekukonko/tablewriter v0.0.5 // indirect
-	github.com/opencontainers/go-digest v1.0.0 // indirect
-	github.com/opencontainers/image-spec v1.1.0-rc2 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
-	github.com/rhysd/actionlint v1.6.15 // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
-	github.com/robfig/cron v1.2.0 // indirect
+	github.com/jszwec/csvutil v1.7.1 // indirect
+	github.com/kr/pretty v0.3.0 // indirect
+	github.com/rogpeppe/go-internal v1.8.1 // indirect
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
 	github.com/sirupsen/logrus v1.9.0 // indirect
-	github.com/spf13/cobra v1.6.1 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
-	github.com/vbatts/tar-split v0.11.2 // indirect
 	go.opencensus.io v0.23.0 // indirect
 	go.uber.org/atomic v1.9.0 // indirect
 	go.uber.org/multierr v1.8.0 // indirect
@@ -104,6 +76,4 @@ require (
 	google.golang.org/grpc v1.50.1 // indirect
 	google.golang.org/protobuf v1.28.1 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	mvdan.cc/sh/v3 v3.5.1 // indirect
-	sigs.k8s.io/release-utils v0.6.0 // indirect
 )

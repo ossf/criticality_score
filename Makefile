@@ -33,9 +33,11 @@ lint:  ## Run linter
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
-docker-targets = build/docker/enumerate-github build/docker/criticality-score
+docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals
 .PHONY: build/docker $(docker-targets)
 build/docker: $(docker-targets)  ## Build all docker targets
+build/docker/collect-signals:
+	DOCKER_BUILDKIT=1 docker build . -f cmd/collect_signals/Dockerfile --tag $(IMAGE_NAME)-collect-signals
 build/docker/criticality-score:
 	DOCKER_BUILDKIT=1 docker build . -f cmd/criticality_score/Dockerfile --tag $(IMAGE_NAME)-cli
 build/docker/enumerate-github:

@@ -65,7 +65,7 @@ const (
 )
 
 //nolint:govet
-type Config struct {
+type config struct {
 	logger *zap.Logger
 
 	gitHubHTTPClient *http.Client
@@ -78,16 +78,16 @@ type Config struct {
 }
 
 // Option is an interface used to change the config.
-type Option interface{ set(*Config) }
+type Option interface{ set(*config) }
 
 // option implements Option interface.
-type option func(*Config)
+type option func(*config)
 
 // set implements the Option interface.
-func (o option) set(c *Config) { o(c) }
+func (o option) set(c *config) { o(c) }
 
-func makeConfig(ctx context.Context, logger *zap.Logger, opts ...Option) *Config {
-	c := &Config{
+func makeConfig(ctx context.Context, logger *zap.Logger, opts ...Option) *config {
+	c := &config{
 		logger:              logger,
 		defaultSourceStatus: sourceStatusEnabled,
 		sourceStatuses:      make(map[SourceType]sourceStatus),
@@ -104,7 +104,7 @@ func makeConfig(ctx context.Context, logger *zap.Logger, opts ...Option) *Config
 }
 
 // IsEnabled returns true if the given SourceType is enabled.
-func (c *Config) IsEnabled(s SourceType) bool {
+func (c *config) IsEnabled(s SourceType) bool {
 	if status, ok := c.sourceStatuses[s]; ok {
 		return status == sourceStatusEnabled
 	} else {
@@ -130,7 +130,7 @@ func defaultGitHubHTTPClient(ctx context.Context, logger *zap.Logger) *http.Clie
 // All data sources will be used for collection unless explicitly disabled
 // with DisableSource.
 func EnableAllSources() Option {
-	return option(func(c *Config) {
+	return option(func(c *config) {
 		c.defaultSourceStatus = sourceStatusEnabled
 	})
 }
@@ -140,21 +140,21 @@ func EnableAllSources() Option {
 // No data sources will be used for collection unless explicitly enabled
 // with EnableSource.
 func DisableAllSources() Option {
-	return option(func(c *Config) {
+	return option(func(c *config) {
 		c.defaultSourceStatus = sourceStatusDisabled
 	})
 }
 
 // EnableSource will enable the supplied SourceType for collection.
 func EnableSource(s SourceType) Option {
-	return option(func(c *Config) {
+	return option(func(c *config) {
 		c.sourceStatuses[s] = sourceStatusEnabled
 	})
 }
 
 // DisableSource will enable the supplied SourceType for collection.
 func DisableSource(s SourceType) Option {
-	return option(func(c *Config) {
+	return option(func(c *config) {
 		c.sourceStatuses[s] = sourceStatusDisabled
 	})
 }
@@ -164,14 +164,14 @@ func DisableSource(s SourceType) Option {
 //
 // If not supplied, the currently configured project will be used.
 func GCPProject(n string) Option {
-	return option(func(c *Config) {
+	return option(func(c *config) {
 		c.gcpProject = n
 	})
 }
 
 // GCPDatasetName overrides DefaultGCPDatasetName with the supplied dataset name.
 func GCPDatasetName(n string) Option {
-	return option(func(c *Config) {
+	return option(func(c *config) {
 		c.gcpDatasetName = n
 	})
 }
