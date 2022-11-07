@@ -90,6 +90,7 @@ func main() {
 	case "no", "disabled", "disable", "off", "false", "0":
 		scoringEnabled = false
 	default:
+		// Fatal exits.
 		logger.Fatal("Unknown 'scoring' setting: " + scoringState)
 	}
 
@@ -116,6 +117,9 @@ func main() {
 
 	loop := worker.NewWorkLoop(w)
 	if err := loop.Run(); err != nil {
+		// Fatal exits.
 		logger.With(zap.Error(err)).Fatal("Worker run loop failed")
 	}
+
+	logger.Info("Done.")
 }
