@@ -83,7 +83,7 @@ func main() {
 	// It supports various "truthy" and "fasley" values. It will default to
 	// enabled.
 	scoringState := strings.ToLower(criticalityConfig["scoring"])
-	scoringEnabled := false
+	scoringEnabled := true // this value is overridden below
 	switch scoringState {
 	case "", "yes", "enabled", "enable", "on", "true", "1":
 		scoringEnabled = true

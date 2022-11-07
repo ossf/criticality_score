@@ -100,6 +100,8 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 }
 
 func getScorer(logger *zap.Logger, scoringEnabled bool, scoringConfigFile string) (*scorer.Scorer, error) {
+	logger.Debug("Creating scorer")
+
 	if !scoringEnabled {
 		logger.Info("Scoring: disabled")
 		return nil, nil
@@ -125,13 +127,12 @@ func getScorer(logger *zap.Logger, scoringEnabled bool, scoringConfigFile string
 
 func NewWorker(ctx context.Context, logger *zap.Logger, scoringEnabled bool, scoringConfigFile, scoringColumn string, collectOpts []collector.Option) (*collectWorker, error) {
 	logger.Info("Initializing worker")
-	logger.Debug("Creating collector")
+
 	c, err := collector.New(ctx, logger, collectOpts...)
 	if err != nil {
 		return nil, fmt.Errorf("collector: %w", err)
 	}
 
-	logger.Debug("Creating scorer")
 	s, err := getScorer(logger, scoringEnabled, scoringConfigFile)
 	if err != nil {
 		return nil, fmt.Errorf("scorer: %w", err)
