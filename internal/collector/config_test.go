@@ -80,7 +80,7 @@ func TestGCPDatasetName(t *testing.T) {
 	}
 }
 
-func makeTestConfig(t *testing.T, opts ...Option) *Config {
+func makeTestConfig(t *testing.T, opts ...Option) *config {
 	t.Helper()
 	return makeConfig(context.Background(), zaptest.NewLogger(t), opts...)
 }
