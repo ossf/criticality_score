@@ -37,6 +37,8 @@ spec:
               value: "gs://ossf-criticality-score-url-data/[[runid]]/github.csv"
             - name: CRITICALITY_SCORE_OUTFILE_FORCE
               value: "1"
+            - name: CRITICALITY_SCORE_MARKER
+              value: "gs://ossf-criticality-score-url-data/latest"
             - name: CRITICALITY_SCORE_STARS_MIN
               value: "20"
             - name: CRITICALITY_SCORE_START_DATE
