@@ -90,6 +90,7 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (NameWriteCloser
 	if o.append || !o.force {
 		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
 	}
+	name := u.String()
 
 	// Separate the path from the URL as options may be present in the query
 	// string.
@@ -107,7 +108,7 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (NameWriteCloser
 	}
 	return &writeCloserWrapper{
 		WriteCloser: w,
-		name:        u.String(),
+		name:        name,
 	}, nil
 }
 

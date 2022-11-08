@@ -34,6 +34,7 @@ import (
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
 	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
+	"github.com/ossf/criticality_score/internal/cloudstorage"
 	"github.com/ossf/criticality_score/internal/envflag"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
@@ -54,6 +55,7 @@ var (
 	epochDate = time.Date(2008, 1, 1, 0, 0, 0, 0, time.UTC)
 	runID     = time.Now().UTC().Format(runIDDateFormat)
 
+	markerFileFlag      = flag.String("marker", "", "writes the path to the file where results were written.")
 	minStarsFlag        = flag.Int("min-stars", 10, "only enumerates repositories with this or more of stars.")
 	starOverlapFlag     = flag.Int("star-overlap", 5, "the number of stars to overlap between queries.")
 	requireMinStarsFlag = flag.Bool("require-min-stars", false, "abort if -min-stars can't be reached during enumeration.")
@@ -75,6 +77,7 @@ var (
 		"CRITICALITY_SCORE_END_DATE":           "end",
 		"CRITICALITY_SCORE_OUTFILE":            "out",
 		"CRITICALITY_SCORE_OUTFILE_FORCE":      "force",
+		"CRITICALITY_SCORE_MARKER":             "marker",
 		"CRITICALITY_SCORE_QUERY":              "query",
 		"CRITICALITY_SCORE_STARS_MIN":          "min-stars",
 		"CRITICALITY_SCORE_STARS_OVERLAP":      "star-overlap",
@@ -149,6 +152,26 @@ func searchWorker(s *githubsearch.Searcher, logger *zap.Logger, queries, results
 			zap.Int("repo_count", total),
 		).Info("Enumeration for query done")
 	}
+}
+
+func writeMarker(ctx context.Context, markerFile, outFile string) (err error) {
+	marker, e := cloudstorage.NewWriter(ctx, markerFile)
+	if e != nil {
+		return fmt.Errorf("open marker: %w", e)
+	}
+	defer func() {
+		if e := marker.Close(); e != nil {
+			// Return the error using the named return value if it isn't
+			// already set.
+			if e == nil {
+				err = fmt.Errorf("closing marker: %w", e)
+			}
+		}
+	}()
+	if _, e := fmt.Fprintln(marker, outFile); e != nil {
+		err = fmt.Errorf("writing marker: %w", e)
+	}
+	return
 }
 
 func main() {
@@ -261,6 +284,22 @@ func main() {
 	close(results)
 	// Wait for the writer to be finished.
 	<-done
+
+	// Trigger Close() early to ensure the data exists before the marker file.
+	if err := out.Close(); err != nil {
+		logger.Fatal("Failed write data", zap.Error(err))
+	}
+
+	if *markerFileFlag != "" {
+		logger = logger.With(zap.String("marker_filename", *markerFileFlag))
+		logger.Debug("Writing the marker file")
+
+		if err := writeMarker(ctx, *markerFileFlag, out.Name()); err != nil {
+			logger.Error("Failed creating marker file", zap.Error(err))
+			// Don't exit after a failure to create the marker file. Just fail
+			// to write the marker file.
+		}
+	}
 
 	logger.With(
 		zap.Int("total_repos", totalRepos),
