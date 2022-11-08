@@ -155,9 +155,7 @@ func searchWorker(s *githubsearch.Searcher, logger *zap.Logger, queries, results
 }
 
 func writeMarker(ctx context.Context, markerFile, outFile string) (err error) {
-	// Open the file
-	// local files need to be atomic, remote files are assumed to be atomic ()
-	marker, e := cloudstorage.NewWriter(ctx, *markerFileFlag)
+	marker, e := cloudstorage.NewWriter(ctx, markerFile)
 	if e != nil {
 		return fmt.Errorf("open marker: %w", err)
 	}

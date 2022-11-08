@@ -12,6 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
+//nolint:goconst
 package cloudstorage
 
 import (
@@ -84,7 +85,7 @@ func TestNewWriter(t *testing.T) {
 	}
 }
 
-func assertBucket(t *testing.T, bucket string, wantScheme, wantHost string, wantQuery map[string]string) {
+func assertBucket(t *testing.T, bucket, wantScheme, wantHost string, wantQuery map[string]string) {
 	t.Helper()
 	u, err := url.Parse(bucket)
 	if err != nil {

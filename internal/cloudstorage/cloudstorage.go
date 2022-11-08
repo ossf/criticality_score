@@ -60,7 +60,7 @@ func parseBucketAndPrefix(rawURL string) (bucket, prefix string, _ error) {
 	prefix = strings.TrimPrefix(u.Path, "/")
 	u.Path = ""
 	bucket = u.String()
-	return
+	return bucket, prefix, nil
 }
 
 func NewWriter(ctx context.Context, rawURL string) (io.WriteCloser, error) {
