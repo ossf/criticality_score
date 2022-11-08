@@ -157,19 +157,19 @@ func searchWorker(s *githubsearch.Searcher, logger *zap.Logger, queries, results
 func writeMarker(ctx context.Context, markerFile, outFile string) (err error) {
 	marker, e := cloudstorage.NewWriter(ctx, markerFile)
 	if e != nil {
-		return fmt.Errorf("open marker: %w", err)
+		return fmt.Errorf("open marker: %w", e)
 	}
 	defer func() {
 		if e := marker.Close(); e != nil {
 			// Return the error using the named return value if it isn't
 			// already set.
-			if err == nil {
-				err = fmt.Errorf("closing marker: %w", err)
+			if e == nil {
+				err = fmt.Errorf("closing marker: %w", e)
 			}
 		}
 	}()
 	if _, e := fmt.Fprintln(marker, outFile); e != nil {
-		err = fmt.Errorf("writing marker: %w", err)
+		err = fmt.Errorf("writing marker: %w", e)
 	}
 	return
 }
