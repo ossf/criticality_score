@@ -15,6 +15,10 @@
 package marker_test
 
 import (
+	"context"
+	"os"
+	"path"
+	"strings"
 	"testing"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/marker"
@@ -114,9 +118,17 @@ func TestTransform(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			got := test.t.Transform(test.in)
-			if test.want != got {
-				t.Fatalf("Transform() = %q, want %q", got, test.want)
+			markerFile := path.Join(t.TempDir(), "marker.out")
+			err := marker.Write(context.Background(), test.t, markerFile, test.in)
+			if err != nil {
+				t.Fatalf("Write() = %v, want no error", err)
+			}
+			markerContents, err := os.ReadFile(markerFile)
+			if err != nil {
+				t.Fatalf("ReadFile() = %v, want no error", err)
+			}
+			if got := strings.TrimSpace(string(markerContents)); got != test.want {
+				t.Fatalf("marker content = %q, want %q", got, test.want)
 			}
 		})
 	}

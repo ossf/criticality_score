@@ -35,7 +35,7 @@ func Write(ctx context.Context, t Type, markerFile, outFile string) (err error) 
 			}
 		}
 	}()
-	if _, e := fmt.Fprintln(marker, t.Transform(outFile)); e != nil {
+	if _, e := fmt.Fprintln(marker, t.transform(outFile)); e != nil {
 		err = fmt.Errorf("writing marker: %w", e)
 	}
 	return

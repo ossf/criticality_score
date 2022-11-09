@@ -70,7 +70,7 @@ func (t *Type) UnmarshalText(text []byte) error {
 	return nil
 }
 
-func (t Type) Transform(p string) string {
+func (t Type) transform(p string) string {
 	if t == TypeFull {
 		return p
 	}
