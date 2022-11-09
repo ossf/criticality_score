@@ -23,9 +23,9 @@ import (
 func TestTransform(t *testing.T) {
 	tests := []struct {
 		name string
-		t    marker.Type
 		in   string
 		want string
+		t    marker.Type
 	}{
 		{
 			name: "full-bucket-gs",
@@ -164,8 +164,8 @@ func TestUnmarshal(t *testing.T) {
 
 func TestMarshal(t *testing.T) {
 	tests := []struct {
-		in      marker.Type
 		want    string
+		in      marker.Type
 		wantErr bool
 	}{
 		{

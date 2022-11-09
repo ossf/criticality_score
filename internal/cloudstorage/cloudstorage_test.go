@@ -12,7 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-//nolint:goconst
 package cloudstorage
 
 import (
@@ -26,7 +25,7 @@ func TestParseBucketAndPrefixAbsLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseBucketAndPrefix() = %v, want no error", err)
 	}
-	assertBucket(t, b, "file", "", "/path/to/", map[string]string{"metadata": "skip"})
+	assertBucket(t, b, fileScheme, "", "/path/to/", map[string]string{"metadata": "skip"})
 	if p != "file" {
 		t.Fatalf("Prefix = %v; want file", p)
 	}
@@ -37,7 +36,7 @@ func TestParseBucketAndPrefixRelativeLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseBucketAndPrefix() = %v, want no error", err)
 	}
-	assertBucket(t, b, "file", ".", "/path/to/", map[string]string{"metadata": "skip"})
+	assertBucket(t, b, fileScheme, ".", "/path/to/", map[string]string{"metadata": "skip"})
 	if p != "file" {
 		t.Fatalf("Prefix = %v; want file", p)
 	}

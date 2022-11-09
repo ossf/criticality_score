@@ -29,6 +29,8 @@ import (
 	_ "gocloud.dev/blob/s3blob"
 )
 
+const fileScheme = "file"
+
 func parseBucketAndPrefix(rawURL string) (bucket, prefix string, _ error) {
 	u, err := url.Parse(rawURL)
 	if err != nil {
@@ -46,7 +48,7 @@ func parseBucketAndPrefix(rawURL string) (bucket, prefix string, _ error) {
 		}
 
 		// Assume a scheme-less, host-less url is a local file.
-		u.Scheme = "file"
+		u.Scheme = fileScheme
 		if !path.IsAbs(u.Path) {
 			u.Host = "."
 		}
@@ -56,7 +58,7 @@ func parseBucketAndPrefix(rawURL string) (bucket, prefix string, _ error) {
 		u.RawQuery = q.Encode()
 	}
 
-	if u.Scheme == "file" {
+	if u.Scheme == fileScheme {
 		// File schemes are treated differently, as the dir forms the bucket.
 		u.Path, prefix = path.Split(u.Path)
 	} else {
