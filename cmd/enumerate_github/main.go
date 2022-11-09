@@ -33,8 +33,8 @@ import (
 	"go.uber.org/zap/zapcore"
 
 	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
+	"github.com/ossf/criticality_score/cmd/enumerate_github/marker"
 	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
-	"github.com/ossf/criticality_score/internal/cloudstorage"
 	"github.com/ossf/criticality_score/internal/envflag"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
@@ -66,6 +66,7 @@ var (
 	logLevel            = defaultLogLevel
 	logEnv              log.Env
 	format              repowriter.WriterType
+	markerType          marker.Type
 
 	// Maps environment variables to the flags they correspond to.
 	envFlagMap = envflag.Map{
@@ -78,6 +79,7 @@ var (
 		"CRITICALITY_SCORE_OUTFILE":            "out",
 		"CRITICALITY_SCORE_OUTFILE_FORCE":      "force",
 		"CRITICALITY_SCORE_MARKER":             "marker",
+		"CRITICALITY_SCORE_MARKER_TYPE":        "marker-type",
 		"CRITICALITY_SCORE_QUERY":              "query",
 		"CRITICALITY_SCORE_STARS_MIN":          "min-stars",
 		"CRITICALITY_SCORE_STARS_OVERLAP":      "star-overlap",
@@ -112,6 +114,7 @@ func init() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&format, "format", repowriter.WriterTypeText, "set output file `format`.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
+	flag.TextVar(&markerType, "marker-type", marker.TypeFull, "format of the contents in the marker file. Can be 'full', 'dir' or 'file'.")
 	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "FILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -152,26 +155,6 @@ func searchWorker(s *githubsearch.Searcher, logger *zap.Logger, queries, results
 			zap.Int("repo_count", total),
 		).Info("Enumeration for query done")
 	}
-}
-
-func writeMarker(ctx context.Context, markerFile, outFile string) (err error) {
-	marker, e := cloudstorage.NewWriter(ctx, markerFile)
-	if e != nil {
-		return fmt.Errorf("open marker: %w", e)
-	}
-	defer func() {
-		if e := marker.Close(); e != nil {
-			// Return the error using the named return value if it isn't
-			// already set.
-			if e == nil {
-				err = fmt.Errorf("closing marker: %w", e)
-			}
-		}
-	}()
-	if _, e := fmt.Fprintln(marker, outFile); e != nil {
-		err = fmt.Errorf("writing marker: %w", e)
-	}
-	return
 }
 
 func main() {
@@ -294,7 +277,7 @@ func main() {
 		logger = logger.With(zap.String("marker_filename", *markerFileFlag))
 		logger.Debug("Writing the marker file")
 
-		if err := writeMarker(ctx, *markerFileFlag, out.Name()); err != nil {
+		if err := marker.Write(ctx, markerType, *markerFileFlag, out.Name()); err != nil {
 			logger.Error("Failed creating marker file", zap.Error(err))
 			// Don't exit after a failure to create the marker file. Just fail
 			// to write the marker file.
