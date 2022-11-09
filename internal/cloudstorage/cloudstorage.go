@@ -56,9 +56,14 @@ func parseBucketAndPrefix(rawURL string) (bucket, prefix string, _ error) {
 		u.RawQuery = q.Encode()
 	}
 
-	// gocloud.dev expects prefix/key and bucket to be separate values.
-	prefix = strings.TrimPrefix(u.Path, "/")
-	u.Path = ""
+	if u.Scheme == "file" {
+		// File schemes are treated differently, as the dir forms the bucket.
+		u.Path, prefix = path.Split(u.Path)
+	} else {
+		prefix = strings.TrimPrefix(u.Path, "/")
+		u.Path = ""
+	}
+
 	bucket = u.String()
 	return bucket, prefix, nil
 }

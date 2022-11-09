@@ -26,9 +26,9 @@ func TestParseBucketAndPrefixAbsLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseBucketAndPrefix() = %v, want no error", err)
 	}
-	assertBucket(t, b, "file", "", map[string]string{"metadata": "skip"})
-	if p != "path/to/file" {
-		t.Fatalf("Prefix = %v; want path/to/file", p)
+	assertBucket(t, b, "file", "", "/path/to/", map[string]string{"metadata": "skip"})
+	if p != "file" {
+		t.Fatalf("Prefix = %v; want file", p)
 	}
 }
 
@@ -37,9 +37,9 @@ func TestParseBucketAndPrefixRelativeLocalFile(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseBucketAndPrefix() = %v, want no error", err)
 	}
-	assertBucket(t, b, "file", ".", map[string]string{"metadata": "skip"})
-	if p != "path/to/file" {
-		t.Fatalf("Prefix = %v; want path/to/file", p)
+	assertBucket(t, b, "file", ".", "/path/to/", map[string]string{"metadata": "skip"})
+	if p != "file" {
+		t.Fatalf("Prefix = %v; want file", p)
 	}
 }
 
@@ -48,7 +48,7 @@ func TestParseBucketAndPrefixS3URL(t *testing.T) {
 	if err != nil {
 		t.Fatalf("parseBucketAndPrefix() = %v, want no error", err)
 	}
-	assertBucket(t, b, "s3", "bucket", map[string]string{})
+	assertBucket(t, b, "s3", "bucket", "", map[string]string{})
 	if p != "path/to/file" {
 		t.Fatalf("Prefix = %v; want path/to/file", p)
 	}
@@ -85,7 +85,7 @@ func TestNewWriter(t *testing.T) {
 	}
 }
 
-func assertBucket(t *testing.T, bucket, wantScheme, wantHost string, wantQuery map[string]string) {
+func assertBucket(t *testing.T, bucket, wantScheme, wantHost, wantPath string, wantQuery map[string]string) {
 	t.Helper()
 	u, err := url.Parse(bucket)
 	if err != nil {
@@ -95,7 +95,10 @@ func assertBucket(t *testing.T, bucket, wantScheme, wantHost string, wantQuery m
 		t.Fatalf("Bucket scheme = %q, want %q", u.Scheme, wantScheme)
 	}
 	if u.Host != wantHost {
-		t.Fatalf("Bucket host = %q, want %q", u.Scheme, wantHost)
+		t.Fatalf("Bucket host = %q, want %q", u.Host, wantHost)
+	}
+	if u.Path != wantPath {
+		t.Fatalf("Bucket path = %q, want %q", u.Path, wantPath)
 	}
 	for k, want := range wantQuery {
 		if !u.Query().Has(k) {
