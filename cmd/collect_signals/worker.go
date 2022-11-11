@@ -17,6 +17,8 @@ import (
 	"github.com/ossf/criticality_score/internal/signalio"
 )
 
+const collectionDateColumnName = "collection_date"
+
 type collectWorker struct {
 	logger          *zap.Logger
 	c               *collector.Collector
@@ -27,11 +29,12 @@ type collectWorker struct {
 // Process implements the worker.Worker interface.
 func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchRequest, bucketURL string) error {
 	filename := worker.ResultFilename(req)
+	jobTime := req.GetJobTime().AsTime()
 
 	// Prepare the logger with identifiers for the shard and job.
 	logger := w.logger.With(
 		zap.Int32("shard_id", req.GetShardNum()),
-		zap.Time("job_time", req.GetJobTime().AsTime()),
+		zap.Time("job_time", jobTime),
 		zap.String("filename", filename),
 	)
 	logger.Info("Processing shard")
@@ -41,6 +44,7 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 	if w.s != nil {
 		extras = append(extras, w.scoreColumnName)
 	}
+	extras = append(extras, collectionDateColumnName)
 	var output bytes.Buffer
 	out := signalio.CsvWriter(&output, w.c.EmptySets(), extras...)
 
@@ -81,6 +85,12 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 			}
 			extras = append(extras, f)
 		}
+
+		// Ensure the collection date is included with each record for paritioning.
+		extras = append(extras, signalio.Field{
+			Key:   collectionDateColumnName,
+			Value: jobTime,
+		})
 
 		// Write the signals to storage.
 		if err := out.WriteSignals(ss, extras...); err != nil {
