@@ -48,12 +48,14 @@ var (
 	workersFlag           = flag.Int("workers", 1, "the total number of concurrent workers to use.")
 	logLevel              = defaultLogLevel
 	logEnv                log.Env
+	formatType            signalio.WriterType
 )
 
 // initFlags prepares any runtime flags, usage information and parses the flags.
 func initFlags() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
+	flag.TextVar(&formatType, "format", signalio.WriterTypeCSV, "set the output format.")
 	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "OUTFILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
@@ -181,7 +183,7 @@ func main() {
 	if s != nil {
 		extras = append(extras, scoreColumnName)
 	}
-	out := signalio.CsvWriter(w, c.EmptySets(), extras...)
+	out := formatType.New(w, c.EmptySets(), extras...)
 
 	// Start the workers that process a channel of repo urls.
 	repos := make(chan *url.URL)

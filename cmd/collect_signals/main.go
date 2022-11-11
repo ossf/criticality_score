@@ -27,6 +27,7 @@ import (
 
 	"github.com/ossf/criticality_score/internal/collector"
 	log "github.com/ossf/criticality_score/internal/log"
+	"github.com/ossf/criticality_score/internal/signalio"
 )
 
 const defaultLogLevel = zapcore.InfoLevel
@@ -66,6 +67,14 @@ func main() {
 		panic(err)
 	}
 	defer logger.Sync()
+
+	// Parse the output format.
+	formatType := signalio.WriterTypeCSV
+	if val := criticalityConfig["output-format"]; val != "" {
+		if err := formatType.UnmarshalText([]byte(val)); err != nil {
+			panic(err)
+		}
+	}
 
 	// Extract the GCP project ID.
 	gcpProjectID, err := config.GetProjectID()
@@ -109,7 +118,7 @@ func main() {
 		collector.GCPDatasetName(gcpDatasetName),
 	}
 
-	w, err := NewWorker(context.Background(), logger, scoringEnabled, scoringConfigFile, scoringColumnName, opts)
+	w, err := NewWorker(context.Background(), logger, formatType, scoringEnabled, scoringConfigFile, scoringColumnName, opts)
 	if err != nil {
 		// Fatal exits.
 		logger.With(zap.Error(err)).Fatal("Failed to create worker")
