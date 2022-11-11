@@ -22,6 +22,7 @@ type collectWorker struct {
 	c               *collector.Collector
 	s               *scorer.Scorer
 	scoreColumnName string
+	writerType      signalio.WriterType
 }
 
 // Process implements the worker.Worker interface.
@@ -42,7 +43,7 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		extras = append(extras, w.scoreColumnName)
 	}
 	var output bytes.Buffer
-	out := signalio.CsvWriter(&output, w.c.EmptySets(), extras...)
+	out := w.writerType.New(&output, w.c.EmptySets(), extras...)
 
 	// Iterate through the repos in this shard.
 	for _, repo := range req.GetRepos() {
@@ -125,7 +126,7 @@ func getScorer(logger *zap.Logger, scoringEnabled bool, scoringConfigFile string
 	return s, nil
 }
 
-func NewWorker(ctx context.Context, logger *zap.Logger, scoringEnabled bool, scoringConfigFile, scoringColumn string, collectOpts []collector.Option) (*collectWorker, error) {
+func NewWorker(ctx context.Context, logger *zap.Logger, writerType signalio.WriterType, scoringEnabled bool, scoringConfigFile, scoringColumn string, collectOpts []collector.Option) (*collectWorker, error) {
 	logger.Info("Initializing worker")
 
 	c, err := collector.New(ctx, logger, collectOpts...)
@@ -149,6 +150,7 @@ func NewWorker(ctx context.Context, logger *zap.Logger, scoringEnabled bool, sco
 		c:               c,
 		s:               s,
 		scoreColumnName: scoringColumn,
+		writerType:      writerType,
 	}, nil
 }
 

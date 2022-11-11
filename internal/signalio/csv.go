@@ -46,7 +46,7 @@ func headerFromSignalSets(sets []signal.Set, extra []string) []string {
 	return hs
 }
 
-func CsvWriter(w io.Writer, emptySets []signal.Set, extra ...string) Writer {
+func CSVWriter(w io.Writer, emptySets []signal.Set, extra ...string) Writer {
 	return &csvWriter{
 		header: headerFromSignalSets(emptySets, extra),
 		w:      csv.NewWriter(w),
