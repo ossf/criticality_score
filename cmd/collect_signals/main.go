@@ -123,6 +123,7 @@ func main() {
 		// Fatal exits.
 		logger.With(zap.Error(err)).Fatal("Failed to create worker")
 	}
+	defer w.Close()
 
 	loop := worker.NewWorkLoop(w)
 	if err := loop.Run(); err != nil {

@@ -8,8 +8,12 @@ import (
 	"net/url"
 	"os"
 
+	githubstats "github.com/ossf/scorecard/v4/clients/githubrepo/stats"
 	"github.com/ossf/scorecard/v4/cron/data"
+	"github.com/ossf/scorecard/v4/cron/monitoring"
 	"github.com/ossf/scorecard/v4/cron/worker"
+	"github.com/ossf/scorecard/v4/stats"
+	"go.opencensus.io/stats/view"
 	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/internal/collector"
@@ -21,6 +25,7 @@ const collectionDateColumnName = "collection_date"
 
 type collectWorker struct {
 	logger          *zap.Logger
+	exporter        monitoring.Exporter
 	c               *collector.Collector
 	s               *scorer.Scorer
 	scoreColumnName string
@@ -110,6 +115,16 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 	return nil
 }
 
+// Close is called to clean up resources used by the worker.
+func (w *collectWorker) Close() {
+	w.exporter.StopMetricsExporter()
+}
+
+// PostProcess implements the worker.Worker interface.
+func (w *collectWorker) PostProcess() {
+	w.exporter.Flush()
+}
+
 func getScorer(logger *zap.Logger, scoringEnabled bool, scoringConfigFile string) (*scorer.Scorer, error) {
 	logger.Debug("Creating scorer")
 
@@ -136,6 +151,25 @@ func getScorer(logger *zap.Logger, scoringEnabled bool, scoringConfigFile string
 	return s, nil
 }
 
+func getMetricsExporter() (monitoring.Exporter, error) {
+	exporter, err := monitoring.GetExporter()
+	if err != nil {
+		return nil, fmt.Errorf("getting monitoring exporter: %w", err)
+	}
+	if err := exporter.StartMetricsExporter(); err != nil {
+		return nil, fmt.Errorf("starting exporter: %w", err)
+	}
+
+	if err := view.Register(
+		&stats.CheckRuntime,
+		&stats.CheckErrorCount,
+		&stats.OutgoingHTTPRequests,
+		&githubstats.GithubTokens); err != nil {
+		return nil, fmt.Errorf("opencensus view register: %w", err)
+	}
+	return exporter, nil
+}
+
 func NewWorker(ctx context.Context, logger *zap.Logger, writerType signalio.WriterType, scoringEnabled bool, scoringConfigFile, scoringColumn string, collectOpts []collector.Option) (*collectWorker, error) {
 	logger.Info("Initializing worker")
 
@@ -155,14 +189,17 @@ func NewWorker(ctx context.Context, logger *zap.Logger, writerType signalio.Writ
 		scoringColumn = s.Name()
 	}
 
+	exporter, err := getMetricsExporter()
+	if err != nil {
+		return nil, fmt.Errorf("metrics exporter: %w", err)
+	}
+
 	return &collectWorker{
 		logger:          logger,
 		c:               c,
 		s:               s,
 		scoreColumnName: scoringColumn,
 		writerType:      writerType,
+		exporter:        exporter,
 	}, nil
 }
-
-// PostProcess implements the worker.Worker interface.
-func (w *collectWorker) PostProcess() {}
