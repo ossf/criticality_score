@@ -37,4 +37,6 @@ additional-params:
     scoring-config: config/scorer/pike_depsdev.yml
     scoring-column-name: default_score
     output-format: json
+
   scorecard:
+    # Unused, but must be present to prevent errors.

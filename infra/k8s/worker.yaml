@@ -29,7 +29,7 @@ spec:
       containers:
         - name: worker
           image: gcr.io/openssf/criticality-score-collect-signals:latest
-          args: ["-config=/etc/criticality_score/config.yaml"]
+          args: ["--config=/etc/criticality_score/config.yaml"]
           imagePullPolicy: Always
           env:
             - name: GITHUB_AUTH_SERVER
