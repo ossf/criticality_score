@@ -33,45 +33,18 @@ type csvWriter struct {
 	mu sync.Mutex
 }
 
-func headerFromSignalSets(sets []signal.Set, extra []string) []string {
-	var hs []string
-	for _, s := range sets {
-		if err := signal.ValidateSet(s); err != nil {
-			panic(err)
-		}
-		hs = append(hs, signal.SetFields(s, true)...)
-	}
-	// Append all the extra fields
-	hs = append(hs, extra...)
-	return hs
-}
-
 func CSVWriter(w io.Writer, emptySets []signal.Set, extra ...string) Writer {
 	return &csvWriter{
-		header: headerFromSignalSets(emptySets, extra),
+		header: fieldsFromSignalSets(emptySets, extra),
 		w:      csv.NewWriter(w),
 	}
 }
 
 // WriteSignals implements the Writer interface.
 func (w *csvWriter) WriteSignals(signals []signal.Set, extra ...Field) error {
-	values := make(map[string]string)
-	for _, s := range signals {
-		// Get all of the signal data from the set and serialize it.
-		for k, v := range signal.SetAsMap(s, true) {
-			if s, err := marshalValue(v); err != nil {
-				return fmt.Errorf("failed to write field %s: %w", k, err)
-			} else {
-				values[k] = s
-			}
-		}
-	}
-	for _, f := range extra {
-		if s, err := marshalValue(f.Value); err != nil {
-			return fmt.Errorf("failed to write field %s: %w", f.Key, err)
-		} else {
-			values[f.Key] = s
-		}
+	values, err := marshalToMap(signals, extra...)
+	if err != nil {
+		return err
 	}
 	return w.writeRecord(values)
 }

@@ -13,6 +13,7 @@ $ gcloud login --update-adc  # Sign-in to GCP
 $ criticality_score \
     -workers=1 \
     -out=signals.csv \
+    -format=csv \
     github_projects.txt
 ```
 
@@ -108,7 +109,10 @@ See more on GCP
 
 #### Output flags
 
-- `-out OUTFILE` specify the `OUTFILE` to use for output. By default `stdout` is used.
+- `-format string` specifies the format to use when writing output. Can be
+  `text` (default), `csv` or `json`.
+- `-out OUTFILE` specify the `OUTFILE` to use for output. By default `stdout`
+  is used.
 - `-append` appends output to `OUTFILE` if it already exists.
 - `-force` overwrites `OUTFILE` if it already exists and `-append` is not set.
 
@@ -123,6 +127,16 @@ fail.
 
 - `-depsdev-disable` disables the collection of signals from deps.dev.
 - `-depsdev-dataset string` the BigQuery dataset name to use. Default is `depsdev_analysis`.
+
+#### Scoring flags
+
+- `-scoring-disable` disables the generation of scores.
+- `-scoring-config CONFIG_FILE` specify the `CONFIG_FILE` to use to define how
+  scores are calculated. See `/config/scorer/` for some valid configs. By
+  default `/config/scorer/original_pike.yml` is used.
+- `-scoring-column` overrides the name of the column used to store the score.
+  By default the column is named `default_score`, and if `-scoring-config` is 
+  resent the column's name will be based on the config filename.
 
 #### Misc flags
 
@@ -151,13 +165,15 @@ the quota for a single token in about 30-40 minutes.
 
 1. Spin up a compute instance in GCE with lots of RAM and fast network:
     - Uses GCP's fast/reliable internet connectivity.
-    - Reduces latency and costs for querying BigQuery data (and perhaps 
+    - Reduces latency and costs for querying BigQuery data (and perhaps
       GitHub's data too).
-   - Prevents downtime due to local IT failures.
+    - Prevents downtime due to local IT failures.
 1. Shard the input repository list and run multiple instances on different
    hosts with different GitHub tokens:
     - Ensures work progresses even if one instance stops.
     - Provides additional compute and network resources.
+1. Take a look at `collect_signals` and the `\infra\` for a productionized
+   implementation.
 
 ### Q: How do I restart after a failure?
 
