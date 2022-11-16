@@ -10,8 +10,8 @@ The input of this tool is usually the output of the `collect_signals` tool.
 ```shell
 $ scorer \
     -config config/scorer/original_pike.yml \
-    raw_signals.txt \
-    scored_signals.txt
+    -out=scored_signals.txt \
+    raw_signals.txt
 ```
 
 ## Install
@@ -23,14 +23,14 @@ $ go install github.com/ossf/criticality_score/cmd/scorer
 ## Usage
 
 ```shell
-$ scorer [FLAGS]... IN_FILE OUT_FILE
+$ scorer [FLAGS]... IN_FILE
 ```
 
 Raw signals are read as CSV from `IN_FILE`. If `-` is passed in for `IN_FILE`
 raw signal data will read from STDIN rather than a file.
 
-Results are re-written in CSV format to `OUT_FILE`. If `OUT_FILE` is `-` the
-results will be written to STDOUT. Results are sorted in descending score order.
+Results are re-written in CSV format to the output in descending score order.
+By default `stdout` is used for output.
 
 The `-config` flag is required. All other `FLAGS` are optional.
 See below for documentation.
@@ -39,6 +39,7 @@ See below for documentation.
 
 #### Output flags
 
+- `-out FILE` specify the `FILE` to use for output. By default `stdout` is used.
 - `-append` appends output to `OUT_FILE` if it already exists.
 - `-force` overwrites `OUT_FILE` if it already exists and `-append` is not set.
 
@@ -48,7 +49,7 @@ fail.
 #### Scoring flags
 
 - `-config string` the name of a YAML config file to use for calculating the
-  score. Required.
+  score. Defaults to the original set of weights and scores.
 - `-column string` the name of the column to store the score in. Defaults to
   the name of the config file with `_score` appended (e.g. `config.yml` becomes
   `config_score`).
@@ -131,7 +132,7 @@ Rather than installing the binary, use `go run` to run the command.
 For example:
 
 ```shell
-$ go run ./cmd/scorer [FLAGS]... IN_FILE OUT_FILE
+$ go run ./cmd/scorer [FLAGS]... IN_FILE
 ```
 
 Use STDIN and STDOUT on a subset of data for fast iteration. For example:
@@ -139,5 +140,5 @@ Use STDIN and STDOUT on a subset of data for fast iteration. For example:
 ```shell
 $ head -10 raw_signals.csv | go run ./cmd/scorer \
     -config config/scorer/original_pike.yml \
-    - -
+    -
 ```

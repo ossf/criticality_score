@@ -24,7 +24,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/google/go-github/v44/github"
+	"github.com/google/go-github/v47/github"
 	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/internal/retry"
@@ -39,7 +39,7 @@ var (
 	issueCommentsRe = regexp.MustCompile("^repos/[^/]+/[^/]+/issues/comments$")
 )
 
-func NewRoundTripper(rt http.RoundTripper, logger *zap.Logger) http.RoundTripper {
+func NewRetryRoundTripper(rt http.RoundTripper, logger *zap.Logger) http.RoundTripper {
 	s := &strategies{logger: logger}
 	return retry.NewRoundTripper(rt,
 		retry.InitialDelay(2*time.Minute),
@@ -152,4 +152,46 @@ func (s *strategies) RetryAfter(r *http.Response) time.Duration {
 		return time.Duration(retryAfterSeconds) * time.Second
 	}
 	return 0
+}
+
+// graphQLRoundTripper is used to make GraphQL errors produced by the GitHub
+// GraphQL accessible.
+//
+// This allows the detection of NOT_FOUND responses, so we can accurately
+// tell the difference between an error due to connectivity or server
+// issues and a repository not existing.
+type graphQLRoundTripper struct {
+	inner http.RoundTripper
+}
+
+// RoundTrip implements the http.RoundTripper interface.
+func (rt *graphQLRoundTripper) RoundTrip(r *http.Request) (*http.Response, error) {
+	resp, err := rt.inner.RoundTrip(r)
+	if err != nil || resp.StatusCode != http.StatusOK {
+		return resp, err
+	}
+	// Read the body in and close it.
+	body, err := io.ReadAll(resp.Body)
+	resp.Body.Close()
+	if err != nil {
+		// TODO: Do we need to do something with this error?
+		return nil, err
+	}
+
+	var out struct {
+		Data   *json.RawMessage
+		Errors []GraphQLError
+	}
+	err = json.Unmarshal(body, &out)
+	if err != nil {
+		// TODO: Do we need to do something with this error?
+		return nil, err
+	}
+	if len(out.Errors) > 0 {
+		return nil, &GraphQLErrors{errors: out.Errors}
+	}
+
+	// Reset the body so that others can read it as well.
+	resp.Body = io.NopCloser(bytes.NewBuffer(body))
+	return resp, nil
 }

@@ -15,237 +15,121 @@
 package main
 
 import (
-	"bufio"
 	"context"
 	"flag"
-	"fmt"
-	"io"
 	"net/http"
-	"net/url"
-	"os"
-	"path"
 	"strings"
 
-	"github.com/go-logr/zapr"
-	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
-	sclog "github.com/ossf/scorecard/v4/log"
+	"github.com/ossf/scorecard/v4/cron/config"
+	"github.com/ossf/scorecard/v4/cron/worker"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/collector"
-	"github.com/ossf/criticality_score/cmd/collect_signals/depsdev"
-	"github.com/ossf/criticality_score/cmd/collect_signals/github"
-	"github.com/ossf/criticality_score/cmd/collect_signals/githubmentions"
-	"github.com/ossf/criticality_score/cmd/collect_signals/projectrepo"
-	"github.com/ossf/criticality_score/cmd/collect_signals/result"
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/internal/collector"
 	log "github.com/ossf/criticality_score/internal/log"
-	"github.com/ossf/criticality_score/internal/outfile"
-	"github.com/ossf/criticality_score/internal/workerpool"
+	"github.com/ossf/criticality_score/internal/signalio"
 )
 
 const defaultLogLevel = zapcore.InfoLevel
 
-var (
-	gcpProjectFlag     = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
-	depsdevDisableFlag = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
-	depsdevDatasetFlag = flag.String("depsdev-dataset", depsdev.DefaultDatasetName, "the BigQuery dataset name to use.")
-	workersFlag        = flag.Int("workers", 1, "the total number of concurrent workers to use.")
-	logLevel           = defaultLogLevel
-	logEnv             log.Env
-)
-
-func init() {
-	flag.Var(&logLevel, "log", "set the `level` of logging.")
-	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	outfile.DefineFlags(flag.CommandLine, "force", "append", "OUT_FILE")
-	flag.Usage = func() {
-		cmdName := path.Base(os.Args[0])
-		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_FILE... OUT_FILE\n\n", cmdName)
-		fmt.Fprintf(w, "Collects signals for each project repository listed.\n")
-		fmt.Fprintf(w, "IN_FILE must be either a file or - to read from stdin.\n")
-		fmt.Fprintf(w, "OUT_FILE must be either be a file or - to write to stdout.\n")
-		fmt.Fprintf(w, "\nFlags:\n")
-		flag.PrintDefaults()
-	}
-}
-
-func handleRepo(ctx context.Context, logger *zap.Logger, u *url.URL, out result.Writer) {
-	r, err := projectrepo.Resolve(ctx, u)
-	if err != nil {
-		logger.With(zap.Error(err)).Warn("Failed to create project")
-		// TODO: we should have an error that indicates that the URL/Project
-		// should be skipped/ignored.
-		return // TODO: add a flag to continue or abort on failure
-	}
-	logger = logger.With(zap.String("canonical_url", r.URL().String()))
-
-	// TODO: p.URL() should be checked to see if it has already been processed.
-
-	// Collect the signals for the given project
-	logger.Info("Collecting")
-	ss, err := collector.Collect(ctx, r)
-	if err != nil {
-		logger.With(
-			zap.Error(err),
-		).Error("Failed to collect signals for project")
-		os.Exit(1) // TODO: add a flag to continue or abort on failure
-	}
-
-	rec := out.Record()
-	for _, s := range ss {
-		if err := rec.WriteSignalSet(s); err != nil {
-			logger.With(
-				zap.Error(err),
-			).Error("Failed to write signal set")
-			os.Exit(1) // TODO: add a flag to continue or abort on failure
-		}
-	}
-	if err := rec.Done(); err != nil {
-		logger.With(
-			zap.Error(err),
-		).Error("Failed to complete record")
-		os.Exit(1) // TODO: add a flag to continue or abort on failure
-	}
-}
-
 func main() {
 	flag.Parse()
 
+	if err := config.ReadConfig(); err != nil {
+		panic(err)
+	}
+
+	// Extract the criticality score specific variables in the config.
+	criticalityConfig, err := config.GetCriticalityValues()
+	if err != nil {
+		panic(err)
+	}
+
+	// Extract the log environment from the config, if it exists.
+	logEnv := log.DefaultEnv
+	if val := criticalityConfig["log-env"]; val != "" {
+		if err := logEnv.UnmarshalText([]byte(val)); err != nil {
+			panic(err)
+		}
+	}
+
+	// Extract the log level from the config, if it exists.
+	logLevel := defaultLogLevel
+	if val := criticalityConfig["log-level"]; val != "" {
+		if err := logLevel.Set(val); err != nil {
+			panic(err)
+		}
+	}
+
+	// Setup the logger.
 	logger, err := log.NewLogger(logEnv, logLevel)
 	if err != nil {
 		panic(err)
 	}
 	defer logger.Sync()
 
-	// roundtripper requires us to use the scorecard logger.
-	innerLogger := zapr.NewLogger(logger)
-	scLogger := &sclog.Logger{Logger: &innerLogger}
-
-	if flag.NArg() < 2 {
-		logger.Error("Must have at least one input file and an output file specified.")
-		os.Exit(2)
-	}
-	lastArg := flag.NArg() - 1
-
-	// Open all the in-files for reading
-	var readers []io.Reader
-	consumingStdin := false
-	for _, inFilename := range flag.Args()[:lastArg] {
-		if inFilename == "-" && !consumingStdin {
-			logger.Info("Reading from stdin")
-			// Only add stdin once.
-			consumingStdin = true
-			readers = append(readers, os.Stdin)
-			continue
+	// Parse the output format.
+	formatType := signalio.WriterTypeCSV
+	if val := criticalityConfig["output-format"]; val != "" {
+		if err := formatType.UnmarshalText([]byte(val)); err != nil {
+			panic(err)
 		}
-		logger.With(
-			zap.String("filename", inFilename),
-		).Debug("Reading from file")
-		f, err := os.Open(inFilename)
-		if err != nil {
-			logger.With(
-				zap.String("filename", inFilename),
-				zap.Error(err),
-			).Error("Failed to open an input file")
-			os.Exit(2)
-		}
-		defer f.Close()
-		readers = append(readers, f)
 	}
-	r := io.MultiReader(readers...)
 
-	// Open the out-file for writing
-	outFilename := flag.Args()[lastArg]
-	w, err := outfile.Open(context.Background(), outFilename)
+	// Extract the GCP project ID.
+	gcpProjectID, err := config.GetProjectID()
 	if err != nil {
-		logger.With(
-			zap.String("filename", outFilename),
-			zap.Error(err),
-		).Error("Failed to open file for output")
-		os.Exit(2)
+		logger.With(zap.Error(err)).Fatal("Failed to get GCP Project ID")
+	}
+
+	// Extract the GCP dataset name.
+	gcpDatasetName := criticalityConfig["dataset"]
+	if gcpDatasetName == "" {
+		gcpDatasetName = collector.DefaultGCPDatasetName
+	}
+
+	// Determine whether scoring is enabled or disabled.
+	// It supports various "truthy" and "fasley" values. It will default to
+	// enabled.
+	scoringState := strings.ToLower(criticalityConfig["scoring"])
+	scoringEnabled := true // this value is overridden below
+	switch scoringState {
+	case "", "yes", "enabled", "enable", "on", "true", "1":
+		scoringEnabled = true
+	case "no", "disabled", "disable", "off", "false", "0":
+		scoringEnabled = false
+	default:
+		// Fatal exits.
+		logger.Fatal("Unknown 'scoring' setting: " + scoringState)
+	}
+
+	scoringConfigFile := criticalityConfig["scoring-config"]
+	scoringColumnName := criticalityConfig["scoring-column-name"]
+
+	// TODO: capture metrics similar to scorecard/cron/worker
+
+	// Bump the # idle conns per host
+	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 5
+
+	// Preapre the options for the collector.
+	opts := []collector.Option{
+		collector.EnableAllSources(),
+		collector.GCPProject(gcpProjectID),
+		collector.GCPDatasetName(gcpDatasetName),
+	}
+
+	w, err := NewWorker(context.Background(), logger, formatType, scoringEnabled, scoringConfigFile, scoringColumnName, opts)
+	if err != nil {
+		// Fatal exits.
+		logger.With(zap.Error(err)).Fatal("Failed to create worker")
 	}
 	defer w.Close()
 
-	ctx := context.Background()
-
-	// Bump the # idle conns per host
-	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = *workersFlag * 5
-
-	// Prepare a client for communicating with GitHub's GraphQLv4 API and Restv3 API
-	rt := githubapi.NewRoundTripper(roundtripper.NewTransport(ctx, scLogger), logger)
-	httpClient := &http.Client{
-		Transport: rt,
-	}
-	ghClient := githubapi.NewClient(httpClient)
-
-	// Register all the Repo factories.
-	projectrepo.Register(github.NewRepoFactory(ghClient, logger))
-
-	// Register all the collectors that are supported.
-	collector.Register(&github.RepoCollector{})
-	collector.Register(&github.IssuesCollector{})
-	collector.Register(githubmentions.NewCollector(ghClient))
-
-	if *depsdevDisableFlag {
-		// deps.dev collection has been disabled, so skip it.
-		logger.Warn("deps.dev signal collection is disabled.")
-	} else {
-		ddcollector, err := depsdev.NewCollector(ctx, logger, *gcpProjectFlag, *depsdevDatasetFlag)
-		if err != nil {
-			logger.With(
-				zap.Error(err),
-			).Error("Failed to create deps.dev collector")
-			os.Exit(2)
-		}
-		logger.Info("deps.dev signal collector enabled")
-		collector.Register(ddcollector)
+	loop := worker.NewWorkLoop(w)
+	if err := loop.Run(); err != nil {
+		// Fatal exits.
+		logger.With(zap.Error(err)).Fatal("Worker run loop failed")
 	}
 
-	// Prepare the output writer
-	out := result.NewCsvWriter(w, collector.EmptySets())
-
-	// Start the workers that process a channel of repo urls.
-	repos := make(chan *url.URL)
-	wait := workerpool.WorkerPool(*workersFlag, func(worker int) {
-		innerLogger := logger.With(zap.Int("worker", worker))
-		for u := range repos {
-			handleRepo(ctx, innerLogger.With(zap.String("url", u.String())), u, out)
-		}
-	})
-
-	// Read in each line from the input files
-	scanner := bufio.NewScanner(r)
-	for scanner.Scan() {
-		line := scanner.Text()
-
-		u, err := url.Parse(strings.TrimSpace(line))
-		if err != nil {
-			logger.With(
-				zap.String("url", line),
-				zap.Error(err),
-			).Error("Failed to parse project url")
-			os.Exit(1) // TODO: add a flag to continue or abort on failure
-		}
-		logger.With(
-			zap.String("url", u.String()),
-		).Debug("Parsed project url")
-
-		// Send the url to the workers
-		repos <- u
-	}
-	if err := scanner.Err(); err != nil {
-		logger.With(
-			zap.Error(err),
-		).Error("Failed while reading input")
-		os.Exit(2)
-	}
-	// Close the repos channel to indicate that there is no more input.
-	close(repos)
-
-	// Wait until all the workers have finished.
-	wait()
-
-	// TODO: track metrics as we are running to measure coverage of data
+	logger.Info("Done.")
 }

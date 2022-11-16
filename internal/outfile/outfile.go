@@ -30,53 +30,67 @@ import (
 	_ "gocloud.dev/blob/s3blob"
 )
 
-// fileOpener wraps a method for opening files.
-//
-// This allows tests to fake the behavior of os.OpenFile() to avoid hitting
-// the filesystem.
-type fileOpener interface {
-	Open(string, int, os.FileMode) (*os.File, error)
+// fileOpenFunc makes it possible to mock os.OpenFile() for testing.
+type fileOpenFunc func(string, int, os.FileMode) (*os.File, error)
+
+// A FilenameTransform applies a transform to the filename before it used to
+// open a file.
+type FilenameTransform func(string) string
+
+// NameWriteCloser implements the io.WriteCloser interface, but also allows a
+// a name to be returned so that the object can be identified.
+type NameWriteCloser interface {
+	// Name returns a name for the Writer.
+	Name() string
+	io.WriteCloser
 }
 
-// fileOpenerFunc allows a function to implement the openFileWrapper interface.
-//
-// This is convenient for wrapping os.OpenFile().
-type fileOpenerFunc func(string, int, os.FileMode) (*os.File, error)
+type writeCloserWrapper struct {
+	io.WriteCloser
+	name string
+}
 
-func (f fileOpenerFunc) Open(filename string, flags int, perm os.FileMode) (*os.File, error) {
-	return f(filename, flags, perm)
+// Name implements the NameWriteCloser interface.
+func (w *writeCloserWrapper) Name() string {
+	if w == nil {
+		return ""
+	}
+	return w.name
 }
 
 type Opener struct {
-	fileOpener fileOpener
-	StdoutName string
-	forceFlag  string
-	force      bool
-	append     bool
-	Perm       os.FileMode
+	FilenameTransform FilenameTransform
+	fileOpener        fileOpenFunc
+	filename          string
+	forceFlag         string
+	force             bool
+	append            bool
+	Perm              os.FileMode
 }
 
-// CreateOpener creates an Opener and defines the sepecified flags forceFlag and appendFlag.
-func CreateOpener(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) *Opener {
+// CreateOpener creates an Opener and defines the sepecified flags fileFlag, forceFlag and appendFlag.
+func CreateOpener(fs *flag.FlagSet, fileFlag, forceFlag, appendFlag, fileHelpName string) *Opener {
 	o := &Opener{
-		Perm:       0o666,
-		StdoutName: "-",
-		fileOpener: fileOpenerFunc(os.OpenFile),
-		forceFlag:  forceFlag,
+		Perm:              0o666,
+		FilenameTransform: func(f string) string { return f },
+		fileOpener:        os.OpenFile,
+		forceFlag:         forceFlag,
 	}
+	fs.StringVar(&(o.filename), fileFlag, "", fmt.Sprintf("use the file `%s` for output. Defaults to stdout if not set.", fileHelpName))
 	fs.BoolVar(&(o.force), forceFlag, false, fmt.Sprintf("overwrites %s if it already exists and -%s is not set.", fileHelpName, appendFlag))
 	fs.BoolVar(&(o.append), appendFlag, false, fmt.Sprintf("appends to %s if it already exists.", fileHelpName))
 	return o
 }
 
-func (o *Opener) openFile(filename string, extraFlags int) (io.WriteCloser, error) {
-	return o.fileOpener.Open(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
+func (o *Opener) openFile(filename string, extraFlags int) (NameWriteCloser, error) {
+	return o.fileOpener(filename, os.O_WRONLY|os.O_SYNC|os.O_CREATE|extraFlags, o.Perm)
 }
 
-func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser, error) {
+func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (NameWriteCloser, error) {
 	if o.append || !o.force {
 		return nil, fmt.Errorf("blob store must use -%s flag", o.forceFlag)
 	}
+	name := u.String()
 
 	// Separate the path from the URL as options may be present in the query
 	// string.
@@ -92,12 +106,16 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 	if err != nil {
 		return nil, fmt.Errorf("failed creating writer for %s/%s: %w", bucket, prefix, err)
 	}
-	return w, nil
+	return &writeCloserWrapper{
+		WriteCloser: w,
+		name:        name,
+	}, nil
 }
 
-// Open opens and returns a file for output with the given filename.
+// Open opens and returns a file for output with the filename set by the fileFlag,
+// applying any transform set in FilenameTransform.
 //
-// If filename is equal to o.StdoutName, os.Stdout will be used.
+// If filename is empty/unset, os.Stdout will be used.
 // If filename does not exist, it will be created with the mode set in o.Perm.
 // If filename does exist, the behavior of this function will depend on the
 // flags:
@@ -108,31 +126,34 @@ func (o *Opener) openBlobStore(ctx context.Context, u *url.URL) (io.WriteCloser,
 //     truncated.
 //   - if neither forceFlag nor appendFlag are set an error will be
 //     returned.
-func (o *Opener) Open(ctx context.Context, filename string) (io.WriteCloser, error) {
-	if o.StdoutName != "" && filename == o.StdoutName {
+func (o *Opener) Open(ctx context.Context) (NameWriteCloser, error) {
+	f := o.FilenameTransform(o.filename)
+	if f == "" {
 		return os.Stdout, nil
-	} else if u, e := url.Parse(filename); e == nil && u.IsAbs() {
+	} else if u, e := url.Parse(f); e == nil && u.IsAbs() {
 		return o.openBlobStore(ctx, u)
 	}
 	switch {
 	case o.append:
-		return o.openFile(filename, os.O_APPEND)
+		return o.openFile(f, os.O_APPEND)
 	case o.force:
-		return o.openFile(filename, os.O_TRUNC)
+		return o.openFile(f, os.O_TRUNC)
 	default:
-		return o.openFile(filename, os.O_EXCL)
+		return o.openFile(f, os.O_EXCL)
 	}
 }
 
-var defaultOpener *Opener
+var DefaultOpener *Opener
 
 // DefineFlags is a wrapper around CreateOpener for updating a default instance
 // of Opener.
-func DefineFlags(fs *flag.FlagSet, forceFlag, appendFlag, fileHelpName string) {
-	defaultOpener = CreateOpener(fs, forceFlag, appendFlag, fileHelpName)
+func DefineFlags(fs *flag.FlagSet, fileFlag, forceFlag, appendFlag, fileHelpName string) {
+	DefaultOpener = CreateOpener(fs, fileFlag, forceFlag, appendFlag, fileHelpName)
 }
 
 // Open is a wrapper around Opener.Open for the default instance of Opener.
-func Open(ctx context.Context, filename string) (io.WriteCloser, error) {
-	return defaultOpener.Open(ctx, filename)
+//
+// Must only be called after DefineFlags.
+func Open(ctx context.Context) (NameWriteCloser, error) {
+	return DefaultOpener.Open(ctx)
 }

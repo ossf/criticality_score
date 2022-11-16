@@ -27,15 +27,20 @@ spec:
           containers:
           - name: enumerate-github
             image: gcr.io/openssf/criticality-score-enumerate-github:latest
-            args: ["gs://ossf-criticality-score-url-data/[[runid]]/github.csv"]
             imagePullPolicy: Always
             env:
             - name: GITHUB_AUTH_SERVER
               value: "10.4.4.210:80"
             - name: CRITICALITY_SCORE_LOG_ENV
               value: "gcp"
+            - name: CRITICALITY_SCORE_OUTFILE
+              value: "gs://ossf-criticality-score-url-data/[[runid]]/github.csv"
             - name: CRITICALITY_SCORE_OUTFILE_FORCE
               value: "1"
+            - name: CRITICALITY_SCORE_MARKER
+              value: "gs://ossf-criticality-score-url-data/latest"
+            - name: CRITICALITY_SCORE_MARKER_TYPE
+              value: "dir"
             - name: CRITICALITY_SCORE_STARS_MIN
               value: "20"
             - name: CRITICALITY_SCORE_START_DATE
