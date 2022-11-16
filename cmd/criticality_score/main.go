@@ -55,7 +55,7 @@ var (
 func initFlags() {
 	flag.Var(&logLevel, "log", "set the `level` of logging.")
 	flag.TextVar(&logEnv, "log-env", log.DefaultEnv, "set logging `env`.")
-	flag.TextVar(&formatType, "format", signalio.WriterTypeCSV, "set the output format.")
+	flag.TextVar(&formatType, "format", signalio.WriterTypeText, "set the output format. Choices are text, json or csv.")
 	outfile.DefineFlags(flag.CommandLine, "out", "force", "append", "OUTFILE")
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
