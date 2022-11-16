@@ -27,6 +27,7 @@ type WriterType int
 const (
 	WriterTypeCSV = WriterType(iota)
 	WriterTypeJSON
+	WriterTypeText
 )
 
 var ErrorUnknownWriterType = errors.New("unknown writer type")
@@ -47,6 +48,8 @@ func (t WriterType) MarshalText() ([]byte, error) {
 		return []byte("csv"), nil
 	case WriterTypeJSON:
 		return []byte("json"), nil
+	case WriterTypeText:
+		return []byte("text"), nil
 	default:
 		return []byte{}, ErrorUnknownWriterType
 	}
@@ -59,6 +62,8 @@ func (t *WriterType) UnmarshalText(text []byte) error {
 		*t = WriterTypeCSV
 	case bytes.Equal(text, []byte("json")):
 		*t = WriterTypeJSON
+	case bytes.Equal(text, []byte("text")):
+		*t = WriterTypeText
 	default:
 		return ErrorUnknownWriterType
 	}
@@ -73,6 +78,8 @@ func (t *WriterType) New(w io.Writer, emptySets []signal.Set, extra ...string) W
 		return CSVWriter(w, emptySets, extra...)
 	case WriterTypeJSON:
 		return JSONWriter(w)
+	case WriterTypeText:
+		return TextWriter(w, emptySets, extra...)
 	default:
 		return nil
 	}
