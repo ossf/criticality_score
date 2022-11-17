@@ -206,11 +206,9 @@ func main() {
 				zap.Time("creation_time", summary.CreationTime()),
 			).Error("Failed to process shard set")
 			erroredShardSets++
-		} else {
-			if n > 0 {
-				processShardSets++
-				totalRecords += n
-			}
+		} else if n > 0 {
+			processShardSets++
+			totalRecords += n
 		}
 	}
 
