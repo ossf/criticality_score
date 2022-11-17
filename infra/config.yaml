@@ -36,7 +36,11 @@ additional-params:
     scoring: enabled
     scoring-config: config/scorer/pike_depsdev.yml
     scoring-column-name: default_score
-    output-format: json
+    csv-transfer-bucket-url: gs://ossf-criticality-score
+    csv-transfer-filename: all.csv
 
   scorecard:
-    # Unused, but must be present to prevent errors.
+    # Use the raw-result-data-bucket-url in place of a better option.
+    # The controller will write the shard metadata to this bucket.
+    # TODO: use a more sensible configuration entry 
+    raw-result-data-bucket-url: gs://ossf-criticality-score-csv-data

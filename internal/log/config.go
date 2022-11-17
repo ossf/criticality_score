@@ -6,6 +6,11 @@ import (
 	"go.uber.org/zap/zapcore"
 )
 
+const (
+	configLogEnvKey   = "log-env"
+	configLogLevelKey = "log-level"
+)
+
 func dev() (zap.Config, []zap.Option) {
 	c := zap.NewDevelopmentConfig()
 	c.EncoderConfig.CallerKey = zapcore.OmitKey
@@ -24,6 +29,11 @@ func gcp() (zap.Config, []zap.Option) {
 	return c, []zap.Option{zapdriver.WrapCore()}
 }
 
+// NewLogger returns a new instance of the zap.Logger based on the specified
+// env and level.
+//
+// The level sets the minimum level log messages will be output, with
+// env being used to configure the logger for a particular environment.
 func NewLogger(e Env, l zapcore.Level) (*zap.Logger, error) {
 	var c zap.Config
 	var opts []zap.Option
@@ -36,4 +46,29 @@ func NewLogger(e Env, l zapcore.Level) (*zap.Logger, error) {
 
 	c.Level = zap.NewAtomicLevelAt(l)
 	return c.Build(opts...)
+}
+
+// NewLoggerFromConfigMap returns a new instance of the zap.Logger based on
+// the value of the keys "log-env" and "log-level" in the config map.
+//
+// If the "log-env" key is not present, defaultEnv will be used.
+// If the "log-level" key is not present, defaultLevel will be used.
+func NewLoggerFromConfigMap(defaultEnv Env, defaultLevel zapcore.Level, config map[string]string) (*zap.Logger, error) {
+	// Extract the log environment from the config, if it exists.
+	logEnv := defaultEnv
+	if val := config[configLogEnvKey]; val != "" {
+		if err := logEnv.UnmarshalText([]byte(val)); err != nil {
+			return nil, err
+		}
+	}
+
+	// Extract the log level from the config, if it exists.
+	logLevel := defaultLevel
+	if val := config[configLogLevelKey]; val != "" {
+		if err := logLevel.Set(val); err != nil {
+			return nil, err
+		}
+	}
+
+	return NewLogger(logEnv, logLevel)
 }
