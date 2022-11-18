@@ -41,8 +41,9 @@ $ cd criticality_score
 1. Find or create an [issue](https://github.com/ossf/criticality_score/issues)
 
 1. Make code changes to:
+    - the [collect_signals CLI tool](https://github.com/ossf/criticality_score/tree/main/cmd/collect_signals)
     - the [GitHub enumerator](https://github.com/ossf/criticality_score/tree/main/cmd/enumerate_github)
-    - the [signal collector](https://github.com/ossf/criticality_score/tree/main/cmd/collect_signals)
+    - the [signal collector worker](https://github.com/ossf/criticality_score/tree/main/cmd/collect_signals)
     - the [scorer](https://github.com/ossf/criticality_score/tree/main/cmd/scorer)
     - the scorer [algorithm configuration](https://github.com/ossf/criticality_score/tree/main/config/scorer)
 
@@ -51,15 +52,10 @@ $ cd criticality_score
 
 ```shell
 $ export GITHUB_TOKEN=ghp_x  # the personal access token created above
-$ echo "https://github.com/{ a repo }" | \
-    go run ./cmd/collect_signals \
-      -log=debug \
-      -depsdev-disable \  # remove if you have a GCP account configured
-      - - | \
-    go run ./cmd/scorer \
-      -log=debug \
-      -config=config/scorer/original_pike.yml \
-      - -
+$ go run ./cmd/criticality_score \
+    -log=debug \
+    -depsdev-disable \  # remove if you have a GCP account configured
+    "https://github.com/{ a repo }"
 ```
 Note: Each of the tools listed above can be run individually and has their own
 README.
