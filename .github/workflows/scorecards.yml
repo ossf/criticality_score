@@ -21,7 +21,7 @@ jobs:
       - name: "Checkout code"
         uses: actions/checkout@93ea575cb5d8a053eaa0ac8fa3b40d7e05a33cc8
       - name: "Run analysis"
-        uses: ossf/scorecard-action@865b4092859256271290c77adbd10a43f4779972 # v2.0.0-alpha.2
+        uses: ossf/scorecard-action@99c53751e09b9529366343771cc321ec74e9bd3d # v2.0.0-alpha.2
         with:
           results_file: results.sarif
           results_format: sarif
@@ -34,7 +34,7 @@ jobs:
       # https://docs.github.com/en/actions/advanced-guides/storing-workflow-data-as-artifacts
       # Optional.
       - name: "Upload artifact"
-        uses: actions/upload-artifact@3cea5372237819ed00197afe530f5a7ea3e805c8 # v2
+        uses: actions/upload-artifact@83fd05a356d7e2593de66fc9913b3002723633cb # v2
         with:
           name: SARIF file
           path: results.sarif

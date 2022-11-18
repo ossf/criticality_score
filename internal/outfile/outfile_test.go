@@ -18,6 +18,7 @@ import (
 	"context"
 	"errors"
 	"flag"
+	"fmt"
 	"os"
 	"testing"
 )
@@ -35,12 +36,12 @@ type testOpener struct {
 	opener   *Opener
 }
 
-func newTestOpener() *testOpener {
+func newTestOpener(t *testing.T) *testOpener {
+	t.Helper()
 	o := &testOpener{}
 	o.flag = flag.NewFlagSet("", flag.ContinueOnError)
-	o.opener = CreateOpener(o.flag, "force", "append", "FILE")
+	o.opener = CreateOpener(o.flag, "out", "force", "append", "FILE")
 	o.opener.Perm = 0o567
-	o.opener.StdoutName = "-stdout-"
 	o.opener.fileOpener = func(filename string, flags int, perm os.FileMode) (*os.File, error) {
 		o.lastOpen = &openCall{
 			filename: filename,
@@ -50,14 +51,18 @@ func newTestOpener() *testOpener {
 		if o.openErr != nil {
 			return nil, o.openErr
 		} else {
-			return &os.File{}, nil
+			dir := t.TempDir()
+			if err := os.Chdir(dir); err != nil {
+				return nil, err
+			}
+			return os.Create(filename)
 		}
 	}
 	return o
 }
 
 func TestForceFlagDefined(t *testing.T) {
-	o := newTestOpener()
+	o := newTestOpener(t)
 	f := o.flag.Lookup("force")
 	if f == nil {
 		t.Fatal("Lookup() == nil, wanted a flag.")
@@ -65,7 +70,7 @@ func TestForceFlagDefined(t *testing.T) {
 }
 
 func TestAppendFlagDefined(t *testing.T) {
-	o := newTestOpener()
+	o := newTestOpener(t)
 	f := o.flag.Lookup("append")
 	if f == nil {
 		t.Fatal("Lookup() == nil, wanted a flag.")
@@ -73,8 +78,8 @@ func TestAppendFlagDefined(t *testing.T) {
 }
 
 func TestOpenStdout(t *testing.T) {
-	o := newTestOpener()
-	f, err := o.opener.Open(context.Background(), "-stdout-")
+	o := newTestOpener(t)
+	f, err := o.opener.Open(context.Background())
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
@@ -84,9 +89,9 @@ func TestOpenStdout(t *testing.T) {
 }
 
 func TestOpenBucketUrl(t *testing.T) {
-	o := newTestOpener()
-	o.flag.Parse([]string{"-force"})
-	f, err := o.opener.Open(context.Background(), "mem://bucket/prefix")
+	o := newTestOpener(t)
+	o.flag.Parse([]string{"-force", "-out=mem://bucket/prefix"})
+	f, err := o.opener.Open(context.Background())
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
@@ -99,9 +104,9 @@ func TestOpenBucketUrl(t *testing.T) {
 }
 
 func TestOpenBucketUrlNoForceFlag(t *testing.T) {
-	o := newTestOpener()
-	o.flag.Parse([]string{})
-	_, err := o.opener.Open(context.Background(), "mem://bucket/prefix")
+	o := newTestOpener(t)
+	o.flag.Parse([]string{"-out=mem://bucket/prefix"})
+	_, err := o.opener.Open(context.Background())
 	if err == nil {
 		t.Fatalf("Open() == nil, want an error")
 	}
@@ -140,26 +145,29 @@ func TestOpenFlagTest(t *testing.T) {
 	// Test success responses
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			o := newTestOpener()
-			o.flag.Parse(test.args)
-			f, err := o.opener.Open(context.Background(), "path/to/file")
+			o := newTestOpener(t)
+			o.flag.Parse(append(test.args, "-out=testfile"))
+			f, err := o.opener.Open(context.Background())
 			if err != nil {
 				t.Fatalf("Open() == %v, want nil", err)
 			}
 			if f == nil {
 				t.Fatal("Open() == nil, want a file")
 			}
-			assertLastOpen(t, o, "path/to/file", test.expectedFlag, 0o567)
+			if got := f.Name(); got != "testfile" {
+				t.Fatalf("Open().Name() == %s; want %s", got, "testfile")
+			}
+			assertLastOpen(t, o, "testfile", test.expectedFlag, 0o567)
 		})
 	}
 
 	// Test error responses
 	for _, test := range tests {
 		t.Run(test.name+" error", func(t *testing.T) {
-			o := newTestOpener()
-			o.flag.Parse(test.args)
+			o := newTestOpener(t)
+			o.flag.Parse(append(test.args, "-out=testfile"))
 			o.openErr = errors.New("test error")
-			_, err := o.opener.Open(context.Background(), "path/to/file")
+			_, err := o.opener.Open(context.Background())
 			if err == nil {
 				t.Fatalf("Open() is nil, want %v", o.openErr)
 			}
@@ -181,4 +189,22 @@ func assertLastOpen(t *testing.T, o *testOpener, filename string, requireFlags i
 	if o.lastOpen.perm != perm {
 		t.Fatalf("Open(_, _, %v) called, want Open(_, _, %v)", o.lastOpen.perm, perm)
 	}
+}
+
+func TestFilenameTransform(t *testing.T) {
+	want := "prefix-testfile-suffix"
+	o := newTestOpener(t)
+	o.opener.FilenameTransform = func(f string) string { return fmt.Sprintf("prefix-%s-suffix", f) }
+	o.flag.Parse([]string{"-out=testfile"})
+	f, err := o.opener.Open(context.Background())
+	if err != nil {
+		t.Fatalf("Open() == %v, want nil", err)
+	}
+	if f == nil {
+		t.Fatal("Open() == nil, want a file")
+	}
+	if got := f.Name(); got != want {
+		t.Fatalf("Open().Name() == %s; want %s", got, want)
+	}
+	assertLastOpen(t, o, want, os.O_EXCL, 0o567)
 }

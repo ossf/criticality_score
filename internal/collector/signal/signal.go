@@ -36,7 +36,7 @@ const (
 
 	// namespaceLegacy is an internal namespace used for fields that provide
 	// compatibility with the legacy python implementation.
-	namespaceLegacy Namespace = "legacy"
+	NamespaceLegacy Namespace = "legacy"
 
 	// The following constants are used while parsing the tags for the struct
 	// fields in a Set.
@@ -213,7 +213,7 @@ func SetFields(s Set, namespace bool) []string {
 	legacyPrefix := ""
 	if namespace {
 		prefix = fmt.Sprintf("%s%c", s.Namespace(), nameSeparator)
-		legacyPrefix = fmt.Sprintf("%s%c", namespaceLegacy, nameSeparator)
+		legacyPrefix = fmt.Sprintf("%s%c", NamespaceLegacy, nameSeparator)
 	}
 	_ = iterSetFields(s, func(f *fieldConfig, _ any) error {
 		if f.legacy {
@@ -251,5 +251,27 @@ func SetAsMap(s Set, namespace bool) map[string]any {
 	for i := range fs {
 		m[fs[i]] = vs[i]
 	}
+	return m
+}
+
+// SetAsMapWithNamespace returns a map where the outer map contains keys
+// corresponding to the namespace, and each inner map contains each field name
+// mapped to the value of the field.
+func SetAsMapWithNamespace(s Set) map[string]map[string]any {
+	m := make(map[string]map[string]any)
+	_ = iterSetFields(s, func(f *fieldConfig, v any) error {
+		// Determine which namespace to use.
+		ns := s.Namespace().String()
+		if f.legacy {
+			ns = NamespaceLegacy.String()
+		}
+		innerM, ok := m[ns]
+		if !ok {
+			innerM = make(map[string]any)
+			m[ns] = innerM
+		}
+		innerM[f.name] = v
+		return nil
+	})
 	return m
 }
