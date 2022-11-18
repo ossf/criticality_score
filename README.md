@@ -6,6 +6,7 @@ This project is maintained by members of the
 [Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects).
 
 ## Goals
+
 1. Generate a **criticality score** for every open source project.
 
 1. Create a list of critical projects that the open source community depends on.
@@ -49,40 +50,36 @@ open source project:
 The program only requires one argument to run, the name of the repo:
 
 ```shell
-$ pip3 install criticality-score
+$ go install github.com/ossf/criticality_score/cmd/criticality_score
 
-$ criticality_score --repo github.com/kubernetes/kubernetes
-name: kubernetes
-url: https://github.com/kubernetes/kubernetes
-language: Go
-description: Production-Grade Container Scheduling and Management
-created_since: 87
-updated_since: 0
-contributor_count: 3999
-watchers_count: 79583
-org_count: 5
-commit_frequency: 97.2
-recent_releases_count: 70
-updated_issues_count: 5395
-closed_issues_count: 3062
-comment_frequency: 5.5
-dependents_count: 454393
-criticality_score: 0.99107
+$ criticality_score github.com/kubernetes/kubernetes
+repo.name: kubernetes
+repo.url: https://github.com/kubernetes/kubernetes
+repo.language: Go
+repo.license: Apache License 2.0
+legacy.created_since: 87
+legacy.updated_since: 0
+legacy.contributor_count: 3999
+legacy.watchers_count: 79583
+legacy.org_count: 5
+legacy.commit_frequency: 97.2
+legacy.recent_releases_count: 70
+legacy.updated_issues_count: 5395
+legacy.closed_issues_count: 3062
+legacy.comment_frequency: 5.5
+legacy.dependents_count: 454393
+default_score: 0.99107
 ```
 
-You can add your own parameters to the criticality score calculation. For
-example, you can add internal project usage data to re-adjust the project's
-criticality score for your prioritization needs. This can be done by adding
-the `--params <param1_value>:<param1_weight>:<param1_max_threshold> ...`
-argument on the command line. You cannot specify the parameter names and
-these won't be listed in the results but they will be included in the
-score calculation.
+The score can be changed by using the `-scoring-config` parameter and supplying
+a different configuration file to specify how the score is calculated.
 
-You can override the default values for the weight and threshold of the
-built-in parameters to match your needs. This can be done by adding the
-`--overrides <param1_name>:<param1_weight>:<param1_max_threshold> ...`
-argument on the command line, where param1_name refers to the name of the
-parameter you want to override.
+By default the `original_pike.yml` configuration is used to calculate the score.
+However, other config files can be supplied to produce different scores. See
+[config/scorer](`https://github.com/ossf/criticality_score/blob/main/config/scorer`) for more.
+
+Feel free to copy one of the configurations and adjust the weights and
+thresholds to suit your needs.
 
 ### Authentication
 
@@ -103,6 +100,8 @@ export GITHUB_AUTH_TOKEN=<your access token>
 set GITHUB_AUTH_TOKEN=<your access token>
 ```
 
+<!-- Hide GitLab documentation until support is added back. -->
+<!--
 - For GitLab repos, you need to
 [create a GitLab access token](https://docs.gitlab.com/ee/user/profile/personal_access_tokens.html)
 and set it in environment variable `GITLAB_AUTH_TOKEN`.
@@ -115,53 +114,60 @@ export GITLAB_AUTH_TOKEN=<your access token>
 # For windows:
 set GITLAB_AUTH_TOKEN=<your access token>
 ```
+-->
 
 ### Formatting Results
 
-There are three formats currently: `default`, `json`, and `csv`. Others may be added in the future.
+There are three formats currently: `text`, `json`, and `csv`. Others may be added in the future.
 
-These may be specified with the `--format` flag.
+These may be specified with the `-format` flag.
+
+## Other Commands
+
+The criticality score project also has other commands for generating and
+working with criticality score data.
+
+- [`enumerate_github`](https://github.com/ossf/criticality_score/blob/main/cmd/enumerate_github):
+  a tool for accurately collecting a set of GitHub repos with a minimum number of stars
+- [`collect_signals`](https://github.com/ossf/criticality_score/blob/main/cmd/collect_signals):
+  a worker for collecting raw signals at scale by leveraging the
+  [Scorecard project's](https://github.com/ossf/scorecard) infrastructure.
+- [`scorer`](https://github.com/ossf/criticality_score/blob/main/cmd/scorer):
+  a tool for recalculating criticality scores based on an input CSV file.
 
 ## Public Data
 
-If you're only interested in seeing a list of critical projects with their
-criticality score, we publish them in `csv` format.
+If you're interested in seeing a list of critical projects with their criticality
+score, we publish them in `csv` format and a BigQuery dataset.
 
-This data is available on Google Cloud Storage and can be downloaded via the
-[`gsutil`](https://cloud.google.com/storage/docs/gsutil_install)
-command-line tool or the web browser
-[here](https://commondatastorage.googleapis.com/ossf-criticality-score/index.html).
+This data is generated using a production instance of the criticality score
+project running in GCP. Details for how this is deployed can be found in the
+[infra](https://github.com/ossf/criticality_score/blob/main/infra) directory.
 
 **NOTE**: Currently, these lists are derived from **projects hosted on GitHub ONLY**.
 We do plan to expand them in near future to account for projects hosted on other
 source control systems.
 
-```shell
-$ gsutil ls gs://ossf-criticality-score/*.csv
-gs://ossf-criticality-score/c_top_200.csv
-gs://ossf-criticality-score/cplusplus_top_200.csv
-gs://ossf-criticality-score/csharp_top_200.csv
-gs://ossf-criticality-score/go_top_200.csv
-gs://ossf-criticality-score/java_top_200.csv
-gs://ossf-criticality-score/js_top_200.csv
-gs://ossf-criticality-score/php_top_200.csv
-gs://ossf-criticality-score/python_top_200.csv
-gs://ossf-criticality-score/ruby_top_200.csv
-gs://ossf-criticality-score/rust_top_200.csv
-gs://ossf-criticality-score/shell_top_200.csv
+### CSV data
+
+The data is available on Google Cloud Storage and can be downloaded via:
+
+- web browser: [commondatastorage.googleapis.com/ossf-criticality-score/index.html](https://commondatastorage.googleapis.com/ossf-criticality-score/index.html)
+- [`gsutil`](https://cloud.google.com/storage/docs/gsutil_install)
+command-line tool: `gsutil ls gs://ossf-criticality-score/`
+
+### BigQuery Dataset
+
+This data is available in the public [BigQuery dataset](https://console.cloud.google.com/bigquery?d=criticality_score_cron&p=openssf&t=criticality-score-v0-latest&page=table).
+
+With a GCP account you can run queries across the data. For example, here is a query returning the top 100 repos by score:
+
+```sql
+  SELECT repo.url, default_score
+    FROM `openssf.criticality_score_cron.criticality-score-v0-latest`
+ORDER BY default_score DESC
+   LIMIT 100;
 ```
-
-This data is generated using this
-[generator script](https://github.com/ossf/criticality_score/blob/main/criticality_score/generate.py).
-For example, to generate a list of top 200 C language projects, run:
-
-```shell
-$ pip3 install python-gitlab PyGithub
-$ python3 -u -m criticality_score.generate \
-    --language c --count 200 --sample-size 5000 --output-dir output
-```
-
-We have also aggregated the results over 100K repositories in GitHub (language-independent) and are available for download [here](https://www.googleapis.com/download/storage/v1/b/ossf-criticality-score/o/all.csv?generation=1614554714813772&alt=media).
 
 ## Contributing
 
