@@ -33,7 +33,7 @@ lint:  ## Run linter
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
-docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals
+docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer
 .PHONY: build/docker $(docker-targets)
 build/docker: $(docker-targets)  ## Build all docker targets
 build/docker/collect-signals:
@@ -42,6 +42,8 @@ build/docker/criticality-score:
 	DOCKER_BUILDKIT=1 docker build . -f cmd/criticality_score/Dockerfile --tag $(IMAGE_NAME)-cli
 build/docker/enumerate-github:
 	DOCKER_BUILDKIT=1 docker build . -f cmd/enumerate_github/Dockerfile --tag $(IMAGE_NAME)-enumerate-github
+build/docker/csv-transfer:
+	DOCKER_BUILDKIT=1 docker build . -f cmd/csv_transfer/Dockerfile --tag $(IMAGE_NAME)-csv-transfer
 
 .PHONY: install/deps
 install/deps:  ## Installs all dependencies during development and building

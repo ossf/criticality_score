@@ -27,7 +27,6 @@ import (
 
 	"github.com/ossf/criticality_score/internal/collector"
 	log "github.com/ossf/criticality_score/internal/log"
-	"github.com/ossf/criticality_score/internal/signalio"
 )
 
 const defaultLogLevel = zapcore.InfoLevel
@@ -45,36 +44,12 @@ func main() {
 		panic(err)
 	}
 
-	// Extract the log environment from the config, if it exists.
-	logEnv := log.DefaultEnv
-	if val := criticalityConfig["log-env"]; val != "" {
-		if err := logEnv.UnmarshalText([]byte(val)); err != nil {
-			panic(err)
-		}
-	}
-
-	// Extract the log level from the config, if it exists.
-	logLevel := defaultLogLevel
-	if val := criticalityConfig["log-level"]; val != "" {
-		if err := logLevel.Set(val); err != nil {
-			panic(err)
-		}
-	}
-
 	// Setup the logger.
-	logger, err := log.NewLogger(logEnv, logLevel)
+	logger, err := log.NewLoggerFromConfigMap(log.DefaultEnv, defaultLogLevel, criticalityConfig)
 	if err != nil {
 		panic(err)
 	}
 	defer logger.Sync()
-
-	// Parse the output format.
-	formatType := signalio.WriterTypeCSV
-	if val := criticalityConfig["output-format"]; val != "" {
-		if err := formatType.UnmarshalText([]byte(val)); err != nil {
-			panic(err)
-		}
-	}
 
 	// Extract the GCP project ID.
 	gcpProjectID, err := config.GetProjectID()
@@ -106,7 +81,13 @@ func main() {
 	scoringConfigFile := criticalityConfig["scoring-config"]
 	scoringColumnName := criticalityConfig["scoring-column-name"]
 
-	// TODO: capture metrics similar to scorecard/cron/worker
+	// Extract the CSV bucket URL. Currently uses the raw result bucket url.
+	// TODO: use a more sensible configuration entry.
+	csvBucketURL, err := config.GetRawResultDataBucketURL()
+	if err != nil {
+		logger.With(zap.Error(err)).Error("Failed to read CSV bucket URL. Ignoring.")
+		csvBucketURL = ""
+	}
 
 	// Bump the # idle conns per host
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 5
@@ -118,7 +99,7 @@ func main() {
 		collector.GCPDatasetName(gcpDatasetName),
 	}
 
-	w, err := NewWorker(context.Background(), logger, formatType, scoringEnabled, scoringConfigFile, scoringColumnName, opts)
+	w, err := NewWorker(context.Background(), logger, scoringEnabled, scoringConfigFile, scoringColumnName, csvBucketURL, opts)
 	if err != nil {
 		// Fatal exits.
 		logger.With(zap.Error(err)).Fatal("Failed to create worker")
