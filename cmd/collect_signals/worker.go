@@ -29,7 +29,7 @@ type collectWorker struct {
 	c               *collector.Collector
 	s               *scorer.Scorer
 	scoreColumnName string
-	writerType      signalio.WriterType
+	csvBucketURL    string
 }
 
 // Process implements the worker.Worker interface.
@@ -51,8 +51,12 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		extras = append(extras, w.scoreColumnName)
 	}
 	extras = append(extras, collectionDateColumnName)
-	var output bytes.Buffer
-	out := w.writerType.New(&output, w.c.EmptySets(), extras...)
+
+	var jsonOutput bytes.Buffer
+	jsonOut := signalio.JSONWriter(&jsonOutput)
+
+	var csvOutput bytes.Buffer
+	csvOut := signalio.CSVWriter(&csvOutput, w.c.EmptySets(), extras...)
 
 	// Iterate through the repos in this shard.
 	for _, repo := range req.GetRepos() {
@@ -99,15 +103,25 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		})
 
 		// Write the signals to storage.
-		if err := out.WriteSignals(ss, extras...); err != nil {
+		if err := jsonOut.WriteSignals(ss, extras...); err != nil {
 			return fmt.Errorf("failed writing signals: %w", err)
+		}
+		if err := csvOut.WriteSignals(ss, extras...); err != nil {
+			return fmt.Errorf("failed writing signals: %w", err)
+		}
+	}
+
+	// Write to the csv bucket if it is set.
+	if w.csvBucketURL != "" {
+		if err := data.WriteToBlobStore(ctx, w.csvBucketURL, filename, csvOutput.Bytes()); err != nil {
+			return fmt.Errorf("error writing csv to blob store")
 		}
 	}
 
 	// Write to the canonical bucket last. The presence of the file indicates
 	// the job was completed. See scorecard's worker package for details.
-	if err := data.WriteToBlobStore(ctx, bucketURL, filename, output.Bytes()); err != nil {
-		return fmt.Errorf("error writing to blob store: %w", err)
+	if err := data.WriteToBlobStore(ctx, bucketURL, filename, jsonOutput.Bytes()); err != nil {
+		return fmt.Errorf("error writing json to blob store: %w", err)
 	}
 
 	logger.Info("Shard written successfully")
@@ -170,7 +184,7 @@ func getMetricsExporter() (monitoring.Exporter, error) {
 	return exporter, nil
 }
 
-func NewWorker(ctx context.Context, logger *zap.Logger, writerType signalio.WriterType, scoringEnabled bool, scoringConfigFile, scoringColumn string, collectOpts []collector.Option) (*collectWorker, error) {
+func NewWorker(ctx context.Context, logger *zap.Logger, scoringEnabled bool, scoringConfigFile, scoringColumn, csvBucketURL string, collectOpts []collector.Option) (*collectWorker, error) {
 	logger.Info("Initializing worker")
 
 	c, err := collector.New(ctx, logger, collectOpts...)
@@ -199,7 +213,7 @@ func NewWorker(ctx context.Context, logger *zap.Logger, writerType signalio.Writ
 		c:               c,
 		s:               s,
 		scoreColumnName: scoringColumn,
-		writerType:      writerType,
 		exporter:        exporter,
+		csvBucketURL:    csvBucketURL,
 	}, nil
 }
