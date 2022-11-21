@@ -6,3 +6,5 @@ __pycache__/
 
 # Installing the package locally for development
 *.egg-info
+
+.idea
