@@ -211,15 +211,14 @@ func Test_buildCondition(t *testing.T) {
 
 		// Can't test the c.Not condition because algorithm.Condition is a func and can't be compared
 	}
-	tt := tests[0]
-	t.Run(tt.name, func(t *testing.T) {
-		got, err := buildCondition(tt.args.c)
-		if (err != nil) != tt.wantErr {
-			t.Errorf("buildCondition() error = %v, wantErr %v", err, tt.wantErr)
-			return
-		}
-		if !reflect.DeepEqual(got, tt.want) {
-			t.Errorf("buildCondition() got = %v, want %v", got, tt.want)
-		}
-	})
+	test := tests[0]
+	got, err := buildCondition(test.args.c)
+
+	if (err != nil) != test.wantErr {
+		t.Errorf("buildCondition() error = %v, wantErr %v", err, test.wantErr)
+		return
+	}
+	if !reflect.DeepEqual(got, test.want) {
+		t.Errorf("buildCondition() got = %v, want %v", got, test.want)
+	}
 }
