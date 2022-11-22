@@ -1,3 +1,17 @@
+// Copyright 2022 Criticality Score Authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     https://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
 package scorer
 
 import (
@@ -46,7 +60,7 @@ func TestInput_ToAlgorithmInput(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Valid condition",
+			name: "valid condition",
 			fields: fields{
 				Field:        "test",
 				Distribution: "linear",
@@ -60,7 +74,7 @@ func TestInput_ToAlgorithmInput(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "Invalid condition",
+			name: "invalid condition",
 			fields: fields{
 				Field:        "test",
 				Distribution: "linear",
@@ -76,39 +90,38 @@ func TestInput_ToAlgorithmInput(t *testing.T) {
 		},
 	}
 
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			i := &Input{
-				Bounds:       tt.fields.Bounds,
-				Condition:    tt.fields.Condition,
-				Field:        tt.fields.Field,
-				Distribution: tt.fields.Distribution,
-				Tags:         tt.fields.Tags,
-				Weight:       tt.fields.Weight,
+				Bounds:       test.fields.Bounds,
+				Condition:    test.fields.Condition,
+				Field:        test.fields.Field,
+				Distribution: test.fields.Distribution,
+				Tags:         test.fields.Tags,
+				Weight:       test.fields.Weight,
 			}
 			got, err := i.ToAlgorithmInput()
-			if (err != nil) != tt.wantErr {
-				t.Errorf("ToAlgorithmInput() error = %v, wantErr %v", err, tt.wantErr)
-				return
+			if (err != nil) != test.wantErr {
+				t.Fatalf("ToAlgorithmInput() error = %v, wantErr %v", err, test.wantErr)
 			}
-			if tt.wantErr {
+			if test.wantErr {
 				return
 			}
 
 			// Comparing specific fields independently because some of the structs have a func as a field which
 			// can't be used for comparison with reflect.DeepEqual()
 
-			if got.Distribution.String() != tt.want.Distribution.String() {
-				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, tt.want)
+			if got.Distribution.String() != test.want.Distribution.String() {
+				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, test.want)
 			}
-			if got.Bounds != tt.want.Bounds {
-				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, tt.want)
+			if got.Bounds != test.want.Bounds {
+				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, test.want)
 			}
-			if got.Weight != tt.want.Weight {
-				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, tt.want)
+			if got.Weight != test.want.Weight {
+				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, test.want)
 			}
-			if !reflect.DeepEqual(got.Tags, tt.want.Tags) {
-				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, tt.want)
+			if !reflect.DeepEqual(got.Tags, test.want.Tags) {
+				t.Errorf("ToAlgorithmInput() got = %v, want %v", got, test.want)
 			}
 		})
 	}
@@ -141,9 +154,9 @@ func TestLoadConfig(t *testing.T) {
 			},
 		},
 		{
-			name: "invalid yml",
+			name: "invalid yaml",
 			args: args{
-				r: "testdata/invalid_config.yml",
+				r: "testdata/invalid_config.yaml",
 			},
 			want:    &Config{},
 			wantErr: true,
@@ -198,17 +211,15 @@ func Test_buildCondition(t *testing.T) {
 
 		// Can't test the c.Not condition because algorithm.Condition is a func and can't be compared
 	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, err := buildCondition(tt.args.c)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("buildCondition() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("buildCondition() got = %v, want %v", got, tt.want)
-			}
-		})
-	}
+	tt := tests[0]
+	t.Run(tt.name, func(t *testing.T) {
+		got, err := buildCondition(tt.args.c)
+		if (err != nil) != tt.wantErr {
+			t.Errorf("buildCondition() error = %v, wantErr %v", err, tt.wantErr)
+			return
+		}
+		if !reflect.DeepEqual(got, tt.want) {
+			t.Errorf("buildCondition() got = %v, want %v", got, tt.want)
+		}
+	})
 }
