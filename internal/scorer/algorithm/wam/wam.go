@@ -15,6 +15,7 @@
 // The package wam implements the Weighted Arithmetic Mean, which forms the
 // basis of Rob Pike's criticality score algorithm as documented in
 // Quantifying_criticality_algorithm.pdf.
+
 package wam
 
 import (
