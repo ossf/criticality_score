@@ -28,12 +28,12 @@ spec:
     spec:
       containers:
         - name: worker
-          image: gcr.io/openssf/criticality-score-collect-signals:latest
+          image: collect-signals
           args: ["--config=/etc/criticality_score/config.yaml"]
           imagePullPolicy: Always
           env:
             - name: GITHUB_AUTH_SERVER
-              value: "criticality-score-github-service:80"
+              value: "$(GITHUB_AUTH_SERVER):80"
           resources:
             requests:
               memory: 5Gi

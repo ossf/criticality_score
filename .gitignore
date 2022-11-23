@@ -6,3 +6,10 @@ __pycache__/
 
 # Installing the package locally for development
 *.egg-info
+
+# Skaffold dir
+.kpt-*
+.swp
+
+# Test output
+unit-coverage.out

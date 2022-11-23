@@ -15,20 +15,24 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: criticality-score-bq-transfer
+  name: criticality-score-batch-controller
 spec:
-  # At 02:00UTC on the 28th day of the month.
-  schedule: "0 2 28 * *"
+  # At 02:00UTC on the first day of the Month.
+  schedule: "0 2 1 * *"
   concurrencyPolicy: "Forbid"
   jobTemplate:
     spec:
       template:
         spec:
+          restartPolicy: Never
           containers:
-            - name: bq-transfer
-              image: gcr.io/openssf/scorecard-bq-transfer:latest
+            - name: controller
+              image: scorecard-batch-controller
               args: ["--config=/etc/criticality_score/config.yaml"]
               imagePullPolicy: Always
+              env:
+                - name: GOMEMLIMIT
+                  value: "950MiB"
               resources:
                 limits:
                   memory: 1Gi
@@ -42,4 +46,3 @@ spec:
             - name: config-volume
               configMap:
                 name: criticality-score-config
-          restartPolicy: OnFailure

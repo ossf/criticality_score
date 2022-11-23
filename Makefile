@@ -23,9 +23,13 @@ help:  ## Display this help
 			{ printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } \
 			/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-.PHONY: test
-test:  ## Run all tests
+test-targets = test/unit test/scorecard-version
+.PHONY: test $(test-targets)
+test: $(test-targets)  ## Run all tests
+test/unit:
 	go test -race -covermode=atomic -coverprofile=unit-coverage.out './...'
+test/scorecard-version:
+	bash ./scripts/validate-scorecard-version.sh
 
 .PHONY: lint
 $(GOLANGCI_LINT): install/deps
