@@ -20,6 +20,7 @@ import (
 	"testing"
 
 	"github.com/google/go-cmp/cmp"
+
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
 
@@ -32,6 +33,7 @@ func TestInput_ToAlgorithmInput(t *testing.T) {
 		Tags         []string
 		Weight       float64
 	}
+	//nolint:govet
 	tests := []struct {
 		name    string
 		fields  fields
@@ -130,6 +132,7 @@ func TestLoadConfig(t *testing.T) {
 	type args struct {
 		r string
 	}
+	//nolint:govet
 	tests := []struct {
 		name    string
 		args    args
@@ -193,6 +196,7 @@ func Test_buildCondition(t *testing.T) {
 	type args struct {
 		c *Condition
 	}
+	//nolint:govet
 	tests := []struct {
 		name    string
 		args    args
