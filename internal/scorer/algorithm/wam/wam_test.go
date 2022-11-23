@@ -22,108 +22,104 @@ import (
 )
 
 func TestWeighetedArithmeticMean_Score(t *testing.T) {
-	type fields struct {
-		inputs []*algorithm.Input
-	}
-	type args struct {
-		record map[string]float64
-	}
+	//nolint:govet
 	tests := []struct {
 		name   string
-		fields fields
-		args   args
+		inputs []*algorithm.Input
+		record map[string]float64
 		want   float64
 	}{
 		{
 			name: "regular test",
-			fields: fields{
-				inputs: []*algorithm.Input{
-					{Weight: 1, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("1"))},
-					{Weight: 2, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("2"))},
-					{Weight: 3, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("3"))},
-					{Weight: 4, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("4"))},
-					{Weight: 5, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("5"))},
+			inputs: []*algorithm.Input{
+				{
+					Weight: 1, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("1")),
+				},
+				{
+					Weight: 2, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("2")),
+				},
+				{
+					Weight: 3, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("3")),
+				},
+				{
+					Weight: 4, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("4")),
+				},
+				{
+					Weight: 5, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("5")),
 				},
 			},
-			want: 3.6666666666666665,
-			args: args{
-				record: map[string]float64{"1": 1},
-			},
+			want:   3.6666666666666665,
+			record: map[string]float64{"1": 1},
 		},
 		{
 			name: "With zero weight",
-			fields: fields{
-				inputs: []*algorithm.Input{
-					{Weight: 0, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("0"))},
-					{Weight: 1, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("1"))},
+			inputs: []*algorithm.Input{
+				{
+					Weight: 0, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("0")),
 				},
 			},
-			want: 1,
-			args: args{
-				record: map[string]float64{"1": 1},
-			},
+			want:   math.NaN(),
+			record: map[string]float64{"1": 1},
 		},
 		{
 			name: "with negative weight",
-			fields: fields{
-				inputs: []*algorithm.Input{
-					{Weight: -1, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("0"))},
-					{Weight: -2, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("1"))},
+			inputs: []*algorithm.Input{
+				{
+					Weight: -1, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("0")),
+				},
+				{
+					Weight: -2, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("1")),
 				},
 			},
-			want: 1,
-			args: args{
-				record: map[string]float64{"1": 1},
-			},
+			want:   1,
+			record: map[string]float64{"1": 1},
 		},
 		{
 			name: "with a single negative weight",
-			fields: fields{
-				inputs: []*algorithm.Input{
-					{Weight: -300, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("-300"))},
+			inputs: []*algorithm.Input{
+				{
+					Weight: -300, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("-300")),
 				},
 			},
-			want: math.NaN(),
-			args: args{
-				record: map[string]float64{"1": 1},
-			},
+			want:   math.NaN(),
+			record: map[string]float64{"1": 1},
 		},
 		{
 			name: "with zero weight as the only input",
-			fields: fields{
-				inputs: []*algorithm.Input{
-					{Weight: 0, Distribution: algorithm.LookupDistribution("linear"),
-						Source: algorithm.Value(algorithm.Field("0"))},
+			inputs: []*algorithm.Input{
+				{
+					Weight: 0, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("0")),
 				},
 			},
-			want: math.NaN(),
-			args: args{
-				record: map[string]float64{"1": 1},
-			},
+			want:   math.NaN(),
+			record: map[string]float64{"1": 1},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-
-			p, err := New(tt.fields.inputs)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			p, err := New(test.inputs)
 			if err != nil {
 				t.Fatalf("New() error = %v", err)
 			}
 
-			got := p.Score(tt.args.record)
+			got := p.Score(test.record)
 
-			if got != tt.want && !(math.IsNaN(tt.want) && math.IsNaN(got)) {
-				t.Errorf("Score() = %v, want %v", got, tt.want)
+			if math.IsNaN(got) && math.IsNaN(test.want) {
+				return
+			}
+
+			if got != test.want && !(math.IsNaN(test.want) && math.IsNaN(got)) {
+				t.Errorf("Score() = %v, want %v", got, test.want)
 			}
 		})
 	}
