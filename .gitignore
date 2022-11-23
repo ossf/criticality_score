@@ -7,6 +7,9 @@ __pycache__/
 # Installing the package locally for development
 *.egg-info
 
+# This is for IDEs/Editors
+.idea
+
 # Skaffold dir
 .kpt-*
 .swp
