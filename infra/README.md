@@ -53,10 +53,11 @@ For Kustomize (fast):
 kubectl kustomize ./infra/envs/{staging,prod}
 ```
 
-For Skaffold (must be run from repo root):
+For Skaffold :
 
 ```shell
-skaffold render -f ./infra/skaffold.yaml --offline -p {staging,prod}
+cd infra && \
+  skaffold render -f ./skaffold.yaml --offline -p {staging,prod}
 ```
 
 ### Kubernetes Information
