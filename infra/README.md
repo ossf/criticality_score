@@ -84,9 +84,9 @@ kubectl create secret generic github --from-literal=token=$GITHUB_AUTH_TOKENS
 Updating Staging GitHub access tokens:
 
 ```shell
-kubectl create secret generic github_staging --from-literal=token=$GITHUB_AUTH_TOKENS
+kubectl create secret generic github-staging --from-literal=token=$GITHUB_AUTH_TOKENS
 ```
 
-**Note:** `github` and `github_staging` must be disjoint sets of GitHub
+**Note:** `github` and `github-staging` must be disjoint sets of GitHub
 personal access tokens. If they share tokens one environment may starve the
 other.
