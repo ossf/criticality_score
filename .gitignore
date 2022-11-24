@@ -9,3 +9,10 @@ __pycache__/
 
 # This is for IDEs/Editors
 .idea
+
+# Skaffold dir
+.kpt-*
+.swp
+
+# Test output
+unit-coverage.out
