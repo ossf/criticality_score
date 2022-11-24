@@ -19,13 +19,13 @@ profiles:
     deploy:
       kustomize:
         paths:
-          - infra/envs/staging
+          - envs/staging
         flags:
-          apply: ['--prune', '-l', 'managed-by-kustomize="true"']
+          apply: ['--prune', '-l', 'managed-by-kustomize=true']
   - name: prod
     deploy:
       kustomize:
         paths:
-          - infra/envs/prod
+          - envs/prod
         flags:
-          apply: ['--prune', '-l', 'managed-by-kustomize="true"']
+          apply: ['--prune', '-l', 'managed-by-kustomize=true']
