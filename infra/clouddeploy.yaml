@@ -19,10 +19,10 @@ metadata:
 description: Pipeline for deploying Criticality Score
 serialPipeline:
  stages:
- - targetId: stagingTarget
+ - targetId: staging-target
    profiles: 
    - staging
- - targetId: prodTarget
+ - targetId: prod-target
    profiles:
    - prod
 
@@ -31,7 +31,7 @@ serialPipeline:
 apiVersion: deploy.cloud.google.com/v1beta1
 kind: Target
 metadata:
- name: stagingTarget
+ name: staging-target
 description: Staging deploy target
 gke:
  cluster: projects/openssf/locations/us-central1-c/clusters/criticality-score
@@ -41,7 +41,7 @@ gke:
 apiVersion: deploy.cloud.google.com/v1beta1
 kind: Target
 metadata:
- name: prodTarget
+ name: prod-target
 description: Production deploy target
 gke:
  cluster: projects/openssf/locations/us-central1-c/clusters/criticality-score
