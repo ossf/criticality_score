@@ -22,6 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
 
 type Condition struct {
@@ -38,7 +39,7 @@ type Input struct {
 	Weight       float64           `yaml:"weight"`
 }
 
-// Implements yaml.Unmarshaler interface.
+// UnmarshalYAML Implements yaml.Unmarshaler interface.
 func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	type RawInput Input
 	raw := &RawInput{
@@ -72,6 +73,7 @@ func buildCondition(c *Condition) (algorithm.Condition, error) {
 	return nil, errors.New("one condition field must be set")
 }
 
+// ToAlgorithmInput returns an instance of algorithm.Input that is constructed.
 func (i *Input) ToAlgorithmInput() (*algorithm.Input, error) {
 	var v algorithm.Value
 	v = algorithm.Field(i.Field)
@@ -121,6 +123,13 @@ func LoadConfig(r io.Reader) (*Config, error) {
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, err
 	}
+
+	for _, i := range c.Inputs {
+		if i.Weight <= 0 {
+			return nil, wam.ErrWeightLessThanOrEqualToZero
+		}
+	}
+
 	return c, nil
 }
 

@@ -126,33 +126,29 @@ func TestLookupDistribution(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got := LookupDistribution(tt.distributionName)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got := LookupDistribution(test.distributionName)
 
-			if got == nil && tt.wantNil {
+			if got == nil && test.wantNil {
 				return
 			}
 
-			normalizedValue := got.Normalize(tt.distributionValue)
+			normalizedValue := got.Normalize(test.distributionValue)
 
-			// round to 6 decimal places for comparison
-			normalizedValue = math.Round(normalizedValue*1000000) / 1000000
-			wantValue := math.Round(tt.want.value*1000000) / 1000000
-
-			if got.String() != tt.want.name {
-				t.Errorf("The names are not equal LookupDistribution name = %s, want name %s",
-					got.String(), tt.want.name)
+			if got.String() != test.want.name {
+				t.Errorf("LookupDistribution name = %s, want name %s", got.String(), test.want.name)
 			}
 
-			if math.IsNaN(normalizedValue) && math.IsNaN(tt.want.value) {
+			if math.IsNaN(normalizedValue) && math.IsNaN(test.want.value) {
 				// both are NaN, and we can't compare two NaNs together
 				return
 			}
 
-			if normalizedValue != wantValue {
-				t.Errorf("The values are not equal LookupDistribution value %f, want value %f",
-					normalizedValue, wantValue)
+			if math.Abs(test.want.value-normalizedValue) > 0.000001 {
+				// Making a comparison up to 6 decimal places, but this might not work for some cases with
+				// test.want.value and normalizedValue have a very small absolute difference
+				t.Errorf("LookupDistribution value %f, want value %f", normalizedValue, test.want.value)
 			}
 		})
 	}
