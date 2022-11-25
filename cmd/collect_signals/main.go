@@ -32,8 +32,10 @@ import (
 	log "github.com/ossf/criticality_score/internal/log"
 )
 
-const defaultLogLevel = zapcore.InfoLevel
-const githubAuthServerMaxAttemps = 10
+const (
+	defaultLogLevel            = zapcore.InfoLevel
+	githubAuthServerMaxAttemps = 10
+)
 
 func waitForRPCServer(logger *zap.Logger, rpcServer string, maxAttempts int) {
 	if rpcServer == "" {
@@ -46,17 +48,19 @@ func waitForRPCServer(logger *zap.Logger, rpcServer string, maxAttempts int) {
 	attempt := 0
 	for {
 		attempt++
-		if c, err := rpc.DialHTTP("tcp", rpcServer); err == nil {
+		c, err := rpc.DialHTTP("tcp", rpcServer)
+		switch {
+		case err == nil:
 			c.Close()
 			logger.Info("GitHub auth server found.")
 			return
-		} else if attempt < maxAttempts {
+		case attempt < maxAttempts:
 			logger.With(
 				zap.Error(err),
 				zap.Duration("wait", retryWait),
 				zap.Int("attempt", attempt),
 			).Warn("Waiting for GitHub auth server.")
-		} else {
+		default:
 			// Fatal exits.
 			logger.With(
 				zap.Error(err),
