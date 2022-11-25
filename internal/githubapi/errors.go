@@ -95,11 +95,7 @@ func (e *GraphQLErrors) Errors() []GraphQLError {
 
 // Is implements the errors.Is interface.
 func (e *GraphQLErrors) Is(target error) bool {
-	if target == e {
-		// Identity test is always true.
-		return true
-	}
-	if target == ErrGraphQLNotFound {
+	if errors.Is(target, ErrGraphQLNotFound) {
 		return len(e.errors) == 1 && e.HasType(gitHubGraphQLNotFoundType)
 	}
 	return false
