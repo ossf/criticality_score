@@ -18,7 +18,10 @@ import (
 	"context"
 	"flag"
 	"net/http"
+	"net/rpc"
+	"os"
 	"strings"
+	"time"
 
 	"github.com/ossf/scorecard/v4/cron/config"
 	"github.com/ossf/scorecard/v4/cron/worker"
@@ -30,6 +33,39 @@ import (
 )
 
 const defaultLogLevel = zapcore.InfoLevel
+const githubAuthServerMaxAttemps = 10
+
+func waitForRPCServer(logger *zap.Logger, rpcServer string, maxAttempts int) {
+	if rpcServer == "" {
+		return
+	}
+
+	logger = logger.With(zap.String("rpc_server", rpcServer))
+
+	retryWait := time.Second
+	attempt := 0
+	for {
+		attempt++
+		if c, err := rpc.DialHTTP("tcp", rpcServer); err == nil {
+			c.Close()
+			logger.Info("GitHub auth server found.")
+			return
+		} else if attempt < maxAttempts {
+			logger.With(
+				zap.Error(err),
+				zap.Duration("wait", retryWait),
+				zap.Int("attempt", attempt),
+			).Warn("Waiting for GitHub auth server.")
+		} else {
+			// Fatal exits.
+			logger.With(
+				zap.Error(err),
+			).Fatal("Unable to find GitHub auth server.")
+		}
+		time.Sleep(retryWait)
+		retryWait = retryWait + (retryWait / 2)
+	}
+}
 
 func main() {
 	flag.Parse()
@@ -88,6 +124,10 @@ func main() {
 		logger.With(zap.Error(err)).Error("Failed to read CSV bucket URL. Ignoring.")
 		csvBucketURL = ""
 	}
+
+	// The GitHub authentication server may be unavailable if it is starting
+	// at the same time. Wait until it can be reached.
+	waitForRPCServer(logger, os.Getenv("GITHUB_AUTH_SERVER"), githubAuthServerMaxAttemps)
 
 	// Bump the # idle conns per host
 	http.DefaultTransport.(*http.Transport).MaxIdleConnsPerHost = 5
