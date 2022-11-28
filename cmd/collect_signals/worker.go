@@ -21,7 +21,10 @@ import (
 	"github.com/ossf/criticality_score/internal/signalio"
 )
 
-const collectionDateColumnName = "collection_date"
+const (
+	collectionDateColumnName = "collection_date"
+	commitIDColumnName       = "worker_commit_id"
+)
 
 type collectWorker struct {
 	logger          *zap.Logger
@@ -36,6 +39,7 @@ type collectWorker struct {
 func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchRequest, bucketURL string) error {
 	filename := worker.ResultFilename(req)
 	jobTime := req.GetJobTime().AsTime()
+	commitID := getCommitID()
 
 	// Prepare the logger with identifiers for the shard and job.
 	logger := w.logger.With(
@@ -43,6 +47,9 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		zap.Time("job_time", jobTime),
 		zap.String("filename", filename),
 	)
+	if commitID != "" {
+		logger = logger.With(zap.String("commit_id", commitID))
+	}
 	logger.Info("Processing shard")
 
 	// Prepare the output writer
@@ -51,6 +58,9 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		extras = append(extras, w.scoreColumnName)
 	}
 	extras = append(extras, collectionDateColumnName)
+	if commitID != "" {
+		extras = append(extras, commitIDColumnName)
+	}
 
 	var jsonOutput bytes.Buffer
 	jsonOut := signalio.JSONWriter(&jsonOutput)
@@ -101,6 +111,15 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 			Key:   collectionDateColumnName,
 			Value: jobTime,
 		})
+
+		// Ensure the commit ID is included with each record for helping
+		// identify which Git commit is associated with this record.
+		if commitID != "" {
+			extras = append(extras, signalio.Field{
+				Key:   commitIDColumnName,
+				Value: commitID,
+			})
+		}
 
 		// Write the signals to storage.
 		if err := jsonOut.WriteSignals(ss, extras...); err != nil {
