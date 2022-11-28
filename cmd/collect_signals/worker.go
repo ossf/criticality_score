@@ -39,7 +39,6 @@ type collectWorker struct {
 func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchRequest, bucketURL string) error {
 	filename := worker.ResultFilename(req)
 	jobTime := req.GetJobTime().AsTime()
-	commitID := getCommitID()
 
 	// Prepare the logger with identifiers for the shard and job.
 	logger := w.logger.With(
@@ -47,9 +46,6 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		zap.Time("job_time", jobTime),
 		zap.String("filename", filename),
 	)
-	if commitID != "" {
-		logger = logger.With(zap.String("commit_id", commitID))
-	}
 	logger.Info("Processing shard")
 
 	// Prepare the output writer

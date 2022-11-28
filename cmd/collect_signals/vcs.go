@@ -20,6 +20,8 @@ import (
 
 const commitIDKey = "vcs.revision"
 
+var commitID = getCommitID()
+
 // getCommitID returns the vcs commit ID embedded in the binary when the
 // -buildvcs flag is set while building.
 func getCommitID() string {
