@@ -21,7 +21,10 @@ import (
 	"github.com/ossf/criticality_score/internal/signalio"
 )
 
-const collectionDateColumnName = "collection_date"
+const (
+	collectionDateColumnName = "collection_date"
+	commitIDColumnName       = "worker_commit_id"
+)
 
 type collectWorker struct {
 	logger          *zap.Logger
@@ -51,6 +54,9 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		extras = append(extras, w.scoreColumnName)
 	}
 	extras = append(extras, collectionDateColumnName)
+	if commitID != "" {
+		extras = append(extras, commitIDColumnName)
+	}
 
 	var jsonOutput bytes.Buffer
 	jsonOut := signalio.JSONWriter(&jsonOutput)
@@ -101,6 +107,15 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 			Key:   collectionDateColumnName,
 			Value: jobTime,
 		})
+
+		// Ensure the commit ID is included with each record for helping
+		// identify which Git commit is associated with this record.
+		if commitID != "" {
+			extras = append(extras, signalio.Field{
+				Key:   commitIDColumnName,
+				Value: commitID,
+			})
+		}
 
 		// Write the signals to storage.
 		if err := jsonOut.WriteSignals(ss, extras...); err != nil {

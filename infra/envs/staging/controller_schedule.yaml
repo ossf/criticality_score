@@ -17,5 +17,5 @@ kind: CronJob
 metadata:
   name: criticality-score-batch-controller
 spec:
-  # At 02:00UTC each weekday.
-  schedule: "0 2 * * 1-5"
+  # At 0:30UTC, or 10:30AEST each weekday.
+  schedule: "30 0 * * 1-5"

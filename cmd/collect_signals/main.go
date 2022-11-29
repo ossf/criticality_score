@@ -91,6 +91,11 @@ func main() {
 	}
 	defer logger.Sync()
 
+	// Embed the commitID with all log messages.
+	if commitID != "" {
+		logger = logger.With(zap.String("commit_id", commitID))
+	}
+
 	// Extract the GCP project ID.
 	gcpProjectID, err := config.GetProjectID()
 	if err != nil {
