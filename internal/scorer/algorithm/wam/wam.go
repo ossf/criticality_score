@@ -18,12 +18,8 @@
 package wam
 
 import (
-	"errors"
-
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
-
-var ErrWeightLessThanOrEqualToZero = errors.New("weight must be greater than 0")
 
 type WeighetedArithmeticMean struct {
 	inputs []*algorithm.Input
@@ -32,12 +28,6 @@ type WeighetedArithmeticMean struct {
 // New returns a new instance of the Weighted Arithmetic Mean algorithm, which
 // is used by the Pike algorithm.
 func New(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
-	for _, i := range inputs {
-		if i.Weight <= 0 {
-			return nil, ErrWeightLessThanOrEqualToZero
-		}
-	}
-
 	return &WeighetedArithmeticMean{
 		inputs: inputs,
 	}, nil

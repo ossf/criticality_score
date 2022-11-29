@@ -16,6 +16,7 @@ package wam
 
 import (
 	"errors"
+	"math"
 	"testing"
 
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
@@ -58,41 +59,30 @@ func TestWeighetedArithmeticMean_Score(t *testing.T) {
 			record: map[string]float64{"1": 1, "2": 2, "3": 3, "4": 4, "5": 5},
 		},
 		{
-			name: "With zero weight",
+			name: "fields not matching the record",
 			inputs: []*algorithm.Input{
 				{
-					Weight: 0, Distribution: algorithm.LookupDistribution("linear"),
-					Source: algorithm.Value(algorithm.Field("0")),
-				},
-			},
-			err:    ErrWeightLessThanOrEqualToZero,
-			record: map[string]float64{"0": 0},
-		},
-		{
-			name: "with negative weight",
-			inputs: []*algorithm.Input{
-				{
-					Weight: -1, Distribution: algorithm.LookupDistribution("linear"),
-					Source: algorithm.Value(algorithm.Field("0")),
-				},
-				{
-					Weight: -2, Distribution: algorithm.LookupDistribution("linear"),
+					Weight: 1, Distribution: algorithm.LookupDistribution("linear"),
 					Source: algorithm.Value(algorithm.Field("1")),
 				},
 			},
-			err:    ErrWeightLessThanOrEqualToZero,
-			record: map[string]float64{"-1": -1, "-2": -2},
+			want:   math.NaN(),
+			record: map[string]float64{"2": 2},
 		},
 		{
-			name: "with a single negative weight",
+			name: "some fields matching the record",
 			inputs: []*algorithm.Input{
 				{
-					Weight: -300, Distribution: algorithm.LookupDistribution("linear"),
-					Source: algorithm.Value(algorithm.Field("-300")),
+					Weight: 1, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("1")),
+				},
+				{
+					Weight: 2, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("2")),
 				},
 			},
-			err:    ErrWeightLessThanOrEqualToZero,
-			record: map[string]float64{"-300": -300},
+			want:   1,
+			record: map[string]float64{"1": 1},
 		},
 	}
 	for _, test := range tests {
@@ -107,7 +97,7 @@ func TestWeighetedArithmeticMean_Score(t *testing.T) {
 			}
 			got := p.Score(test.record)
 
-			if got != test.want {
+			if !(math.IsNaN(got) && math.IsNaN(test.want)) && got != test.want {
 				t.Errorf("Score() = %v, want %v", got, test.want)
 			}
 		})

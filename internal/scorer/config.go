@@ -22,7 +22,6 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
-	"github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
 
 type Condition struct {
@@ -41,6 +40,9 @@ type Input struct {
 
 // UnmarshalYAML Implements yaml.Unmarshaler interface.
 func (i *Input) UnmarshalYAML(value *yaml.Node) error {
+	if i.Weight <= 0 {
+		return errors.New("weight must be greater than 0")
+	}
 	type RawInput Input
 	raw := &RawInput{
 		Weight:       1,
@@ -122,12 +124,6 @@ func LoadConfig(r io.Reader) (*Config, error) {
 	}
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, err
-	}
-
-	for _, i := range c.Inputs {
-		if i.Weight <= 0 {
-			return nil, wam.ErrWeightLessThanOrEqualToZero
-		}
 	}
 
 	return c, nil
