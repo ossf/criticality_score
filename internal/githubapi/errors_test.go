@@ -33,12 +33,12 @@ func TestErrorResponseStatusCode(t *testing.T) {
 			want: 0,
 		},
 		{
-			name: "non-nil error that is not in ErrorResponse",
+			name: "non-nil error that is not an ErrorResponse",
 			err:  errors.New("some error"),
 			want: 0,
 		},
 		{
-			name: "error that is in ErrorResponse",
+			name: "error that is an ErrorResponse",
 			err: &github.ErrorResponse{
 				Response: &http.Response{
 					StatusCode: 404,
@@ -90,7 +90,7 @@ func TestGraphQLErrors_Error(t *testing.T) {
 			defer func() {
 				r := recover()
 				if r != nil && !test.wantPanic {
-					t.Fatalf("Error() panic: %v, %s", r, test.name)
+					t.Fatalf("Error() panic: %v, want no panic", r)
 				}
 			}()
 
@@ -117,6 +117,22 @@ func TestGraphQLErrors_HasType(t *testing.T) {
 			},
 			t:    "NOT_FOUND",
 			want: true,
+		},
+		{
+			name:   "type without NOT_FOUND",
+			errors: []GraphQLError{},
+			t:      "NOT_FOUND",
+			want:   false,
+		},
+		{
+			name: "type multiple type fields not set to t",
+			errors: []GraphQLError{
+				{Type: "random_1"},
+				{Type: "random_2"},
+				{Type: "random_3"},
+			},
+			t:    "NOT_FOUND",
+			want: false,
 		},
 		{
 			name: "type is not equal to t",
