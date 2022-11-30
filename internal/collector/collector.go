@@ -81,7 +81,7 @@ func New(ctx context.Context, logger *zap.Logger, opts ...Option) (*Collector, e
 		// deps.dev collection source has been disabled, so skip it.
 		logger.Warn("deps.dev signal source is disabled.")
 	} else {
-		ddsource, err := depsdev.NewSource(ctx, logger, c.config.gcpProject, c.config.gcpDatasetName)
+		ddsource, err := depsdev.NewSource(ctx, logger, c.config.gcpProject, c.config.gcpDatasetName, c.config.gcpDatasetTTL)
 		if err != nil {
 			return nil, fmt.Errorf("init deps.dev source: %w", err)
 		}

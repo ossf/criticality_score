@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"text/template"
 	"time"
 
@@ -66,7 +67,7 @@ FROM ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
 WHERE ProjectName = @projectname AND ProjectType = @projecttype;
 `
 
-func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Logger, datasetName string) (*dependents, error) {
+func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Logger, datasetName string, datasetTTL time.Duration) (*dependents, error) {
 	b := &bq{client: client}
 	c := &dependents{
 		b: b,
@@ -75,6 +76,7 @@ func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Log
 			zap.String("dataset", datasetName),
 		),
 		datasetName: datasetName,
+		datasetTTL:  datasetTTL,
 	}
 	var err error
 
@@ -117,6 +119,7 @@ type dependents struct {
 	snapshotTime time.Time
 	countQuery   string
 	datasetName  string
+	datasetTTL   time.Duration
 }
 
 func (c *dependents) generateQuery(temp string) string {
@@ -166,17 +169,22 @@ func (c *dependents) getOrCreateDataset(ctx context.Context) (*Dataset, error) {
 	// Attempt to get the current dataset
 	ds, err := c.b.GetDataset(ctx, c.datasetName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get dataset: %w", err)
 	}
 	if ds == nil {
 		// Dataset doesn't exist so create it
 		c.logger.Debug("creating dependent count dataset")
-		ds, err = c.b.CreateDataset(ctx, c.datasetName)
+		ds, err = c.b.CreateDataset(ctx, c.datasetName, c.datasetTTL)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("create dataset: %w", err)
 		}
 	} else {
 		c.logger.Debug("dependent count dataset exists")
+	}
+	// Ensure the dataset is consistent with the settings.
+	err = c.b.UpdateDataset(ctx, ds, c.datasetTTL)
+	if err != nil {
+		return nil, fmt.Errorf("update dataset: %w", err)
 	}
 	return ds, nil
 }

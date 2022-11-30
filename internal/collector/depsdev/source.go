@@ -18,6 +18,7 @@ import (
 	"context"
 	"net/url"
 	"strings"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"go.uber.org/zap"
@@ -75,7 +76,7 @@ func (c *depsDevSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set
 // TODO add options to configure the dataset:
 //   - force dataset re-creation (-update-strategy = always,stale,weekly,monthly,never)
 //   - force dataset destruction (-depsdev-destroy-data)
-func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName string) (signal.Source, error) {
+func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName string, datasetTTL time.Duration) (signal.Source, error) {
 	if projectID == "" {
 		projectID = bigquery.DetectProjectID
 	}
@@ -86,7 +87,7 @@ func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName s
 	// Set the location
 	gcpClient.Location = defaultLocation
 
-	dependents, err := NewDependents(ctx, gcpClient, logger, datasetName)
+	dependents, err := NewDependents(ctx, gcpClient, logger, datasetName, datasetTTL)
 	if err != nil {
 		return nil, err
 	}
