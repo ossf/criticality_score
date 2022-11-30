@@ -53,3 +53,6 @@ build/docker/csv-transfer:
 install/deps:  ## Installs all dependencies during development and building
 	@echo Installing tools from tools/tools.go
 	@cd tools; cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
+gofumpt: ## Run gofumpt on all go files
+	@which gofumpt || (echo "gofumpt is not installed. Please install it using 'go install mvdan.cc/gofumpt@latest'" && exit 1)
+	gofumpt -w -l .
