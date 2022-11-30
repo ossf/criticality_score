@@ -51,11 +51,11 @@ func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	if raw.Field == "" {
 		return errors.New("field must be set")
 	}
-	*i = Input(*raw)
-
 	if raw.Weight <= 0 {
 		return errors.New("weight must be greater than 0")
 	}
+
+	*i = Input(*raw)
 
 	return nil
 }
