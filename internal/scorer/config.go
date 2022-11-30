@@ -53,7 +53,7 @@ func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	}
 	*i = Input(*raw)
 
-	if i.Weight <= 0 {
+	if raw.Weight <= 0 {
 		return errors.New("weight must be greater than 0")
 	}
 
