@@ -46,7 +46,7 @@ AS
   WHERE d.SnapshotAt = @part
   GROUP BY Name, Version, System;
 
-CREATE TABLE ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
+CREATE TABLE IF NOT EXISTS ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
 AS
 WITH pvp AS (
     SELECT System, Name, Version, ProjectName, ProjectType
