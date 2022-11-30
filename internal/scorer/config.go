@@ -40,9 +40,6 @@ type Input struct {
 
 // UnmarshalYAML Implements yaml.Unmarshaler interface.
 func (i *Input) UnmarshalYAML(value *yaml.Node) error {
-	if i.Weight <= 0 {
-		return errors.New("weight must be greater than 0")
-	}
 	type RawInput Input
 	raw := &RawInput{
 		Weight:       1,
@@ -55,6 +52,11 @@ func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 		return errors.New("field must be set")
 	}
 	*i = Input(*raw)
+
+	if i.Weight <= 0 {
+		return errors.New("weight must be greater than 0")
+	}
+
 	return nil
 }
 
