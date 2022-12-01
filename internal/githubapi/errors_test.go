@@ -186,6 +186,16 @@ func TestGraphQLErrors_Is(t *testing.T) {
 			target: errors.New("some error"),
 			want:   false,
 		},
+		{
+			name: "multiple errors with only one having the error type as 'NOT_FOUND'",
+			errors: []GraphQLError{
+				{Message: "one"},
+				{Message: "two", Type: "NOT_FOUND"},
+				{Message: "three"},
+			},
+			target: ErrGraphQLNotFound,
+			want:   false,
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
