@@ -103,8 +103,8 @@ type dependents struct {
 	datasetTTL   time.Duration
 }
 
-func (c *dependents) generateQuery(temp string, tableName string) string {
-	t := template.Must(template.New("query").Parse(temp))
+func (c *dependents) generateQuery(queryTemplate, tableName string) string {
+	t := template.Must(template.New("query").Parse(queryTemplate))
 	var b bytes.Buffer
 	t.Execute(&b, struct {
 		ProjectID   string
