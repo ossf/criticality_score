@@ -99,7 +99,10 @@ func (c *Collector) EmptySets() []signal.Set {
 }
 
 // Collect gathers and returns all the signals for the given project repo url.
-func (c *Collector) Collect(ctx context.Context, u *url.URL) ([]signal.Set, error) {
+//
+// An optional jobID can be specified which can be used by underlying sources to
+// manage caching. For simple usage this can be the empty string.
+func (c *Collector) Collect(ctx context.Context, u *url.URL, jobID string) ([]signal.Set, error) {
 	l := c.config.logger.With(zap.String("url", u.String()))
 
 	repo, err := c.resolver.Resolve(ctx, u)
@@ -116,7 +119,7 @@ func (c *Collector) Collect(ctx context.Context, u *url.URL) ([]signal.Set, erro
 	l = l.With(zap.String("canonical_url", repo.URL().String()))
 
 	l.Info("Collecting")
-	ss, err := c.registry.Collect(ctx, repo)
+	ss, err := c.registry.Collect(ctx, repo, jobID)
 	if err != nil {
 		return nil, fmt.Errorf("collecting project: %w", err)
 	}

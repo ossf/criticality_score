@@ -54,14 +54,14 @@ func (c *depsDevSource) IsSupported(r projectrepo.Repo) bool {
 	return t != ""
 }
 
-func (c *depsDevSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (c *depsDevSource) Get(ctx context.Context, r projectrepo.Repo, jobID string) (signal.Set, error) {
 	var s depsDevSet
 	n, t := parseRepoURL(r.URL())
 	if t == "" {
 		return &s, nil
 	}
 	c.logger.With(zap.String("url", r.URL().String())).Debug("Fetching deps.dev dependent count")
-	deps, found, err := c.dependents.Count(ctx, n, t)
+	deps, found, err := c.dependents.Count(ctx, n, t, jobID)
 	if err != nil {
 		return nil, err
 	}

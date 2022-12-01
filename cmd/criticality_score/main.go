@@ -194,7 +194,7 @@ func main() {
 		innerLogger := logger.With(zap.Int("worker", worker))
 		for u := range repos {
 			l := innerLogger.With(zap.String("url", u.String()))
-			ss, err := c.Collect(ctx, u)
+			ss, err := c.Collect(ctx, u, "")
 			if err != nil {
 				if errors.Is(err, collector.ErrUncollectableRepo) {
 					l.With(
