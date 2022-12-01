@@ -13,6 +13,7 @@
 # limitations under the License.
 IMAGE_NAME = criticality-score
 GOLANGCI_LINT := golangci-lint
+GOFUMPT := gofumpt
 
 default: help
 
@@ -37,6 +38,12 @@ lint:  ## Run linter
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
+.PHONY: gofumpt
+$(GOFUMPT): install/deps
+gofumpt:  ## Run formatter
+gofumpt: $(GOFUMPT)
+	$(GOFUMPT) -w -l .
+
 docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer
 .PHONY: build/docker $(docker-targets)
 build/docker: $(docker-targets)  ## Build all docker targets
@@ -53,6 +60,3 @@ build/docker/csv-transfer:
 install/deps:  ## Installs all dependencies during development and building
 	@echo Installing tools from tools/tools.go
 	@cd tools; cat tools.go | grep _ | awk -F'"' '{print $$2}' | xargs -tI % go install %
-gofumpt: ## Run gofumpt on all go files
-	@which gofumpt || (echo "gofumpt is not installed. Please install it using 'go install mvdan.cc/gofumpt@latest'" && exit 1)
-	gofumpt -w -l .
