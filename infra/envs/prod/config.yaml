@@ -33,6 +33,7 @@ additional-params:
     log-env: gcp
     log-level: info
     dataset: ossf_criticality_score_depsdev
+    dataset-ttl-hours: 672 # 4 weeks
     scoring: enabled
     scoring-config: config/scorer/pike_depsdev.yml
     scoring-column-name: default_score
