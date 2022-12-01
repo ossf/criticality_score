@@ -64,10 +64,10 @@ $ export GITHUB_TOKEN=ghp_abc,ghp_123
 BigQuery access requires the "BigQuery User" (`roles/bigquery.user`) role added
 to the account used, or be an "Owner".
 
-##### Option 1: `gcloud login`
+##### Option 1: `gcloud auth login`
 
-This option is useful during development. Run `gcloud login --update-adc` to
-login to GCP and prepare application default credentials.
+This option is useful during development. Run `gcloud auth login --update-adc`
+to login to GCP and prepare application default credentials.
 
 ##### Option 2: GCE Service Worker
 
