@@ -38,10 +38,10 @@ lint:  ## Run linter
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run -c .golangci.yml
 
-.PHONY: gofumpt
+.PHONY: format
 $(GOFUMPT): install/deps
-gofumpt:  ## Run formatter
-gofumpt: $(GOFUMPT)
+format:  ## Run formatter
+format: $(GOFUMPT)
 	$(GOFUMPT) -w -l .
 
 docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer
