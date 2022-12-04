@@ -146,10 +146,10 @@ func Test_parseStructField(t *testing.T) {
 			},
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := parseStructField(tt.sf); !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("parseStructField() = %v, want %v", got, tt.want)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := parseStructField(test.sf); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("parseStructField() = %v, want %v", got, test.want)
 			}
 		})
 	}
@@ -203,11 +203,134 @@ func Test_iterSetFields(t *testing.T) {
 			wantErr: false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if err := iterSetFields(tt.s, tt.cb); (err != nil) != tt.wantErr {
-				t.Errorf("iterSetFields() error = %v, wantErr %v", err, tt.wantErr)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := iterSetFields(test.s, test.cb); (err != nil) != test.wantErr {
+				t.Errorf("iterSetFields() error = %v, wantErr %v", err, test.wantErr)
 			}
 		})
+	}
+}
+
+type testSetFields struct {
+	UpdatedCount Field[int] `signal:"legacy"`
+}
+
+func (t testSetFields) Namespace() Namespace {
+	return "test-"
+}
+
+func TestSetFields(t *testing.T) {
+	tests := []struct { //nolint:govet
+		name      string
+		s         Set
+		namespace bool
+		want      []string
+	}{
+		{
+			name: "valid",
+			s: &testIterSetFields{
+				UpdatedCount: Field[int]{value: 1},
+			},
+			namespace: false,
+			want:      []string{"updated_count"},
+		},
+		{
+			name: "valid with namespace",
+			s: &testIterSetFields{
+				UpdatedCount: Field[int]{value: 1},
+			},
+			namespace: true,
+			want:      []string{"test-.updated_count"},
+		},
+		{
+			name: "valid with namespace and legacy",
+			s: &testSetFields{
+				UpdatedCount: Field[int]{value: 1},
+			},
+			namespace: true,
+			want:      []string{"legacy.updated_count"},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := SetFields(test.s, test.namespace); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("SetFields() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestSetValues(t *testing.T) {
+	tests := []struct {
+		name string
+		s    Set
+		want []any
+	}{
+		{
+			name: "valid",
+			s: &testSetFields{
+				UpdatedCount: Field[int]{value: 1, set: true},
+			},
+			want: []any{1},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := SetValues(test.s); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("SetValues() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestSetAsMap(t *testing.T) {
+	tests := []struct { //nolint:govet
+		name      string
+		s         Set
+		namespace bool
+		want      map[string]any
+	}{
+		{
+			name: "valid",
+			s: &testSetFields{
+				UpdatedCount: Field[int]{value: 1, set: true},
+			},
+			namespace: false,
+			want:      map[string]any{"updated_count": 1},
+		},
+		{
+			name: "valid with namespace",
+			s: &testSetFields{
+				UpdatedCount: Field[int]{value: 1, set: true},
+			},
+			namespace: true,
+			want:      map[string]any{"legacy.updated_count": 1},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := SetAsMap(test.s, test.namespace); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("SetAsMap() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestSetAsMapWithNamespace(t *testing.T) {
+	test := struct { //nolint:govet
+		name string
+		s    Set
+		want map[string]map[string]any
+	}{
+		name: "valid",
+		s: &testSetFields{
+			UpdatedCount: Field[int]{value: 1, set: true},
+		},
+		want: map[string]map[string]any{"legacy": {"updated_count": 1}},
+	}
+
+	if got := SetAsMapWithNamespace(test.s); !reflect.DeepEqual(got, test.want) {
+		t.Errorf("SetAsMapWithNamespace() = %v, want %v", got, test.want)
 	}
 }

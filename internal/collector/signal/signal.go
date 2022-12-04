@@ -216,14 +216,15 @@ func SetFields(s Set, namespace bool) []string {
 		prefix = fmt.Sprintf("%s%c", s.Namespace(), nameSeparator)
 		legacyPrefix = fmt.Sprintf("%s%c", NamespaceLegacy, nameSeparator)
 	}
-	_ = iterSetFields(s, func(f *fieldConfig, _ any) error {
+	cb := func(f *fieldConfig, _ any) error {
 		if f.legacy {
 			fs = append(fs, legacyPrefix+f.name)
 		} else {
 			fs = append(fs, prefix+f.name)
 		}
 		return nil
-	})
+	}
+	_ = iterSetFields(s, cb)
 	return fs
 }
 
@@ -233,10 +234,11 @@ func SetFields(s Set, namespace bool) []string {
 // set.
 func SetValues(s Set) []any {
 	var vs []any
-	_ = iterSetFields(s, func(_ *fieldConfig, v any) error {
+	cb := func(_ *fieldConfig, v any) error {
 		vs = append(vs, v)
 		return nil
-	})
+	}
+	_ = iterSetFields(s, cb)
 	return vs
 }
 
@@ -260,7 +262,7 @@ func SetAsMap(s Set, namespace bool) map[string]any {
 // mapped to the value of the field.
 func SetAsMapWithNamespace(s Set) map[string]map[string]any {
 	m := make(map[string]map[string]any)
-	_ = iterSetFields(s, func(f *fieldConfig, v any) error {
+	cb := func(f *fieldConfig, v any) error {
 		// Determine which namespace to use.
 		ns := s.Namespace().String()
 		if f.legacy {
@@ -273,6 +275,7 @@ func SetAsMapWithNamespace(s Set) map[string]map[string]any {
 		}
 		innerM[f.name] = v
 		return nil
-	})
+	}
+	_ = iterSetFields(s, cb)
 	return m
 }
