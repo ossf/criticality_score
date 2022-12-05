@@ -17,5 +17,5 @@ kind: CronJob
 metadata:
   name: criticality-score-bq-transfer
 spec:
-  # At 12:00UTC each weekday.
-  schedule: "0 12 * * 1-5"
+  # At 4:00UTC, 14:00AEST each weekday.
+  schedule: "0 4 * * 1-5"

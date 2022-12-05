@@ -18,6 +18,7 @@ import (
 	"bytes"
 	"context"
 	"errors"
+	"fmt"
 	"text/template"
 	"time"
 
@@ -46,7 +47,7 @@ AS
   WHERE d.SnapshotAt = @part
   GROUP BY Name, Version, System;
 
-CREATE TABLE ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
+CREATE TABLE IF NOT EXISTS ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
 AS
 WITH pvp AS (
     SELECT System, Name, Version, ProjectName, ProjectType
@@ -66,7 +67,7 @@ FROM ` + "`{{.ProjectID}}.{{.DatasetName}}.{{.TableName}}`" + `
 WHERE ProjectName = @projectname AND ProjectType = @projecttype;
 `
 
-func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Logger, datasetName string) (*dependents, error) {
+func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Logger, datasetName string, datasetTTL time.Duration) (*dependents, error) {
 	b := &bq{client: client}
 	c := &dependents{
 		b: b,
@@ -75,62 +76,50 @@ func NewDependents(ctx context.Context, client *bigquery.Client, logger *zap.Log
 			zap.String("dataset", datasetName),
 		),
 		datasetName: datasetName,
+		datasetTTL:  datasetTTL,
 	}
 	var err error
 
-	// Populate the snapshot time
-	c.snapshotTime, err = c.getLatestSnapshotTime(ctx)
-	if err != nil {
-		return nil, err
-	}
-
 	// Ensure the dataset exists
-	ds, err := c.getOrCreateDataset(ctx)
+	c.ds, err = c.getOrCreateDataset(ctx)
 	if err != nil {
 		return nil, err
 	}
-
-	// Ensure the dependent count table exists and is populated
-	t, err := c.b.GetTable(ctx, ds, dependentCountsTableName)
-	if err != nil {
-		return nil, err
-	}
-	if t != nil {
-		c.logger.Warn("dependent count table exists")
-	} else {
-		c.logger.Warn("creating dependent count table")
-		err := c.b.NoResultQuery(ctx, c.generateQuery(dataQuery), map[string]any{"part": c.snapshotTime})
-		if err != nil {
-			return nil, err
-		}
-	}
-
-	// Cache the data query to avoid re-generating it repeatedly.
-	c.countQuery = c.generateQuery(countQuery)
 
 	return c, nil
+}
+
+type cache struct {
+	countQuery string
+	tableKey   string
 }
 
 type dependents struct {
 	b            bqAPI
 	logger       *zap.Logger
-	snapshotTime time.Time
-	countQuery   string
+	ds           *Dataset
+	lastUseCache *cache
 	datasetName  string
+	datasetTTL   time.Duration
 }
 
-func (c *dependents) generateQuery(temp string) string {
-	t := template.Must(template.New("query").Parse(temp))
+func (c *dependents) generateQuery(queryTemplate, tableName string) string {
+	t := template.Must(template.New("query").Parse(queryTemplate))
 	var b bytes.Buffer
 	t.Execute(&b, struct {
 		ProjectID   string
 		DatasetName string
 		TableName   string
-	}{c.b.Project(), c.datasetName, dependentCountsTableName})
+	}{c.b.Project(), c.datasetName, tableName})
 	return b.String()
 }
 
-func (c *dependents) Count(ctx context.Context, projectName, projectType string) (int, bool, error) {
+func (c *dependents) Count(ctx context.Context, projectName, projectType, tableKey string) (int, bool, error) {
+	query, err := c.prepareCountQuery(ctx, tableKey)
+	if err != nil {
+		return 0, false, fmt.Errorf("prepare count query: %w", err)
+	}
+
 	var rec struct {
 		DependentCount int
 	}
@@ -138,18 +127,14 @@ func (c *dependents) Count(ctx context.Context, projectName, projectType string)
 		"projectname": projectName,
 		"projecttype": projectType,
 	}
-	err := c.b.OneResultQuery(ctx, c.countQuery, params, &rec)
+	err = c.b.OneResultQuery(ctx, query, params, &rec)
 	if err == nil {
 		return rec.DependentCount, true, nil
 	}
 	if errors.Is(err, ErrorNoResults) {
 		return 0, false, nil
 	}
-	return 0, false, err
-}
-
-func (c *dependents) LatestSnapshotTime() time.Time {
-	return c.snapshotTime
+	return 0, false, fmt.Errorf("count query: %w", err)
 }
 
 func (c *dependents) getLatestSnapshotTime(ctx context.Context) (time.Time, error) {
@@ -157,7 +142,7 @@ func (c *dependents) getLatestSnapshotTime(ctx context.Context) (time.Time, erro
 		SnapshotTime time.Time
 	}
 	if err := c.b.OneResultQuery(ctx, snapshotQuery, nil, &rec); err != nil {
-		return time.Time{}, err
+		return time.Time{}, fmt.Errorf("snapshot query: %w", err)
 	}
 	return rec.SnapshotTime, nil
 }
@@ -166,17 +151,70 @@ func (c *dependents) getOrCreateDataset(ctx context.Context) (*Dataset, error) {
 	// Attempt to get the current dataset
 	ds, err := c.b.GetDataset(ctx, c.datasetName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("get dataset: %w", err)
 	}
 	if ds == nil {
 		// Dataset doesn't exist so create it
 		c.logger.Debug("creating dependent count dataset")
-		ds, err = c.b.CreateDataset(ctx, c.datasetName)
+		ds, err = c.b.CreateDataset(ctx, c.datasetName, c.datasetTTL)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("create dataset: %w", err)
 		}
 	} else {
 		c.logger.Debug("dependent count dataset exists")
 	}
+	// Ensure the dataset is consistent with the settings.
+	err = c.b.UpdateDataset(ctx, ds, c.datasetTTL)
+	if err != nil {
+		return nil, fmt.Errorf("update dataset: %w", err)
+	}
 	return ds, nil
+}
+
+func (c *dependents) prepareCountQuery(ctx context.Context, tableKey string) (string, error) {
+	// If the last use is the same as this usage, avoid needlessly checking if
+	// the table exists.
+	if c.lastUseCache != nil && c.lastUseCache.tableKey == tableKey {
+		c.logger.Debug("Using cached dependent count query")
+		return c.lastUseCache.countQuery, nil
+	}
+
+	// Generate the table name
+	tableName := getTableName(tableKey)
+
+	// Ensure the dependent count table exists and is populated
+	t, err := c.b.GetTable(ctx, c.ds, tableName)
+	if err != nil {
+		return "", fmt.Errorf("get table: %w", err)
+	}
+	if t != nil {
+		c.logger.Info("Dependent count table exists")
+	} else {
+		c.logger.Info("Creating dependent count table")
+		// Always get the latest snapshot time to ensure the partition used is
+		// the latest possible partition.
+		snapshotTime, err := c.getLatestSnapshotTime(ctx)
+		if err != nil {
+			return "", fmt.Errorf("get latest snapshot time: %w", err)
+		}
+		// This query use "IF NOT EXISTS" to avoid failing if two or more
+		// workers execute this code at the same time.
+		err = c.b.NoResultQuery(ctx, c.generateQuery(dataQuery, tableName), map[string]any{"part": snapshotTime})
+		if err != nil {
+			return "", fmt.Errorf("create table: %w", err)
+		}
+	}
+
+	c.lastUseCache = &cache{
+		tableKey:   tableKey,
+		countQuery: c.generateQuery(countQuery, tableName),
+	}
+	return c.lastUseCache.countQuery, nil
+}
+
+func getTableName(tableKey string) string {
+	if tableKey == "" {
+		return dependentCountsTableName
+	}
+	return dependentCountsTableName + "_" + tableKey
 }
