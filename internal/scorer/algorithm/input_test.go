@@ -4,94 +4,105 @@ import "testing"
 
 func TestBoundsApply(t *testing.T) {
 	tests := []struct {
-		name            string
-		Lower           float64
-		Upper           float64
-		SmallerIsBetter bool
-		v               float64
-		want            float64
+		name string
+		b    Bounds
+		v    float64
+		want float64
 	}{
 		{
 			"regular test",
-			0,
-			10,
-			false,
+			Bounds{
+				0,
+				10,
+				false,
+			},
 			7,
 			7,
 		},
 		{
 			"SmallerIsBetter equals true",
-			0,
-			10,
-			true,
+			Bounds{
+				0,
+				10,
+				true,
+			},
 			7,
 			3,
 		},
 		{
 			"lower is not 0",
-			40,
-			80,
-			false,
+			Bounds{
+				40,
+				80,
+				false,
+			},
 			50,
 			10,
 		},
 		{
 			"upper bound > lower bound", // should this test work?
-			40,
-			20,
-			false,
+			Bounds{
+				40,
+				20,
+				false,
+			},
 			30,
 			0,
 		},
 		{
 			"upper bound == lower bound", // similar question as above, should this work?
-			40,
-			40,
-			false,
+			Bounds{
+				40,
+				40,
+				false,
+			},
 			40,
 			0,
 		},
 		{
 			"upper bound == lower bound and SmallerIsBetter is true", // same question as above
-			40,
-			40,
-			true,
+			Bounds{
+				40,
+				40,
+				true,
+			},
 			40,
 			0,
 		},
 		{
 			"v is negative", // can v be negative?
-			0,
-			10,
-			false,
+			Bounds{
+				0,
+				10,
+				false,
+			},
 			-10,
 			0,
 		},
 		{
 			"v is lower than lower bound and SmallerIsBetter is true",
-			20,
-			30,
-			true,
+			Bounds{
+				20,
+				30,
+				true,
+			},
 			15,
 			10,
 		},
 		{
 			"v is greater than upper bound and SmallerIsBetter is true",
-			0,
-			10,
-			true,
+			Bounds{
+				0,
+				10,
+				true,
+			},
 			20,
 			0,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
-			b := Bounds{
-				Lower:           test.Lower,
-				Upper:           test.Upper,
-				SmallerIsBetter: test.SmallerIsBetter,
-			}
-			if got := b.Apply(test.v); got != test.want {
+			if got := test.b.Apply(test.v); got != test.want {
 				t.Errorf("Apply(%v) = %v, want %v", test.v, got, test.want)
 			}
 		})
