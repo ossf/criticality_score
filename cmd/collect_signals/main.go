@@ -20,6 +20,7 @@ import (
 	"net/http"
 	"net/rpc"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -108,6 +109,17 @@ func main() {
 		gcpDatasetName = collector.DefaultGCPDatasetName
 	}
 
+	// Extract the GCP dataset TTL.
+	gcpDatasetTTLHours := criticalityConfig["dataset-ttl-hours"]
+	gcpDatasetTTL := time.Duration(0)
+	if gcpDatasetTTLHours != "" {
+		i, err := strconv.Atoi(gcpDatasetTTLHours)
+		if err != nil {
+			logger.With(zap.Error(err)).Fatal("Failed to get GCP Dataset TTL")
+		}
+		gcpDatasetTTL = time.Hour * time.Duration(i)
+	}
+
 	// Determine whether scoring is enabled or disabled.
 	// It supports various "truthy" and "fasley" values. It will default to
 	// enabled.
@@ -146,6 +158,7 @@ func main() {
 		collector.EnableAllSources(),
 		collector.GCPProject(gcpProjectID),
 		collector.GCPDatasetName(gcpDatasetName),
+		collector.GCPDatasetTTL(gcpDatasetTTL),
 	}
 
 	w, err := NewWorker(context.Background(), logger, scoringEnabled, scoringConfigFile, scoringColumnName, csvBucketURL, opts)

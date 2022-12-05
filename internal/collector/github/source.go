@@ -30,7 +30,7 @@ func (rc *RepoSource) EmptySet() signal.Set {
 	return &signal.RepoSet{}
 }
 
-func (rc *RepoSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (rc *RepoSource) Get(ctx context.Context, r projectrepo.Repo, _ string) (signal.Set, error) {
 	ghr, ok := r.(*repo)
 	if !ok {
 		return nil, errors.New("project is not a github project")
@@ -91,7 +91,7 @@ func (ic *IssuesSource) EmptySet() signal.Set {
 	return &signal.IssuesSet{}
 }
 
-func (ic *IssuesSource) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (ic *IssuesSource) Get(ctx context.Context, r projectrepo.Repo, _ string) (signal.Set, error) {
 	ghr, ok := r.(*repo)
 	if !ok {
 		return nil, errors.New("project is not a github project")

@@ -29,9 +29,12 @@ type Source interface {
 	// IsSupported returns true if the Source supports the supplied Repo.
 	IsSupported(projectrepo.Repo) bool
 
-	// Get gathers and returns a Set of signals for the given project repo.
+	// Get gathers and returns a Set of signals for the given project repo r.
+	//
+	// An optional string jobID can be specified and may be used by the Source
+	// to manage caches related to a collection run.
 	//
 	// An error is returned if it is unable to successfully gather the signals,
 	// or if the context is cancelled.
-	Get(context.Context, projectrepo.Repo) (Set, error)
+	Get(ctx context.Context, r projectrepo.Repo, jobID string) (Set, error)
 }
