@@ -17,6 +17,7 @@ package collector
 import (
 	"context"
 	"testing"
+	"time"
 
 	"go.uber.org/zap/zaptest"
 )
@@ -77,6 +78,14 @@ func TestGCPDatasetName(t *testing.T) {
 	c := makeTestConfig(t, GCPDatasetName(want))
 	if c.gcpDatasetName != want {
 		t.Fatalf("config.gcpDatasetName = %q, want %q", c.gcpDatasetName, want)
+	}
+}
+
+func TestGCPDatasetTTL(t *testing.T) {
+	want := time.Duration(24) * time.Hour
+	c := makeTestConfig(t, GCPDatasetTTL(want))
+	if c.gcpDatasetTTL != want {
+		t.Fatalf("config.gcpDatasetTTL = %q, want %q", c.gcpDatasetTTL, want)
 	}
 }
 

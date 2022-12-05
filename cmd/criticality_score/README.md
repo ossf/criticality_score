@@ -126,7 +126,12 @@ fail.
 #### deps.dev Collection Flags
 
 - `-depsdev-disable` disables the collection of signals from deps.dev.
-- `-depsdev-dataset string` the BigQuery dataset name to use. Default is `depsdev_analysis`.
+- `-depsdev-dataset string` the BigQuery dataset name to use. Default is
+  `depsdev_analysis`.
+- `-depsdev-expiration hours` the default time-to-live or expiration for tables
+  created in the BigQuery dataset. New tables will be deleted after this
+  period. Expiration times on existing tables in the dataset won't be changed.
+  Default is `0` (no expiration).
 
 #### Scoring flags
 

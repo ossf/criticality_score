@@ -13,6 +13,7 @@
 # limitations under the License.
 IMAGE_NAME = criticality-score
 GOLANGCI_LINT := golangci-lint
+GOFUMPT := gofumpt
 
 default: help
 
@@ -36,6 +37,12 @@ $(GOLANGCI_LINT): install/deps
 lint:  ## Run linter
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run -c .golangci.yml
+
+.PHONY: format
+$(GOFUMPT): install/deps
+format:  ## Run formatter
+format: $(GOFUMPT)
+	$(GOFUMPT) -w -l .
 
 docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer
 .PHONY: build/docker $(docker-targets)

@@ -24,6 +24,7 @@ import (
 	"os"
 	"path"
 	"strings"
+	"time"
 
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
@@ -42,6 +43,7 @@ var (
 	gcpProjectFlag        = flag.String("gcp-project-id", "", "the Google Cloud Project ID to use. Auto-detects by default.")
 	depsdevDisableFlag    = flag.Bool("depsdev-disable", false, "disables the collection of signals from deps.dev.")
 	depsdevDatasetFlag    = flag.String("depsdev-dataset", collector.DefaultGCPDatasetName, "the BigQuery dataset name to use.")
+	depsdevTTLFlag        = flag.Int("depsdev-expiration", 0, "the default expiration (`hours`) to use for deps.dev tables. No expiration by default.")
 	scoringDisableFlag    = flag.Bool("scoring-disable", false, "disables the generation of scores.")
 	scoringConfigFlag     = flag.String("scoring-config", "", "path to a YAML file for configuring the scoring algorithm.")
 	scoringColumnNameFlag = flag.String("scoring-column", "", "manually specify the name for the column used to hold the score.")
@@ -145,6 +147,7 @@ func main() {
 		collector.EnableAllSources(),
 		collector.GCPProject(*gcpProjectFlag),
 		collector.GCPDatasetName(*depsdevDatasetFlag),
+		collector.GCPDatasetTTL(time.Hour * time.Duration(*depsdevTTLFlag)),
 	}
 	if *depsdevDisableFlag {
 		opts = append(opts, collector.DisableSource(collector.SourceTypeDepsDev))
@@ -191,7 +194,7 @@ func main() {
 		innerLogger := logger.With(zap.Int("worker", worker))
 		for u := range repos {
 			l := innerLogger.With(zap.String("url", u.String()))
-			ss, err := c.Collect(ctx, u)
+			ss, err := c.Collect(ctx, u, "")
 			if err != nil {
 				if errors.Is(err, collector.ErrUncollectableRepo) {
 					l.With(

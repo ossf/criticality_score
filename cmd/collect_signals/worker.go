@@ -39,6 +39,7 @@ type collectWorker struct {
 func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchRequest, bucketURL string) error {
 	filename := worker.ResultFilename(req)
 	jobTime := req.GetJobTime().AsTime()
+	jobID := jobTime.Format("20060102_150405")
 
 	// Prepare the logger with identifiers for the shard and job.
 	logger := w.logger.With(
@@ -83,7 +84,7 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 			repoLogger.With(zap.Error(err)).Warn("Failed to parse repo URL")
 			continue
 		}
-		ss, err := w.c.Collect(ctx, u)
+		ss, err := w.c.Collect(ctx, u, jobID)
 		if err != nil {
 			if errors.Is(err, collector.ErrUncollectableRepo) {
 				repoLogger.With(zap.Error(err)).Warn("Repo is uncollectable")
