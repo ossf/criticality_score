@@ -334,3 +334,113 @@ func TestSetAsMapWithNamespace(t *testing.T) {
 		t.Errorf("SetAsMapWithNamespace() = %v, want %v", got, test.want)
 	}
 }
+
+func TestField_Set(t *testing.T) {
+	type testCase[T SupportedType] struct { //nolint:govet
+		name      string
+		s         Field[T]
+		v         T
+		shouldSet bool
+	}
+	tests := []testCase[int]{
+		{
+			name:      "valid",
+			s:         Field[int]{},
+			v:         2,
+			shouldSet: true,
+		},
+		{
+			name:      "not set",
+			s:         Field[int]{},
+			shouldSet: false,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.shouldSet {
+				test.s.Set(test.v)
+			}
+			if test.shouldSet && test.s.value != test.v {
+				t.Errorf("Field.Set() = %v, want %v", test.s.value, test.v)
+			}
+
+			if test.shouldSet && !test.s.IsSet() {
+				t.Errorf("Field.Set() was not set")
+			} else if !test.shouldSet && test.s.IsSet() {
+				t.Errorf("Field.Set() was set")
+			}
+		})
+	}
+}
+
+func TestField_Get(t *testing.T) {
+	type testCase[T SupportedType] struct { //nolint:govet
+		name string
+		s    Field[T]
+		want T
+	}
+	tests := []testCase[int]{
+		{
+			name: "valid",
+			s:    Field[int]{value: 1, set: true},
+			want: 1,
+		},
+		{
+			name: "not set",
+			s:    Field[int]{},
+			want: 0,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := test.s.Get(); !reflect.DeepEqual(got, test.want) {
+				t.Errorf("Get() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func TestField_Unset(t *testing.T) {
+	type testCase[T SupportedType] struct {
+		name        string
+		s           Field[T]
+		shouldUnset bool
+	}
+	tests := []testCase[int]{
+		{
+			name:        "valid", // should we reset the value to T when we unset?
+			s:           Field[int]{value: 1, set: true},
+			shouldUnset: true,
+		},
+		{
+			name: "not set",
+			s:    Field[int]{},
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if test.shouldUnset {
+				test.s.Unset()
+			}
+			if test.shouldUnset && test.s.IsSet() {
+				t.Errorf("Field.Unset() was set")
+			}
+		})
+	}
+}
+
+func TestVal(t *testing.T) {
+	type testCase[T SupportedType] struct {
+		name string
+		v    T
+		want Field[T]
+	}
+	test := testCase[int]{
+		name: "valid",
+		v:    1,
+		want: Field[int]{value: 1, set: true},
+	}
+	if got := Val(test.v); !reflect.DeepEqual(got, test.want) {
+		t.Errorf("Val() = %v, want %v", got, test.want)
+	}
+}
