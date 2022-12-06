@@ -53,9 +53,11 @@ func (r *registry) containsSource(s signal.Source) bool {
 func (r *registry) Register(s signal.Source) {
 	validateSource(s)
 	if r.containsSource(s) {
+		// TODO: return error instead of panic
 		panic(fmt.Sprintf("source %s has already been registered", s.EmptySet().Namespace()))
 	}
 	if err := signal.ValidateSet(s.EmptySet()); err != nil {
+		// TODO: return error instead of panic
 		panic(err)
 	}
 	r.ss = append(r.ss, s)
