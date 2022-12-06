@@ -18,151 +18,92 @@ import (
 	"testing"
 )
 
-func TestExistsCondition(t *testing.T) {
+func TestCondition(t *testing.T) {
 	tests := []struct { //nolint:govet
-		name   string
-		f      Field
-		fields map[string]float64
-		want   bool
+		name       string
+		f          Field
+		fields     map[string]float64
+		existsWant bool // for ExistsCondition()
+		notWant    bool // for NotCondition()
 	}{
 		{
-			name:   "exists",
-			f:      Field("a"),
-			fields: map[string]float64{"a": 1},
-			want:   true,
+			name:       "exists",
+			f:          Field("a"),
+			fields:     map[string]float64{"a": 1},
+			existsWant: true,
+			notWant:    false,
 		},
 		{
-			name:   "not exists",
-			f:      Field("a"),
-			fields: map[string]float64{"b": 1},
-			want:   false,
+			name:       "not exists",
+			f:          Field("a"),
+			fields:     map[string]float64{"b": 1},
+			existsWant: false,
+			notWant:    true,
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			got := ExistsCondition(test.f)
 
-			if got(test.fields) != test.want {
-				t.Errorf("ExistsCondition() = %v, wantVal %v", got(test.fields), test.want)
+			if got(test.fields) != test.existsWant {
+				t.Errorf("ExistsCondition() = %v, wantVal %v", got(test.fields), test.existsWant)
 			}
-		})
-	}
-}
 
-func TestNotCondition(t *testing.T) {
-	tests := []struct { //nolint:govet
-		name   string
-		f      Field
-		fields map[string]float64
-		want   bool
-	}{
-		{
-			name:   "exists but wantVal false",
-			f:      Field("a"),
-			fields: map[string]float64{"a": 1},
-			want:   false,
-		},
-		{
-			name:   "not exists but wantVal true",
-			f:      Field("a"),
-			fields: map[string]float64{"b": 1},
-			want:   true,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			exists := ExistsCondition(test.f)
-			got := NotCondition(exists)
+			got = NotCondition(got)
 
-			if got(test.fields) != test.want {
-				t.Errorf("NotCondition() = %v, wantVal %v", got(test.fields), test.want)
-			}
-		})
-	}
-}
-
-func TestField_Value(t *testing.T) {
-	tests := []struct { //nolint:govet
-		name     string
-		f        Field
-		fields   map[string]float64
-		wantVal  float64
-		wantBool bool
-	}{
-		{
-			name:     "exists",
-			f:        Field("a"),
-			fields:   map[string]float64{"a": 1},
-			wantVal:  1,
-			wantBool: true,
-		},
-		{
-			name:     "not exists",
-			f:        Field("a"),
-			fields:   map[string]float64{"b": 1},
-			wantVal:  0,
-			wantBool: false,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			gotVal, gotBool := test.f.Value(test.fields)
-			if gotVal != test.wantVal {
-				t.Errorf("Value() gotVal = %v, wantVal %v", gotVal, test.wantVal)
-			}
-			if gotBool != test.wantBool {
-				t.Errorf("Value() gotBool = %v, wantVal %v", gotBool, test.wantBool)
+			if got(test.fields) != test.notWant {
+				t.Errorf("NotCondition() = %v, wantVal %v", got(test.fields), test.notWant)
 			}
 		})
 	}
 }
 
 func TestConditionalValue_Value(t *testing.T) {
+	type want struct {
+		value  float64
+		exists bool
+	}
 	tests := []struct { //nolint:govet
 		name      string
 		Condition Condition
-		f         Field
+		value     Field
 		fields    map[string]float64
-		want      float64
-		want1     bool
+		w         want
 	}{
 		{
 			name:      "exists",
 			Condition: ExistsCondition(Field("a")),
-			f:         Field("a"),
+			value:     Field("a"),
 			fields:    map[string]float64{"a": 1},
-			want:      1,
-			want1:     true,
+			w:         want{1, true},
 		},
 		{
 			name:      "not exists",
 			Condition: ExistsCondition(Field("a")),
-			f:         Field("a"),
+			value:     Field("a"),
 			fields:    map[string]float64{"b": 1},
-			want:      0,
-			want1:     false,
+			w:         want{0, false},
 		},
 		{
 			name:      "cv.Inner.Value not have fields",
 			Condition: ExistsCondition(Field("a")),
-			f:         Field("b"),
+			value:     Field("b"),
 			fields:    map[string]float64{"b": 1},
-			want:      0,
-			want1:     false,
+			w:         want{0, false},
 		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
 			cv := &ConditionalValue{
 				Condition: test.Condition,
-				Inner:     test.f,
+				Inner:     test.value,
 			}
 			gotVal, gotBool := cv.Value(test.fields)
-			if gotVal != test.want {
-				t.Errorf("Value() gotVal = %v, want %v", gotVal, test.want)
+			if gotVal != test.w.value {
+				t.Errorf("Value() gotVal = %v, want %v", gotVal, test.w.value)
 			}
-			if gotBool != test.want1 {
-				t.Errorf("Value() gotBool = %v, want %v", gotBool, test.want1)
+			if gotBool != test.w.exists {
+				t.Errorf("Value() gotBool = %v, want %v", gotBool, test.w.exists)
 			}
 		})
 	}
