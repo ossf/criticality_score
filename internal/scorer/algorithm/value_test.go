@@ -58,7 +58,7 @@ func TestCondition(t *testing.T) {
 	}
 }
 
-func TestConditionalValue_Value(t *testing.T) {
+func TestValue(t *testing.T) {
 	type want struct {
 		value  float64
 		exists bool
