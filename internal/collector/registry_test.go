@@ -42,9 +42,8 @@ func Test_registry_EmptySets(t *testing.T) {
 			&signal.IssuesSet{},
 		},
 	}
-	r := registry{
-		ss: test.ss,
-	}
+	r := newRegistry()
+	r.ss = test.ss
 
 	got := r.EmptySets()
 

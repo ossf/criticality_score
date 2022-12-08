@@ -106,7 +106,7 @@ func (r *registry) EmptySets() []signal.Set {
 
 // Collect will collect all the signals for the given repo.
 //
-// An optinal jobID can be specified which is used by some sources for managing
+// An optional jobID can be specified which is used by some sources for managing
 // caches.
 func (r *registry) Collect(ctx context.Context, repo projectrepo.Repo, jobID string) ([]signal.Set, error) {
 	cs := r.sourcesForRepository(repo)
