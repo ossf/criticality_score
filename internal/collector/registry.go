@@ -90,9 +90,15 @@ func (r *registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
 // Sources return a Set with the same Namespace, only the first Set will be
 // included.
 func (r *registry) EmptySets() []signal.Set {
+	exists := make(map[signal.Namespace]empty)
 	var ss []signal.Set
 	for _, c := range r.ss {
+		// skip existing namespaces
+		if _, ok := exists[c.EmptySet().Namespace()]; ok {
+			continue
+		}
 		ss = append(ss, c.EmptySet())
+		exists[c.EmptySet().Namespace()] = empty{}
 	}
 	return ss
 }
