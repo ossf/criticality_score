@@ -98,6 +98,7 @@ func (r *registry) EmptySets() []signal.Set {
 			continue
 		}
 		ss = append(ss, c.EmptySet())
+		exists[c.EmptySet().Namespace()] = empty{}
 	}
 	return ss
 }
