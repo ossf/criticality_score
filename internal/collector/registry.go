@@ -74,6 +74,7 @@ func (r *registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
 		}
 		if _, ok := exists[s.EmptySet().Namespace()]; ok {
 			// This key'd source already exists for this repo.
+			// TODO: return error instead of panic
 			panic("")
 		}
 		// Record that we have seen this key

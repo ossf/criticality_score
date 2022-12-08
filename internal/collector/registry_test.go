@@ -21,6 +21,7 @@ import (
 	"github.com/golang/mock/gomock"
 
 	"github.com/ossf/criticality_score/internal/collector/github"
+	"github.com/ossf/criticality_score/internal/collector/projectrepo"
 	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/mocks"
 )
@@ -103,6 +104,68 @@ func Test_registry_Register(t *testing.T) {
 			}
 
 			r.Register(source)
+		})
+	}
+}
+
+func Test_registry_sourcesForRepository(t *testing.T) {
+	tests := []struct { //nolint:govet
+		name        string
+		want        int // number of sources
+		namespace   string
+		isSupported bool
+		shouldPanic bool
+	}{
+		{
+			name:        "supported",
+			want:        1,
+			namespace:   "test",
+			isSupported: true,
+		},
+		{
+			name:      "not supported",
+			want:      0,
+			namespace: "test",
+		},
+		{
+			name:        "exists",
+			namespace:   "test",
+			isSupported: true,
+			shouldPanic: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			defer func() {
+				if p := recover(); (p != nil) != test.shouldPanic {
+					t.Errorf("registry.Register() panic = %v, should panic = %v", p, test.shouldPanic)
+				}
+			}()
+
+			ctrl := gomock.NewController(t)
+			source := mocks.NewMockSource(ctrl)
+			repo := mocks.NewMockRepo(ctrl)
+			set := mocks.NewMockSet(ctrl)
+			set.EXPECT().Namespace().DoAndReturn(func() signal.Namespace {
+				return signal.Namespace(test.namespace)
+			}).AnyTimes()
+			source.EXPECT().EmptySet().DoAndReturn(func() signal.Set {
+				return set
+			}).AnyTimes()
+			source.EXPECT().IsSupported(repo).DoAndReturn(func(repo projectrepo.Repo) bool {
+				return test.isSupported
+			}).AnyTimes()
+
+			r := &registry{
+				ss: []signal.Source{source},
+			}
+			if test.shouldPanic {
+				r.ss = append(r.ss, source)
+			}
+
+			if got := r.sourcesForRepository(repo); len(got) != test.want {
+				t.Errorf("sourcesForRepository() = %v, want %v", got, test.want)
+			}
 		})
 	}
 }
