@@ -26,16 +26,20 @@ func (t testAlgo) Score(record map[string]float64) float64 {
 }
 
 func TestNewAlgorithm(t *testing.T) {
+	// Setup for all tests
+	Register("test", func(inputs []*Input) (Algorithm, error) {
+		return testAlgo{}, nil
+	})
+
 	type args struct {
 		name   string
 		inputs []*Input
 	}
 	tests := []struct { //nolint:govet
-		name              string
-		args              args
-		valuesForRegistry map[string]Factory
-		want              Algorithm
-		wantErr           bool
+		name    string
+		args    args
+		want    Algorithm
+		wantErr bool
 	}{
 		{
 			name: "valid registry",
@@ -43,12 +47,6 @@ func TestNewAlgorithm(t *testing.T) {
 			args: args{
 				name:   "test",
 				inputs: []*Input{},
-			},
-
-			valuesForRegistry: map[string]Factory{
-				"test": func(inputs []*Input) (Algorithm, error) {
-					return testAlgo{}, nil
-				},
 			},
 
 			want: testAlgo{},
@@ -61,22 +59,13 @@ func TestNewAlgorithm(t *testing.T) {
 				inputs: []*Input{},
 			},
 
-			valuesForRegistry: map[string]Factory{
-				"test": func(inputs []*Input) (Algorithm, error) {
-					return testAlgo{}, nil
-				},
-			},
-
 			wantErr: true,
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			for k, v := range tt.valuesForRegistry {
-				Register(k, v)
-			}
-
 			got, err := NewAlgorithm(tt.args.name, tt.args.inputs)
+
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAlgorithm() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -86,4 +75,11 @@ func TestNewAlgorithm(t *testing.T) {
 			}
 		})
 	}
+	t.Cleanup(func() {
+		GlobalRegistry = NewRegistry()
+		// Have to do this because the registry is global, and we don't want to
+		// pollute it with the test values.
+		// Can't create a new registry for every test because the NewAlgorithm
+		// function uses GlobalRegistry.
+	})
 }
