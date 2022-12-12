@@ -15,6 +15,8 @@
 package collector
 
 import (
+	"context"
+	"errors"
 	"reflect"
 	"testing"
 
@@ -33,13 +35,12 @@ func Test_registry_EmptySets(t *testing.T) {
 		ss   []signal.Source
 		want []signal.Set
 	}{
-		name: "multiple sources",
+		name: "multiple of the same source",
 		ss: []signal.Source{
 			&github.IssuesSource{},
 			&github.IssuesSource{},
 		},
 		want: []signal.Set{
-			&signal.IssuesSet{},
 			&signal.IssuesSet{},
 		},
 	}
@@ -165,6 +166,94 @@ func Test_registry_sourcesForRepository(t *testing.T) {
 
 			if got := r.sourcesForRepository(repo); len(got) != test.want {
 				t.Errorf("sourcesForRepository() = %v, want %v", got, test.want)
+			}
+		})
+	}
+}
+
+func Test_registry_Collect(t *testing.T) {
+	type args struct {
+		ctx   context.Context
+		jobID string
+	}
+	tests := []struct { //nolint:govet
+		name        string
+		args        args
+		namespace   string
+		isSupported bool
+		wantErr     bool
+		want        []signal.Set
+	}{
+		{
+			name: "valid",
+			args: args{
+				ctx:   context.Background(),
+				jobID: "jobID",
+			},
+			namespace:   "test",
+			isSupported: true,
+			want:        []signal.Set{&mocks.MockSet{}},
+		},
+		{
+			name: "returns error",
+			args: args{
+				ctx:   context.Background(),
+				jobID: "jobID",
+			},
+			namespace:   "test",
+			isSupported: true,
+			wantErr:     true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			ctrl := gomock.NewController(t)
+			source := mocks.NewMockSource(ctrl)
+			repo := mocks.NewMockRepo(ctrl)
+			set := mocks.NewMockSet(ctrl)
+
+			// set the expected namespace
+			set.EXPECT().Namespace().DoAndReturn(func() signal.Namespace {
+				return signal.Namespace(test.namespace)
+			}).AnyTimes()
+
+			// set the expected EmptySet
+			source.EXPECT().EmptySet().DoAndReturn(func() signal.Set {
+				return set
+			}).AnyTimes()
+
+			// set the expected IsSupported
+			source.EXPECT().IsSupported(repo).DoAndReturn(func(repo projectrepo.Repo) bool {
+				return test.isSupported
+			}).AnyTimes()
+
+			// set the expected Get using test.wantErr
+			source.EXPECT().Get(test.args.ctx, repo, test.args.jobID).DoAndReturn(
+				func(ctx context.Context, repo projectrepo.Repo, jobID string) (signal.Set, error) {
+					if test.wantErr {
+						return nil, errors.New("error")
+					}
+					return set, nil
+				}).AnyTimes()
+
+			r := &registry{
+				ss: []signal.Source{source},
+			}
+
+			got, err := r.Collect(test.args.ctx, repo, test.args.jobID)
+			if (err != nil) != test.wantErr {
+				t.Errorf("Collect() error = %v, wantErr %v", err, test.wantErr)
+				return
+			}
+
+			if len(got) == len(test.want) {
+				for i := range got {
+					if reflect.TypeOf(got[i]) != reflect.TypeOf(test.want[i]) {
+						t.Errorf("Collect() = %v, want %v", got, test.want)
+					}
+				}
+			} else {
+				t.Errorf("Len Collect() = %d, want %d", len(got), len(test.want))
 			}
 		})
 	}
