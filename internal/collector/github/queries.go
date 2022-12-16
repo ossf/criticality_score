@@ -29,7 +29,7 @@ const (
 	legacyCommitLookback      = 365 * 24 * time.Hour
 )
 
-type basicRepoData struct {
+type BasicRepoData struct {
 	Name      string
 	URL       string
 	MirrorURL string
@@ -66,7 +66,7 @@ type basicRepoData struct {
 	} `graphql:"refs(refPrefix:\"refs/tags/\")"`
 }
 
-func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL) (*basicRepoData, error) {
+func (q query) QueryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL) (*BasicRepoData, error) {
 	// Search based on owner and repo name becaues the `repository` query
 	// better handles changes in ownership and repository name than the
 	// `resource` query.
@@ -75,7 +75,7 @@ func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL
 	owner := parts[0]
 	name := parts[1]
 	s := &struct {
-		Repository basicRepoData `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
+		Repository BasicRepoData `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
 	}{}
 	now := time.Now().UTC()
 	vars := map[string]any{
@@ -87,4 +87,10 @@ func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL
 		return nil, err
 	}
 	return &s.Repository, nil
+}
+
+type query struct{}
+
+func NewQuery() query {
+	return query{}
 }
