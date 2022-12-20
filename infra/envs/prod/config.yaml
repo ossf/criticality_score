@@ -1,0 +1,47 @@
+# Copyright 2022 Criticality Score Authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+project-id: openssf
+request-topic-url: gcppubsub://projects/openssf/topics/criticality-score-batch-requests
+request-subscription-url: gcppubsub://projects/openssf/subscriptions/criticality-score-batch-worker
+bigquery-dataset: criticality_score_cron
+bigquery-table: criticality-score-v0
+completion-threshold: 0.99
+shard-size: 10
+webhook-url: 
+metric-exporter: stackdriver
+metric-stackdriver-prefix: criticality-score-cron
+result-data-bucket-url: gs://ossf-criticality-score-data
+
+additional-params:
+  input-bucket:
+    url: gs://ossf-criticality-score-url-data
+    prefix-file: latest
+
+  criticality:
+    log-env: gcp
+    log-level: info
+    dataset: ossf_criticality_score_depsdev
+    dataset-ttl-hours: 672 # 4 weeks
+    scoring: enabled
+    scoring-config: config/scorer/pike_depsdev.yml
+    scoring-column-name: default_score
+    csv-transfer-bucket-url: gs://ossf-criticality-score
+    csv-transfer-filename: all.csv
+
+  scorecard:
+    # Use the raw-result-data-bucket-url in place of a better option.
+    # The controller will write the shard metadata to this bucket.
+    # TODO: use a more sensible configuration entry 
+    raw-result-data-bucket-url: gs://ossf-criticality-score-csv-data

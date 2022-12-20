@@ -13,34 +13,35 @@
 # limitations under the License.
 
 project-id: openssf
-request-topic-url: gcppubsub://projects/openssf/topics/criticality-score-batch-requests
-request-subscription-url: gcppubsub://projects/openssf/subscriptions/criticality-score-batch-worker
+request-topic-url: gcppubsub://projects/openssf/topics/criticality-score-batch-requests-staging
+request-subscription-url: gcppubsub://projects/openssf/subscriptions/criticality-score-batch-worker-staging
 bigquery-dataset: criticality_score_cron
-bigquery-table: criticality-score-v0
+bigquery-table: criticality-score-v0-staging
 completion-threshold: 0.99
 shard-size: 10
 webhook-url: 
 metric-exporter: stackdriver
-metric-stackdriver-prefix: criticality-score-cron
-result-data-bucket-url: gs://ossf-criticality-score-data
+metric-stackdriver-prefix: criticality-score-cron-staging
+result-data-bucket-url: gs://ossf-criticality-score-data-staging
 
 additional-params:
   input-bucket:
-    url: gs://ossf-criticality-score-url-data
+    url: gs://ossf-criticality-score-url-data-staging
     prefix-file: latest
 
   criticality:
     log-env: gcp
     log-level: info
-    dataset: ossf_criticality_score_depsdev
+    dataset: ossf_criticality_score_depsdev_staging
+    dataset-ttl-hours: 168 # 1 week
     scoring: enabled
     scoring-config: config/scorer/pike_depsdev.yml
     scoring-column-name: default_score
-    csv-transfer-bucket-url: gs://ossf-criticality-score
+    csv-transfer-bucket-url: gs://ossf-criticality-score-staging
     csv-transfer-filename: all.csv
 
   scorecard:
     # Use the raw-result-data-bucket-url in place of a better option.
     # The controller will write the shard metadata to this bucket.
     # TODO: use a more sensible configuration entry 
-    raw-result-data-bucket-url: gs://ossf-criticality-score-csv-data
+    raw-result-data-bucket-url: gs://ossf-criticality-score-csv-data-staging

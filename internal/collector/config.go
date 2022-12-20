@@ -18,6 +18,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"time"
 
 	"github.com/go-logr/zapr"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
@@ -72,6 +73,7 @@ type config struct {
 
 	gcpProject     string
 	gcpDatasetName string
+	gcpDatasetTTL  time.Duration
 
 	sourceStatuses      map[SourceType]sourceStatus
 	defaultSourceStatus sourceStatus
@@ -94,6 +96,7 @@ func makeConfig(ctx context.Context, logger *zap.Logger, opts ...Option) *config
 		gitHubHTTPClient:    defaultGitHubHTTPClient(ctx, logger),
 		gcpProject:          "",
 		gcpDatasetName:      DefaultGCPDatasetName,
+		gcpDatasetTTL:       time.Duration(0),
 	}
 
 	for _, opt := range opts {
@@ -173,5 +176,13 @@ func GCPProject(n string) Option {
 func GCPDatasetName(n string) Option {
 	return option(func(c *config) {
 		c.gcpDatasetName = n
+	})
+}
+
+// GCPDatasetTTL sets the time-to-live for tables created with GCP BigQuery
+// datasets.
+func GCPDatasetTTL(ttl time.Duration) Option {
+	return option(func(c *config) {
+		c.gcpDatasetTTL = ttl
 	})
 }

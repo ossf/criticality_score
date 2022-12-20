@@ -13,6 +13,7 @@
 # limitations under the License.
 IMAGE_NAME = criticality-score
 GOLANGCI_LINT := golangci-lint
+GOFUMPT := gofumpt
 
 default: help
 
@@ -23,15 +24,25 @@ help:  ## Display this help
 			{ printf "  \033[36m%-25s\033[0m %s\n", $$1, $$2 } \
 			/^##@/ { printf "\n\033[1m%s\033[0m\n", substr($$0, 5) } ' $(MAKEFILE_LIST)
 
-.PHONY: test
-test:  ## Run all tests
+test-targets = test/unit test/scorecard-version
+.PHONY: test $(test-targets)
+test: $(test-targets)  ## Run all tests
+test/unit:
 	go test -race -covermode=atomic -coverprofile=unit-coverage.out './...'
+test/scorecard-version:
+	bash ./scripts/validate-scorecard-version.sh
 
 .PHONY: lint
 $(GOLANGCI_LINT): install/deps
 lint:  ## Run linter
 lint: $(GOLANGCI_LINT)
 	$(GOLANGCI_LINT) run -c .golangci.yml
+
+.PHONY: format
+$(GOFUMPT): install/deps
+format:  ## Run formatter
+format: $(GOFUMPT)
+	$(GOFUMPT) -w -l .
 
 docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer
 .PHONY: build/docker $(docker-targets)

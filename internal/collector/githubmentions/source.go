@@ -59,7 +59,7 @@ func (c *Source) IsSupported(r projectrepo.Repo) bool {
 	return true
 }
 
-func (c *Source) Get(ctx context.Context, r projectrepo.Repo) (signal.Set, error) {
+func (c *Source) Get(ctx context.Context, r projectrepo.Repo, _ string) (signal.Set, error) {
 	s := &mentionSet{}
 	if c, err := c.githubSearchTotalCommitMentions(ctx, r.URL()); err != nil {
 		return nil, err
