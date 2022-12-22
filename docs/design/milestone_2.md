@@ -75,11 +75,11 @@ aligns well with this infrastructure.
 
 ### Enumeration
 
-![GitHub Enumeration Infra Design](images/github-enumeration-infra.svg)
+[![GitHub Enumeration Infra Design](images/github-enumeration-infra.svg)](https://github.com/ossf/criticality_score/blob/main/cmd/enumerate_github/)
 
 #### Initiation
 
-A Kubernetes schedule starts the enumeration process.
+A Kubernetes schedule starts the enumeration process ([ref](https://github.com/ossf/criticality_score/blob/main/infra/k8s/enumerate_github.yaml)).
 
 Initially the enumeration will be scheduled to be run weekly.
 
@@ -180,7 +180,7 @@ to the Scorecard project:
 Additionally, the following changes need to be made to the Criticality Score
 project:
 
-- Implement a criticality score specific worker
+- Implement a criticality score specific worker ([ref](https://github.com/ossf/criticality_score/blob/main/cmd/collect_signals/))
   - Refactor and clone the `collect_signals` tool into a new `criticality_score`
     command, which continues as a CLI focused tool for end-users.
   - Adapt the `collect_signals` command to:
@@ -194,7 +194,7 @@ project:
       and environment variables.
     - apply a default score during collection.
 - Implement a criticality score specific data-transfer service to combine CSV
-  data together.
+  data together ([ref](https://github.com/ossf/criticality_score/blob/main/cmd/csv_transfer/)).
 
 Cloud Infrastructure Changes:
 
@@ -218,26 +218,29 @@ Cloud Infrastructure Changes:
 How to deploy updates.
 
 - Setup:
-  - Built around GitHub Actions, specifically the process described in
-    [this GitHub deployment doc](https://docs.github.com/en/actions/deployment/deploying-to-your-cloud-provider/deploying-to-google-kubernetes-engine#creating-the-workflow).
+  - Built around [Google Cloud Deploy](https://cloud.google.com/deploy) and
+    [Google Cloud Build](https://cloud.google.com/build).
   - All Kubernetes configs are stored in a general form, with Kustomize used
     to alter the config to match the deployment environment.
   - `config.yaml` is versioned by Kustomize and tied to the commit ID.
   - Any scorecard docker images will be pinned to the same scorecard commit ID
     as set in `go.mod` to ensure consistency.
-
-- **Staging**
-  - Trigger: A PR is merged to *main*
+- **Build**
+  - Trigger: A PR is merge to *main*
   - Process:
     1. Build Docker images, tagged with commit ID.
-    1. Use Kustomize + Kubectl to set the tag on the images and update
-       the staging infrastructure.
-- **Production**
-  - Trigger: A release is cut (ideally not while collection is occuring)
+- **Staging**
+  - Trigger: Once every weekday, if there is a new build.
   - Process:
-    1. Assume docker images already exist with the given commit ID.
-    1. Use Kustomize + Kubectl to set the tag on the images to the commit ID for
-       the release and update the production infrastructure
+    1. Ensure that the images for the latest commit ID on *main* exist (this is
+       to ensure a *build* is not in progress).
+    1. Create a new release in Google Cloud Deploy, which triggers a deploy to
+       the staging environment.
+- **Production**
+  - Trigger: Manually, from a successful staging build.
+  - Process:
+    1. From the Google Cloud Deploy interface "promote" a successful staging
+       release to production.
 
 ## Rollout Plan
 
@@ -256,5 +259,4 @@ Phase 2: staging -> production
   - On commit - staging will be updated to the latest images.
   - Staging will use a limited set of data (O(1000) repos) to allow for regular
     runs.
-  - Promtion from staging to production will be a manual step, likely involving
-    a manual release in the GitHub repo.
+  - Promtion from staging to production will be a manual step.
