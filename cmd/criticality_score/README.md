@@ -9,7 +9,7 @@ The input of this tool could by the output of the `enumerate_github` tool.
 
 ```shell
 $ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here
-$ gcloud login --update-adc  # Sign-in to GCP
+$ gcloud auth login --project=x --update-adc  # Sign-in to GCP and set projectID
 $ criticality_score \
     -workers=1 \
     -out=signals.csv \
@@ -121,7 +121,9 @@ fail.
 
 #### Google Cloud Platform flags
 
-- `-gcp-project-id string` the Google Cloud Project ID to use. Auto-detects by default.
+- `-gcp-project-id string` the Google Cloud Project ID to use. Auto-detects by
+  default. An alternative to using this flag is to changed the project used by
+  `gcloud` by running `gcloud config set project [project-id]`.
 
 #### deps.dev Collection Flags
 
