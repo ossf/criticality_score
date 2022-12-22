@@ -17,8 +17,8 @@ kind: CronJob
 metadata:
   name: criticality-score-bq-transfer
 spec:
-  # At 02:00UTC on the 28th day of the month.
-  schedule: "0 2 28 * *"
+  # At 3:00UTC, 13:00AEST on Wednesday and Friday.
+  schedule: "0 3 * * 3,5"
   concurrencyPolicy: "Forbid"
   jobTemplate:
     spec:
