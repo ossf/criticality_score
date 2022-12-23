@@ -117,13 +117,17 @@ func TestInputValue(t *testing.T) {
 		Tags         []string
 		Weight       float64
 	}
+	type want struct {
+		val float64
+		ok  bool
+	}
+
 	//nolint:govet
 	tests := []struct {
 		name   string
 		input  fields
 		fields map[string]float64
-		want   float64
-		canDo  bool
+		want   want
 	}{
 		{
 			name: "regular test",
@@ -133,8 +137,7 @@ func TestInputValue(t *testing.T) {
 			},
 			fields: map[string]float64{"test": 10},
 
-			want:  10,
-			canDo: true,
+			want: want{10, true},
 		},
 		{
 			name: "invalid Field",
@@ -143,8 +146,7 @@ func TestInputValue(t *testing.T) {
 			},
 			fields: map[string]float64{"test": 10},
 
-			want:  0,
-			canDo: false,
+			want: want{0, false},
 		},
 		{
 			name: "bounds not equal to nil",
@@ -159,8 +161,7 @@ func TestInputValue(t *testing.T) {
 			},
 			fields: map[string]float64{"test": 5},
 
-			want:  .5,
-			canDo: true,
+			want: want{0.5, true},
 		},
 	}
 	for _, test := range tests {
@@ -173,11 +174,11 @@ func TestInputValue(t *testing.T) {
 				Weight:       test.input.Weight,
 			}
 			wantVal, wantBool := i.Value(test.fields)
-			if wantVal != test.want {
-				t.Errorf("Value() wantVal = %v, want %v", wantVal, test.want)
+			if wantVal != test.want.val {
+				t.Errorf("Value() wantVal = %v, want %v", wantVal, test.want.val)
 			}
-			if wantBool != test.canDo {
-				t.Errorf("Value() wantBool = %v, want %v", wantBool, test.canDo)
+			if wantBool != test.want.ok {
+				t.Errorf("Value() wantBool = %v, want %v", wantBool, test.want.ok)
 			}
 		})
 	}
