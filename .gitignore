@@ -16,3 +16,11 @@ __pycache__/
 
 # Test output
 unit-coverage.out
+
+# Build output
+!scorer/
+scorer
+enumerate-github
+csv-transfer
+criticality-score
+collect-signals
