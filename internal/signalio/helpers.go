@@ -36,11 +36,9 @@ func marshalToMap(signals []signal.Set, extra ...Field) (map[string]string, erro
 	for _, s := range signals {
 		// Get all of the signal data from the set and serialize it.
 		for k, v := range signal.SetAsMap(s, true) {
-			if s, err := marshalValue(v); err != nil {
-				return nil, fmt.Errorf("failed to write field %s: %w", k, err)
-			} else {
-				values[k] = s
-			}
+			s, _ := marshalValue(v) //nolint:nolintlint
+			// The above line will never return an error, so we can ignore it.
+			values[k] = s
 		}
 	}
 	for _, f := range extra {
