@@ -17,7 +17,6 @@ linters:
   enable:
     - asciicheck
     #- bodyclose  # Temporarily disabled.
-    - deadcode
     - depguard
     - dogsled
     #- errcheck  # Temporarily disabled.
@@ -59,7 +58,6 @@ linters:
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
       #- wrapcheck
 linters-settings:

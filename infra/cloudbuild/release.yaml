@@ -22,8 +22,10 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['pull', 'gcr.io/openssf/criticality-score-csv-transfer:$COMMIT_SHA']
 
-# Start a Cloud Deploy replease
+# Start a Cloud Deploy replease. Ignore failures as this will get run daily,
+# even if latest commit hasn't changed.
 - name: gcr.io/google.com/cloudsdktool/cloud-sdk
+  allowFailure: true
   entrypoint: gcloud
   args:
     [

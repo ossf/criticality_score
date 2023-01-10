@@ -98,16 +98,20 @@ func (r *registry) EmptySets() []signal.Set {
 			continue
 		}
 		ss = append(ss, c.EmptySet())
+		exists[c.EmptySet().Namespace()] = empty{}
 	}
 	return ss
 }
 
 // Collect will collect all the signals for the given repo.
-func (r *registry) Collect(ctx context.Context, repo projectrepo.Repo) ([]signal.Set, error) {
+//
+// An optinal jobID can be specified which is used by some sources for managing
+// caches.
+func (r *registry) Collect(ctx context.Context, repo projectrepo.Repo, jobID string) ([]signal.Set, error) {
 	cs := r.sourcesForRepository(repo)
 	var ss []signal.Set
 	for _, c := range cs {
-		s, err := c.Get(ctx, repo)
+		s, err := c.Get(ctx, repo, jobID)
 		if err != nil {
 			return nil, err
 		}

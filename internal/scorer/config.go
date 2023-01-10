@@ -38,7 +38,7 @@ type Input struct {
 	Weight       float64           `yaml:"weight"`
 }
 
-// Implements yaml.Unmarshaler interface.
+// UnmarshalYAML Implements yaml.Unmarshaler interface.
 func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	type RawInput Input
 	raw := &RawInput{
@@ -51,7 +51,12 @@ func (i *Input) UnmarshalYAML(value *yaml.Node) error {
 	if raw.Field == "" {
 		return errors.New("field must be set")
 	}
+	if raw.Weight <= 0 {
+		return errors.New("weight must be greater than 0")
+	}
+
 	*i = Input(*raw)
+
 	return nil
 }
 
@@ -72,6 +77,7 @@ func buildCondition(c *Condition) (algorithm.Condition, error) {
 	return nil, errors.New("one condition field must be set")
 }
 
+// ToAlgorithmInput returns an instance of algorithm.Input that is constructed.
 func (i *Input) ToAlgorithmInput() (*algorithm.Input, error) {
 	var v algorithm.Value
 	v = algorithm.Field(i.Field)
@@ -121,6 +127,7 @@ func LoadConfig(r io.Reader) (*Config, error) {
 	if err := yaml.Unmarshal(data, c); err != nil {
 		return nil, err
 	}
+
 	return c, nil
 }
 

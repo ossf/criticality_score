@@ -14,8 +14,27 @@
 
 package main
 
-// This set of imports is used to ensure `go mod tidy` does not remove them.
 import (
-	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
-	_ "mvdan.cc/gofumpt"
+	"runtime/debug"
 )
+
+const commitIDKey = "vcs.revision"
+
+var commitID = getCommitID()
+
+// getCommitID returns the vcs commit ID embedded in the binary when the
+// -buildvcs flag is set while building.
+func getCommitID() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return ""
+	}
+
+	for _, setting := range info.Settings {
+		if setting.Key == commitIDKey {
+			return setting.Value
+		}
+	}
+
+	return ""
+}

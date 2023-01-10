@@ -21,11 +21,11 @@ profiles:
         paths:
           - envs/staging
         flags:
-          apply: ['--prune', '-l', 'managed-by-kustomize=true']
+          apply: ['--prune', '-l', 'managed-by-kustomize=true,env=staging']
   - name: prod
     deploy:
       kustomize:
         paths:
           - envs/prod
         flags:
-          apply: ['--prune', '-l', 'managed-by-kustomize=true']
+          apply: ['--prune', '-l', 'managed-by-kustomize=true,env=prod']

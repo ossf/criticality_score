@@ -17,6 +17,8 @@ package depsdev
 import (
 	"context"
 	"errors"
+	"fmt"
+	"time"
 
 	"cloud.google.com/go/bigquery"
 	"google.golang.org/api/googleapi"
@@ -39,7 +41,8 @@ type bqAPI interface {
 	OneResultQuery(ctx context.Context, query string, params map[string]any, result any) error
 	NoResultQuery(ctx context.Context, query string, params map[string]any) error
 	GetDataset(ctx context.Context, id string) (*Dataset, error)
-	CreateDataset(ctx context.Context, id string) (*Dataset, error)
+	CreateDataset(ctx context.Context, id string, ttl time.Duration) (*Dataset, error)
+	UpdateDataset(ctx context.Context, d *Dataset, ttl time.Duration) error
 	GetTable(ctx context.Context, d *Dataset, id string) (*Table, error)
 }
 
@@ -96,6 +99,16 @@ func (b *bq) GetDataset(ctx context.Context, id string) (*Dataset, error) {
 		return nil, nil
 	}
 	if err != nil {
+		return nil, fmt.Errorf("dataset metadata: %w", err)
+	}
+	return &Dataset{
+		ds: ds,
+	}, nil
+}
+
+func (b *bq) CreateDataset(ctx context.Context, id string, ttl time.Duration) (*Dataset, error) {
+	ds := b.client.Dataset(id)
+	if err := ds.Create(ctx, &bigquery.DatasetMetadata{DefaultTableExpiration: ttl}); err != nil {
 		return nil, err
 	}
 	return &Dataset{
@@ -103,14 +116,23 @@ func (b *bq) GetDataset(ctx context.Context, id string) (*Dataset, error) {
 	}, nil
 }
 
-func (b *bq) CreateDataset(ctx context.Context, id string) (*Dataset, error) {
-	ds := b.client.Dataset(id)
-	if err := ds.Create(ctx, &bigquery.DatasetMetadata{}); err != nil {
-		return nil, err
+func (b *bq) UpdateDataset(ctx context.Context, d *Dataset, ttl time.Duration) error {
+	md, err := d.ds.Metadata(ctx)
+	if err != nil {
+		return fmt.Errorf("dataset metadata: %w", err)
 	}
-	return &Dataset{
-		ds: ds,
-	}, nil
+	var update bigquery.DatasetMetadataToUpdate
+	needsWrite := false
+	if md.DefaultTableExpiration != ttl {
+		update.DefaultTableExpiration = ttl
+		needsWrite = true
+	}
+	if needsWrite {
+		if _, err := d.ds.Update(ctx, update, ""); err != nil {
+			return fmt.Errorf("dataset update metadata: %w", err)
+		}
+	}
+	return nil
 }
 
 func (b *bq) GetTable(ctx context.Context, d *Dataset, id string) (*Table, error) {
