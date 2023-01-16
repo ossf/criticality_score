@@ -37,7 +37,7 @@ type depsDevSet struct {
 }
 
 func (s *depsDevSet) Namespace() signal.Namespace {
-	return signal.Namespace("depsdev")
+	return "depsdev"
 }
 
 type depsDevSource struct {
