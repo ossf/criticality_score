@@ -56,6 +56,20 @@ build/docker/enumerate-github:
 build/docker/csv-transfer:
 	DOCKER_BUILDKIT=1 docker build . -f cmd/csv_transfer/Dockerfile --tag $(IMAGE_NAME)-csv-transfer
 
+build-targets = build/enumerate-github build/criticality-score build/collect-signals build/csv-transfer build/scorer
+.PHONY: build $(build-targets)
+build: $(build-targets)  ## Build all binaries
+build/enumerate-github:
+	go build -o enumerate-github ./cmd/enumerate_github
+build/criticality-score:
+	go build -o criticality-score ./cmd/criticality_score
+build/collect-signals:
+	go build -o collect-signals ./cmd/collect_signals
+build/csv-transfer:
+	go build -o csv-transfer ./cmd/csv_transfer
+build/scorer:
+	go build -o scorer ./cmd/scorer
+
 .PHONY: install/deps
 install/deps:  ## Installs all dependencies during development and building
 	@echo Installing tools from tools/tools.go
