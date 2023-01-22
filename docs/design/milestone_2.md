@@ -259,4 +259,4 @@ Phase 2: staging -> production
   - On commit - staging will be updated to the latest images.
   - Staging will use a limited set of data (O(1000) repos) to allow for regular
     runs.
-  - Promtion from staging to production will be a manual step.
+  - Promotion from staging to production will be a manual step.
