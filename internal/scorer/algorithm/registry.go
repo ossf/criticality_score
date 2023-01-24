@@ -16,8 +16,6 @@ package algorithm
 
 import "fmt"
 
-// TODO: Replace global variable.
-
 // GlobalRegistry is the global, application wide, registry for all algorithms.
 var GlobalRegistry = NewRegistry()
 
