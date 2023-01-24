@@ -12,11 +12,13 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package algorithm
+package algorithm_test
 
 import (
 	"reflect"
 	"testing"
+
+	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
 
 type testAlgo struct{}
@@ -27,18 +29,18 @@ func (t testAlgo) Score(record map[string]float64) float64 {
 
 func TestNewAlgorithm(t *testing.T) {
 	// Setup for all tests
-	Register("test", func(inputs []*Input) (Algorithm, error) {
+	algorithm.Register("test", func(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
 		return testAlgo{}, nil
 	})
 
 	type args struct {
 		name   string
-		inputs []*Input
+		inputs []*algorithm.Input
 	}
 	tests := []struct { //nolint:govet
 		name    string
 		args    args
-		want    Algorithm
+		want    algorithm.Algorithm
 		wantErr bool
 	}{
 		{
@@ -46,7 +48,7 @@ func TestNewAlgorithm(t *testing.T) {
 
 			args: args{
 				name:   "test",
-				inputs: []*Input{},
+				inputs: []*algorithm.Input{},
 			},
 
 			want: testAlgo{},
@@ -56,7 +58,7 @@ func TestNewAlgorithm(t *testing.T) {
 
 			args: args{
 				name:   "invalid",
-				inputs: []*Input{},
+				inputs: []*algorithm.Input{},
 			},
 
 			wantErr: true,
@@ -64,7 +66,7 @@ func TestNewAlgorithm(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			got, err := NewAlgorithm(tt.args.name, tt.args.inputs)
+			got, err := algorithm.NewAlgorithm(tt.args.name, tt.args.inputs)
 
 			if (err != nil) != tt.wantErr {
 				t.Errorf("NewAlgorithm() error = %v, wantErr %v", err, tt.wantErr)
@@ -76,7 +78,7 @@ func TestNewAlgorithm(t *testing.T) {
 		})
 	}
 	t.Cleanup(func() {
-		GlobalRegistry = NewRegistry()
+		algorithm.GlobalRegistry = algorithm.NewRegistry()
 		// Have to do this because the registry is global, and we don't want to
 		// pollute it with the test values.
 		// Can't create a new registry for every test because the NewAlgorithm
