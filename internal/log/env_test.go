@@ -15,8 +15,8 @@
 package log
 
 import (
+	"bytes"
 	"math"
-	"reflect"
 	"testing"
 )
 
@@ -29,11 +29,12 @@ func TestLookupEnv(t *testing.T) {
 		{"dev", "dev", DevEnv},
 		{"gcp", "gcp", GCPEnv},
 		{"unknown", "unknown", UnknownEnv},
+		{"empty", "", UnknownEnv},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := LookupEnv(tt.text); got != tt.want {
-				t.Errorf("LookupEnv() = %v, want %v", got, tt.want)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := LookupEnv(test.text); got != test.want {
+				t.Errorf("LookupEnv() = %v, want %v", got, test.want)
 			}
 		})
 	}
@@ -49,10 +50,10 @@ func TestEnv_String(t *testing.T) {
 		{"gcp", GCPEnv, "gcp"},
 		{"unknown", UnknownEnv, "unknown"},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := tt.e.String(); got != tt.want {
-				t.Errorf("String() = %v, want %v", got, tt.want)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if got := test.e.String(); got != test.want {
+				t.Errorf("String() = %v, want %v", got, test.want)
 			}
 		})
 	}
@@ -78,11 +79,10 @@ func TestEnv_UnmarshalText(t *testing.T) {
 			value: "dev",
 		},
 	}
-	for _, tt := range tests {
-		t.Setenv(string(tt.text), tt.value)
-		t.Run(tt.name, func(t *testing.T) {
-			if err := tt.e.UnmarshalText(tt.text); (err != nil) != tt.wantErr {
-				t.Errorf("UnmarshalText() error = %v, wantErr %v", err, tt.wantErr)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			if err := test.e.UnmarshalText(test.text); (err != nil) != test.wantErr || test.e.String() != test.value {
+				t.Errorf("UnmarshalText() error = %v, wantErr %v", err, test.wantErr)
 			}
 		})
 	}
@@ -98,12 +98,13 @@ func TestEnv_MarshalText(t *testing.T) {
 		{"unknown", UnknownEnv, []byte("unknown")},
 		{"empty", math.MaxInt, []byte("unknown")},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			got, _ := tt.e.MarshalText() // this function never returns an error
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := test.e.MarshalText()
 
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("MarshalText() got = %v, want %v", got, tt.want)
+			if !bytes.Equal(got, test.want) || err != nil {
+				// this function never returns an error so err should always be nil
+				t.Errorf("MarshalText() got = %v, want %v", got, test.want)
 			}
 		})
 	}
