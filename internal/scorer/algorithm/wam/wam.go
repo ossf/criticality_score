@@ -46,7 +46,3 @@ func (p *WeighetedArithmeticMean) Score(record map[string]float64) float64 {
 	}
 	return s / totalWeight
 }
-
-func init() {
-	algorithm.Register("weighted_arithmetic_mean", New)
-}
