@@ -37,12 +37,10 @@ func (p *WeighetedArithmeticMean) Score(record map[string]float64) float64 {
 	var totalWeight float64
 	var s float64
 	for _, i := range p.inputs {
-		v, ok := i.Value(record)
-		if !ok {
-			continue
+		if v, ok := i.Value(record); ok {
+			totalWeight += i.Weight
+			s += i.Weight * v
 		}
-		totalWeight += i.Weight
-		s += i.Weight * v
 	}
 	return s / totalWeight
 }
