@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package signalio
+package signalio_test
 
 import (
 	"bytes"
@@ -22,18 +22,19 @@ import (
 	"testing"
 
 	"github.com/ossf/criticality_score/internal/collector/signal"
+	"github.com/ossf/criticality_score/internal/signalio"
 )
 
 func TestTypeString(t *testing.T) {
 	//nolint:govet
 	tests := []struct {
 		name       string
-		writerType WriterType
+		writerType signalio.WriterType
 		want       string
 	}{
-		{name: "csv", writerType: WriterTypeCSV, want: "csv"},
-		{name: "json", writerType: WriterTypeJSON, want: "json"},
-		{name: "unknown", writerType: WriterType(10), want: ""},
+		{name: "csv", writerType: signalio.WriterTypeCSV, want: "csv"},
+		{name: "json", writerType: signalio.WriterTypeJSON, want: "json"},
+		{name: "unknown", writerType: signalio.WriterType(10), want: ""},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -49,14 +50,14 @@ func TestTypeMarshalText(t *testing.T) {
 	//nolint:govet
 	tests := []struct {
 		name       string
-		writerType WriterType
+		writerType signalio.WriterType
 		want       string
 		err        error
 	}{
-		{name: "csv", writerType: WriterTypeCSV, want: "csv"},
-		{name: "json", writerType: WriterTypeJSON, want: "json"},
-		{name: "text", writerType: WriterTypeText, want: "text"},
-		{name: "unknown", writerType: WriterType(10), want: "", err: ErrorUnknownWriterType},
+		{name: "csv", writerType: signalio.WriterTypeCSV, want: "csv"},
+		{name: "json", writerType: signalio.WriterTypeJSON, want: "json"},
+		{name: "text", writerType: signalio.WriterTypeText, want: "text"},
+		{name: "unknown", writerType: signalio.WriterType(10), want: "", err: signalio.ErrorUnknownWriterType},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
@@ -80,18 +81,18 @@ func TestTypeUnmarshalText(t *testing.T) {
 	//nolint:govet
 	tests := []struct {
 		input string
-		want  WriterType
+		want  signalio.WriterType
 		err   error
 	}{
-		{input: "csv", want: WriterTypeCSV},
-		{input: "json", want: WriterTypeJSON},
-		{input: "text", want: WriterTypeText},
-		{input: "", want: 0, err: ErrorUnknownWriterType},
-		{input: "unknown", want: 0, err: ErrorUnknownWriterType},
+		{input: "csv", want: signalio.WriterTypeCSV},
+		{input: "json", want: signalio.WriterTypeJSON},
+		{input: "text", want: signalio.WriterTypeText},
+		{input: "", want: 0, err: signalio.ErrorUnknownWriterType},
+		{input: "unknown", want: 0, err: signalio.ErrorUnknownWriterType},
 	}
 	for _, test := range tests {
 		t.Run(test.input, func(t *testing.T) {
-			var got WriterType
+			var got signalio.WriterType
 			err := got.UnmarshalText([]byte(test.input))
 			if err != nil && !errors.Is(err, test.err) {
 				t.Fatalf("UnmarshalText() == %v, want %v", err, test.err)
@@ -115,40 +116,40 @@ func TestWriterType_New(t *testing.T) {
 	}
 	tests := []struct { //nolint:govet
 		name string
-		t    WriterType
+		t    signalio.WriterType
 		args args
 		want any
 	}{
 		{
 			name: "csv",
-			t:    WriterTypeCSV,
+			t:    signalio.WriterTypeCSV,
 			args: args{
 				emptySets: []signal.Set{},
 				extra:     []string{},
 			},
-			want: &csvWriter{},
+			want: signalio.CSVWriter(&bytes.Buffer{}, []signal.Set{}, ""),
 		},
 		{
 			name: "json",
-			t:    WriterTypeJSON,
+			t:    signalio.WriterTypeJSON,
 			args: args{
 				emptySets: []signal.Set{},
 				extra:     []string{},
 			},
-			want: &jsonWriter{},
+			want: signalio.JSONWriter(&bytes.Buffer{}),
 		},
 		{
 			name: "text",
-			t:    WriterTypeText,
+			t:    signalio.WriterTypeText,
 			args: args{
 				emptySets: []signal.Set{},
 				extra:     []string{},
 			},
-			want: &textWriter{},
+			want: signalio.TextWriter(&bytes.Buffer{}, []signal.Set{}, ""),
 		},
 		{
 			name: "unknown",
-			t:    WriterType(math.MaxInt),
+			t:    signalio.WriterType(math.MaxInt),
 			args: args{
 				emptySets: []signal.Set{},
 				extra:     []string{},
