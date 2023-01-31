@@ -22,6 +22,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
 
 type Condition struct {
@@ -137,6 +138,7 @@ func LoadConfig(r io.Reader) (*Config, error) {
 // nil will be returned if the algorithm cannot be returned.
 func (c *Config) Algorithm() (algorithm.Algorithm, error) {
 	var inputs []*algorithm.Input
+	r := algorithm.NewRegistry()
 	for _, i := range c.Inputs {
 		input, err := i.ToAlgorithmInput()
 		if err != nil {
@@ -144,5 +146,7 @@ func (c *Config) Algorithm() (algorithm.Algorithm, error) {
 		}
 		inputs = append(inputs, input)
 	}
-	return algorithm.NewAlgorithm(c.Name, inputs)
+
+	r.Register(wam.Name, wam.New)
+	return r.NewAlgorithm(c.Name, inputs)
 }
