@@ -147,6 +147,6 @@ func (c *Config) Algorithm() (algorithm.Algorithm, error) {
 		inputs = append(inputs, input)
 	}
 
-	r.Register("weighted_arithmetic_mean", wam.New)
+	r.Register(wam.Name, wam.New)
 	return r.NewAlgorithm(c.Name, inputs)
 }

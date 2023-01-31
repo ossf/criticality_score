@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The package wam implements the Weighted Arithmetic Mean, which forms the
+// Package wam implements the Weighted Arithmetic Mean, which forms the
 // basis of Rob Pike's criticality score algorithm as documented in
 // Quantifying_criticality_algorithm.pdf.
 package wam
@@ -20,6 +20,8 @@ package wam
 import (
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
+
+const Name = "weighted_arithmetic_mean"
 
 type WeighetedArithmeticMean struct {
 	inputs []*algorithm.Input
