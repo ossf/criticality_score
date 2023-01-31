@@ -18,9 +18,9 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
@@ -50,31 +50,11 @@ func FromConfig(name string, r io.Reader) (*Scorer, error) {
 func (s *Scorer) Score(signals []signal.Set) float64 {
 	record := make(map[string]float64)
 	for _, s := range signals {
-		// Get all of the signal data from the set and floatify it.
+		// Get all the signal data from the set change it to a float.
 		for k, v := range signal.SetAsMap(s, true) {
 			switch r := v.(type) {
-			case float64:
-				record[k] = r
-			case float32:
-				record[k] = float64(r)
-			case int:
-				record[k] = float64(r)
-			case int16:
-				record[k] = float64(r)
-			case int32:
-				record[k] = float64(r)
-			case int64:
-				record[k] = float64(r)
-			case uint:
-				record[k] = float64(r)
-			case uint16:
-				record[k] = float64(r)
-			case uint32:
-				record[k] = float64(r)
-			case uint64:
-				record[k] = float64(r)
-			case byte:
-				record[k] = float64(r)
+			case float64, float32, int, int16, int32, int64, uint, uint16, uint32, uint64, byte:
+				record[k] = r.(float64)
 			}
 		}
 	}
@@ -103,10 +83,19 @@ func NameFromFilepath(filepath string) string {
 	// Get the name of the file used, without the path
 	f := path.Base(filepath)
 	ext := path.Ext(f)
-	// Strip the extension and convert to lowercase
-	f = strings.ToLower(strings.TrimSuffix(f, ext))
-	// Change any non-alphanumeric character into an underscore
-	f = regexp.MustCompile("[^a-z0-9_]").ReplaceAllString(f, "_")
+
+	modified := func(r rune) rune {
+		// Change any non-alphanumeric character into an underscore
+		if !unicode.IsDigit(r) && !unicode.IsLetter(r) {
+			return '_'
+		}
+		// Convert any characters to lowercase
+		return unicode.ToLower(r)
+	}
+
+	// Strip the extension
+	f = strings.TrimSuffix(f, ext)
+
 	// Append "_score" to the end
-	return f + "_score"
+	return strings.Map(modified, f) + "_score"
 }
