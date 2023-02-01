@@ -45,13 +45,15 @@ open source project:
 - We are looking for community ideas to improve upon these parameters.
 - There will always be exceptions to the individual reasoning rules.
 
+## Quickstart
+```shell
+go run ./cmd/criticality_score -log=debug "https://github.com/ossf/criticality_score"
+```
 ## Usage
 
 The program only requires one argument to run, the name of the repo:
 
 ```shell
-$ go install github.com/ossf/criticality_score/cmd/criticality_score
-
 $ criticality_score github.com/kubernetes/kubernetes
 repo.name: kubernetes
 repo.url: https://github.com/kubernetes/kubernetes
