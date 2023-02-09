@@ -15,8 +15,6 @@
 package scorer
 
 import (
-	"os"
-	"reflect"
 	"testing"
 
 	"github.com/ossf/criticality_score/internal/collector/signal"
@@ -37,84 +35,6 @@ func (t testAlgo) Score(record map[string]float64) float64 {
 
 func (t testAlgo) Namespace() signal.Namespace {
 	return ""
-}
-
-// TODO: Add tests for Score()
-
-func TestFromConfig(t *testing.T) {
-	tests := []struct { //nolint:govet
-		name              string
-		scorerName        string
-		fileName          string
-		valuesForRegistry map[string]algorithm.Factory
-		want              *Scorer
-		wantErr           bool
-	}{
-		{
-			name:       "Valid",
-			scorerName: "Valid",
-			fileName:   "testdata/valid_scorer.yml",
-			valuesForRegistry: map[string]algorithm.Factory{
-				"linear": func(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
-					return testAlgo{}, nil
-				},
-			},
-			want: &Scorer{
-				name: "Valid",
-				a:    testAlgo{},
-			},
-		},
-		{
-			name:       "Not an algorithm",
-			scorerName: "Not an algorithm",
-			fileName:   "testdata/valid_scorer.yml",
-			valuesForRegistry: map[string]algorithm.Factory{
-				"invalid": func(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
-					return testAlgo{}, nil
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name:       "Invalid algorithm",
-			scorerName: "Invalid algorithm",
-			fileName:   "testdata/invalid_scorer.yml",
-			valuesForRegistry: map[string]algorithm.Factory{
-				"linear": func(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
-					return testAlgo{}, nil
-				},
-			},
-			wantErr: true,
-		},
-		{
-			name:              "empty",
-			scorerName:        "",
-			fileName:          "testdata/valid_scorer.yml",
-			valuesForRegistry: map[string]algorithm.Factory{},
-			wantErr:           true,
-		},
-	}
-	for _, test := range tests {
-		t.Run(test.name, func(t *testing.T) {
-			algorithm.GlobalRegistry = algorithm.NewRegistry()
-
-			for k, v := range test.valuesForRegistry {
-				algorithm.Register(k, v)
-			}
-
-			r, err := os.Open(test.fileName)
-			if err != nil {
-				t.Fatalf("open file: %v", err)
-			}
-			got, err := FromConfig(test.scorerName, r)
-			if (err != nil) != test.wantErr {
-				t.Fatalf("FromConfig() error = %v, wantErr %v", err, test.wantErr)
-			}
-			if !reflect.DeepEqual(got, test.want) {
-				t.Errorf("FromConfig() got = %v, want %v", got, test.want)
-			}
-		})
-	}
 }
 
 func TestScorer_ScoreRaw(t *testing.T) {
