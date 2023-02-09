@@ -18,6 +18,7 @@ import (
 	"fmt"
 	"io"
 	"path"
+	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
@@ -52,10 +53,8 @@ func (s *Scorer) Score(signals []signal.Set) float64 {
 	for _, s := range signals {
 		// Get all the signal data from the set change it to a float.
 		for k, v := range signal.SetAsMap(s, true) {
-			switch r := v.(type) {
-			case float64, float32, int, int16, int32, int64, uint, uint16, uint32, uint64, byte:
-				record[k] = r.(float64)
-			}
+			// This takes the value of v and converts it to a float64.
+			record[k] = reflect.ValueOf(v).Convert(reflect.TypeOf(float64(0))).Float()
 		}
 	}
 	return s.a.Score(record)
@@ -82,9 +81,8 @@ func (s *Scorer) Name() string {
 func NameFromFilepath(filepath string) string {
 	// Get the name of the file used, without the path
 	f := path.Base(filepath)
-	ext := path.Ext(f)
 
-	modified := func(r rune) rune {
+	modifier := func(r rune) rune {
 		// Change any non-alphanumeric character into an underscore
 		if !unicode.IsDigit(r) && !unicode.IsLetter(r) {
 			return '_'
@@ -94,8 +92,9 @@ func NameFromFilepath(filepath string) string {
 	}
 
 	// Strip the extension
+	ext := path.Ext(f)
 	f = strings.TrimSuffix(f, ext)
 
 	// Append "_score" to the end
-	return strings.Map(modified, f) + "_score"
+	return strings.Map(modifier, f) + "_score"
 }
