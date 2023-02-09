@@ -28,12 +28,17 @@ import (
 	_ "github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
 
+var ErrEmptyName = fmt.Errorf("name must be non-empty")
+
 type Scorer struct {
 	a    algorithm.Algorithm
 	name string
 }
 
 func FromConfig(name string, r io.Reader) (*Scorer, error) {
+	if name == "" {
+		return nil, ErrEmptyName
+	}
 	cfg, err := LoadConfig(r)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
