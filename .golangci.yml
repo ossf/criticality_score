@@ -11,7 +11,9 @@ issues:
   # Set to 0 to disable.
   # Default: 3
   max-same-issues: 0
-  new-from-rev: ""
+  # Exclude previously existing issues from the wrapcheck report
+  new: true
+  new-from-rev: HEAD
 linters:
   disable-all: true
   enable:
@@ -59,7 +61,7 @@ linters:
     - unparam
     - unused
     - whitespace
-      #- wrapcheck
+    - wrapcheck
 linters-settings:
   errcheck:
     check-type-assertions: true
