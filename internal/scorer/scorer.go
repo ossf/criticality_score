@@ -18,7 +18,6 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"reflect"
 	"strconv"
 	"strings"
 	"unicode"
@@ -58,8 +57,31 @@ func (s *Scorer) Score(signals []signal.Set) float64 {
 	for _, s := range signals {
 		// Get all the signal data from the set change it to a float.
 		for k, v := range signal.SetAsMap(s, true) {
-			// This takes the value of v and converts it to a float64.
-			record[k] = reflect.ValueOf(v).Convert(reflect.TypeOf(float64(0))).Float()
+			fmt.Println(k, v)
+			switch r := v.(type) {
+			case float64:
+				record[k] = r
+			case float32:
+				record[k] = float64(r)
+			case int:
+				record[k] = float64(r)
+			case int16:
+				record[k] = float64(r)
+			case int32:
+				record[k] = float64(r)
+			case int64:
+				record[k] = float64(r)
+			case uint:
+				record[k] = float64(r)
+			case uint16:
+				record[k] = float64(r)
+			case uint32:
+				record[k] = float64(r)
+			case uint64:
+				record[k] = float64(r)
+			case byte:
+				record[k] = float64(r)
+			}
 		}
 	}
 	return s.a.Score(record)
