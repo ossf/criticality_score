@@ -6,7 +6,3 @@ images
 
 # Ignore Dockerfile - this improve caching.
 **/Dockerfile
-
-# Ignore the deprecated Python project
-criticality_score
-*.py
