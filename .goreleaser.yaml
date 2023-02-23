@@ -1,5 +1,9 @@
 project_name: criticality_score
 
+before:
+  hooks:
+    - go mod tidy
+
 builds:
   - main: ./cmd/criticality_score
     id: "criticality_score"
@@ -22,14 +26,8 @@ builds:
       - CGO_ENABLED=0
 
 archives:
-  - format: tar.gz
-    name_template: >-
-      {{ .ProjectName }}_
-      {{- title .Os }}_
-      {{- if eq .Arch "amd64" }}x86_64
-      {{- else if eq .Arch "386" }}i386
-      {{- else }}{{ .Arch }}{{ end }}
-      {{- if .Arm }}v{{ .Arm }}{{ end }}
+  - id: tarballs
+    format: tar.gz
     format_overrides:
     - goos: windows
       format: zip
@@ -45,24 +43,16 @@ archives:
     rlcp: true
 
 checksum:
-  name_template: 'checksums.txt'
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
 
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
 
 changelog:
-  sort: asc
-  filters:
-    exclude:
-      - '^docs:'
-      - '^test:'
+  skip: true
 
-signs:
-  - cmd: cosign
-    stdin: '{{ .Env.COSIGN_PWD }}'
-    args: ["sign-blob", "--key=cosign.key", "--output-signature=${signature}", "${artifact}"]
-    artifacts: all
-    output: true
+release:
+  draft: false
 
 # yaml-language-server: $schema=https://goreleaser.com/static/schema.json
 # vim: set ts=2 sw=2 tw=0 fo=cnqoj
