@@ -16,3 +16,5 @@ __pycache__/
 
 # Test output
 unit-coverage.out
+
+dist/
