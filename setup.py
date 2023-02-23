@@ -22,7 +22,7 @@ setuptools.setup(
     version='1.0.8',
     author='Abhishek Arya',
     author_email='',
-    description='Gives criticality score for an open source project',
+    description='Gives criticality score for an open source project - DEPRECATED',
     long_description=long_description,
     long_description_content_type='text/markdown',
     url='https://github.com/ossf/criticality-score',
