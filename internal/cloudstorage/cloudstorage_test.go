@@ -91,20 +91,20 @@ func assertBucket(t *testing.T, bucket, wantScheme, wantHost, wantPath string, w
 		t.Fatalf("Bucket is not a valid url: %v", err)
 	}
 	if u.Scheme != wantScheme {
-		t.Fatalf("Bucket scheme = %q, want %q", u.Scheme, wantScheme)
+		t.Errorf("Bucket scheme = %q, want %q", u.Scheme, wantScheme)
 	}
 	if u.Host != wantHost {
-		t.Fatalf("Bucket host = %q, want %q", u.Host, wantHost)
+		t.Errorf("Bucket host = %q, want %q", u.Host, wantHost)
 	}
 	if u.Path != wantPath {
-		t.Fatalf("Bucket path = %q, want %q", u.Path, wantPath)
+		t.Errorf("Bucket path = %q, want %q", u.Path, wantPath)
 	}
 	for k, want := range wantQuery {
 		if !u.Query().Has(k) {
-			t.Fatalf("Bucket query has no key %q", k)
+			t.Errorf("Bucket query has no key %q", k)
 		}
 		if got := u.Query().Get(k); got != want {
-			t.Fatalf("Bucket query %q = %q, want %q", k, got, want)
+			t.Errorf("Bucket query %q = %q, want %q", k, got, want)
 		}
 	}
 }
