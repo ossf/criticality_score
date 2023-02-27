@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/ossf/criticality_score/cmd/criticality_score/inputiter"
 	"github.com/ossf/criticality_score/internal/collector"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
@@ -162,14 +163,14 @@ func main() {
 	}
 
 	// Prepare the input for reading
-	inputIter, err := initInput(flag.Args())
+	iter, err := inputiter.New(flag.Args())
 	if err != nil {
 		logger.With(
 			zap.Error(err),
 		).Error("Failed to prepare input")
 		os.Exit(2)
 	}
-	defer inputIter.Close()
+	defer iter.Close()
 
 	// Open the out-file for writing
 	w, err := outfile.Open(context.Background())
@@ -229,8 +230,8 @@ func main() {
 	})
 
 	// Read in each repo from the input
-	for inputIter.Next() {
-		line := inputIter.Item()
+	for iter.Next() {
+		line := iter.Item()
 
 		u, err := url.Parse(strings.TrimSpace(line))
 		if err != nil {
@@ -247,7 +248,7 @@ func main() {
 		// Send the url to the workers
 		repos <- u
 	}
-	if err := inputIter.Err(); err != nil {
+	if err := iter.Err(); err != nil {
 		logger.With(
 			zap.Error(err),
 		).Error("Failed while reading input")
