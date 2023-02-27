@@ -52,14 +52,14 @@ func newTestOpener(t *testing.T) *testOpener {
 			return nil, o.openErr
 		} else {
 			dir := t.TempDir()
-			cwd, err := os.Getwd()
+			cwd, err := os.Getwd() // Save the CWD so we can restore it later.
 			if err != nil {
 				return nil, err
 			}
 			if err := os.Chdir(dir); err != nil {
 				return nil, err
 			}
-			defer os.Chdir(cwd)
+			defer os.Chdir(cwd) // Restore the CWD so the temp dir can be cleaned up on Windows.
 			return os.Create(filename)
 		}
 	}
