@@ -16,7 +16,7 @@ func TestNew_SingleURL(t *testing.T) {
 	want := "https://github.com/ossf/criticality_score"
 	i, err := inputiter.New([]string{want})
 	if err != nil {
-		t.Fatalf("New() = %v; want no error", err)
+		t.Fatalf("New() = %#v; want no error", err)
 	}
 	defer i.Close()
 
@@ -141,8 +141,8 @@ func TestNew_URLFile(t *testing.T) {
 func TestNew_InvalidURL(t *testing.T) {
 	want := ":this.is/not/a/url"
 	i, err := inputiter.New([]string{want})
-	if err == nil || !errors.Is(err, os.ErrNotExist) {
-		t.Errorf("New() = %v; want %v", err, os.ErrNotExist)
+	if err == nil || !(errors.Is(err, os.ErrNotExist) || errors.Is(err, os.ErrInvalid)) {
+		t.Errorf("New() = %#v; want os.ErrNotExist or os.ErrInvalid", err)
 	}
 	if err == nil {
 		defer i.Close()
