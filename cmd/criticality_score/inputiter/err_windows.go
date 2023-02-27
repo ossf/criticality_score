@@ -16,7 +16,11 @@
 
 package inputiter
 
-import "golang.org/x/sys/windows"
+import (
+	"errors"
+
+	"golang.org/x/sys/windows"
+)
 
 func init() {
 	// Windows can return an additional error number when there is a failure.
