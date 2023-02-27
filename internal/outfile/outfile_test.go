@@ -95,6 +95,7 @@ func TestOpenBucketUrl(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
+	defer f.Close()
 	if o.lastOpen != nil {
 		t.Fatal("Open(...) called instead of bucket code")
 	}
@@ -106,8 +107,9 @@ func TestOpenBucketUrl(t *testing.T) {
 func TestOpenBucketUrlNoForceFlag(t *testing.T) {
 	o := newTestOpener(t)
 	o.flag.Parse([]string{"-out=mem://bucket/prefix"})
-	_, err := o.opener.Open(context.Background())
+	f, err := o.opener.Open(context.Background())
 	if err == nil {
+		defer f.Close()
 		t.Fatalf("Open() == nil, want an error")
 	}
 }
@@ -151,6 +153,7 @@ func TestOpenFlagTest(t *testing.T) {
 			if err != nil {
 				t.Fatalf("Open() == %v, want nil", err)
 			}
+			defer f.Close()
 			if f == nil {
 				t.Fatal("Open() == nil, want a file")
 			}
@@ -167,8 +170,9 @@ func TestOpenFlagTest(t *testing.T) {
 			o := newTestOpener(t)
 			o.flag.Parse(append(test.args, "-out=testfile"))
 			o.openErr = errors.New("test error")
-			_, err := o.opener.Open(context.Background())
+			f, err := o.opener.Open(context.Background())
 			if err == nil {
+				defer f.Close()
 				t.Fatalf("Open() is nil, want %v", o.openErr)
 			}
 		})
@@ -200,6 +204,7 @@ func TestFilenameTransform(t *testing.T) {
 	if err != nil {
 		t.Fatalf("Open() == %v, want nil", err)
 	}
+	defer f.Close()
 	if f == nil {
 		t.Fatal("Open() == nil, want a file")
 	}
