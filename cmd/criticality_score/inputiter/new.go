@@ -19,8 +19,6 @@ var osErrorWithFilename func(err error) bool
 // exist.
 func errWithFilename(err error) bool {
 	switch {
-	case errors.Is(err, os.ErrInvalid):
-		return true
 	case errors.Is(err, os.ErrNotExist):
 		return true
 	case osErrorWithFilename != nil && osErrorWithFilename(err):
