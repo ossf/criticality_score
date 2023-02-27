@@ -18,14 +18,16 @@ import (
 	"fmt"
 	"io"
 	"path"
-	"regexp"
 	"strconv"
 	"strings"
+	"unicode"
 
 	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 	_ "github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
 )
+
+var ErrEmptyName = fmt.Errorf("name must be non-empty")
 
 type Scorer struct {
 	a    algorithm.Algorithm
@@ -33,6 +35,9 @@ type Scorer struct {
 }
 
 func FromConfig(name string, r io.Reader) (*Scorer, error) {
+	if name == "" {
+		return nil, ErrEmptyName
+	}
 	cfg, err := LoadConfig(r)
 	if err != nil {
 		return nil, fmt.Errorf("load config: %w", err)
@@ -50,8 +55,9 @@ func FromConfig(name string, r io.Reader) (*Scorer, error) {
 func (s *Scorer) Score(signals []signal.Set) float64 {
 	record := make(map[string]float64)
 	for _, s := range signals {
-		// Get all of the signal data from the set and floatify it.
+		// Get all the signal data from the set change it to a float.
 		for k, v := range signal.SetAsMap(s, true) {
+			fmt.Println(k, v)
 			switch r := v.(type) {
 			case float64:
 				record[k] = r
@@ -102,11 +108,20 @@ func (s *Scorer) Name() string {
 func NameFromFilepath(filepath string) string {
 	// Get the name of the file used, without the path
 	f := path.Base(filepath)
+
+	modifier := func(r rune) rune {
+		// Change any non-alphanumeric character into an underscore
+		if !unicode.IsDigit(r) && !unicode.IsLetter(r) {
+			return '_'
+		}
+		// Convert any characters to lowercase
+		return unicode.ToLower(r)
+	}
+
+	// Strip the extension
 	ext := path.Ext(f)
-	// Strip the extension and convert to lowercase
-	f = strings.ToLower(strings.TrimSuffix(f, ext))
-	// Change any non-alphanumeric character into an underscore
-	f = regexp.MustCompile("[^a-z0-9_]").ReplaceAllString(f, "_")
+	f = strings.TrimSuffix(f, ext)
+
 	// Append "_score" to the end
-	return f + "_score"
+	return strings.Map(modifier, f) + "_score"
 }
