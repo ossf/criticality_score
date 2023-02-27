@@ -52,9 +52,14 @@ func newTestOpener(t *testing.T) *testOpener {
 			return nil, o.openErr
 		} else {
 			dir := t.TempDir()
+			cwd, err := os.Getwd()
+			if err != nil {
+				return nil, err
+			}
 			if err := os.Chdir(dir); err != nil {
 				return nil, err
 			}
+			defer os.Chdir(cwd)
 			return os.Create(filename)
 		}
 	}
