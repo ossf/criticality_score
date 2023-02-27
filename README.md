@@ -50,7 +50,7 @@ open source project:
 The program only requires one argument to run, the name of the repo:
 
 ```shell
-$ go install github.com/ossf/criticality_score/cmd/criticality_score@main
+$ go install github.com/ossf/criticality_score/cmd/criticality_score@latest
 
 $ criticality_score github.com/kubernetes/kubernetes
 repo.name: kubernetes
