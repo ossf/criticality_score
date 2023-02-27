@@ -10,6 +10,26 @@ import (
 	"github.com/ossf/criticality_score/internal/infile"
 )
 
+// osErrorWithFilename is an os-specific helper for determining if a particular
+// error is related to the filename of the file.
+var osErrorWithFilename func(err error) bool
+
+// errWithFilename determines if the given error is the result of an error
+// caused by the filename being invalid, or pointing to a filename that doesn't
+// exist.
+func errWithFilename(err error) bool {
+	switch {
+	case errors.Is(err, os.ErrInvalid):
+		return true
+	case errors.Is(err, os.ErrNotExist):
+		return true
+	case osErrorWithFilename != nil && osErrorWithFilename(err):
+		return true
+	default:
+		return false
+	}
+}
+
 // Iterator returns an IterCloser for iterating across repositories for
 // collecting signals.
 //
@@ -38,7 +58,7 @@ func New(args []string) (IterCloser[string], error) {
 				scanner: bufio.NewScanner(r),
 			}, nil
 		}
-		if urlParseFailed || !(errors.Is(err, os.ErrNotExist) || errors.Is(err, os.ErrInvalid)) {
+		if urlParseFailed || !errWithFilename(err) {
 			// Only report errors if the file doesn't appear to be a URL, if the
 			// filename doesn't exist, or the filename is invalid.
 			return nil, err
