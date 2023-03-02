@@ -11,8 +11,16 @@ import (
 	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/internal/collector/signal"
-	mocks "github.com/ossf/criticality_score/internal/mock"
 )
+
+type mockRepo string
+
+func (r mockRepo) URL() *url.URL {
+	u := &url.URL{
+		Host: string(r),
+	}
+	return u
+}
 
 func Test_parseRepoURL(t *testing.T) {
 	tests := []struct {
@@ -38,14 +46,14 @@ func Test_parseRepoURL(t *testing.T) {
 			wantProjectType: "",
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			gotProjectName, gotProjectType := parseRepoURL(tt.u)
-			if gotProjectName != tt.wantProjectName {
-				t.Errorf("parseRepoURL() gotProjectName = %v, want %v", gotProjectName, tt.wantProjectName)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			gotProjectName, gotProjectType := parseRepoURL(test.u)
+			if gotProjectName != test.wantProjectName {
+				t.Errorf("parseRepoURL() gotProjectName = %v, want %v", gotProjectName, test.wantProjectName)
 			}
-			if gotProjectType != tt.wantProjectType {
-				t.Errorf("parseRepoURL() gotProjectType = %v, want %v", gotProjectType, tt.wantProjectType)
+			if gotProjectType != test.wantProjectType {
+				t.Errorf("parseRepoURL() gotProjectType = %v, want %v", gotProjectType, test.wantProjectType)
 			}
 		})
 	}
@@ -57,7 +65,7 @@ func Test_depsDevSource_Get(t *testing.T) {
 		rHostName string
 		jobID     string
 	}
-	tests := []struct { //nolint:govet
+	test := struct { //nolint:govet
 		name       string
 		logger     *zap.Logger
 		dependents *dependents
@@ -65,39 +73,30 @@ func Test_depsDevSource_Get(t *testing.T) {
 		want       signal.Set
 		wantErr    bool
 	}{
-		{
-			name:       "invalid url",
-			logger:     zap.NewNop(),
-			dependents: &dependents{},
-			args: args{
-				ctx:       context.Background(),
-				rHostName: "random",
-			},
-			want: &depsDevSet{},
+		name:       "invalid url",
+		logger:     zap.NewNop(),
+		dependents: &dependents{},
+		args: args{
+			ctx:       context.Background(),
+			rHostName: "random",
 		},
+		want: &depsDevSet{},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			ctrl := gomock.NewController(t)
-			defer ctrl.Finish()
 
-			r := mocks.NewMockRepo(ctrl)
+	ctrl := gomock.NewController(t)
+	defer ctrl.Finish()
 
-			r.EXPECT().URL().Return(&url.URL{Host: tt.args.rHostName}).AnyTimes()
-
-			c := &depsDevSource{
-				logger:     tt.logger,
-				dependents: tt.dependents,
-			}
-			got, err := c.Get(tt.args.ctx, r, tt.args.jobID)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("Get() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if !reflect.DeepEqual(got, tt.want) {
-				t.Errorf("Get() got = %v, want %v", got, tt.want)
-			}
-		})
+	c := &depsDevSource{
+		logger:     test.logger,
+		dependents: test.dependents,
+	}
+	got, err := c.Get(test.args.ctx, mockRepo(test.args.rHostName), test.args.jobID)
+	if (err != nil) != test.wantErr {
+		t.Errorf("Get() error = %v, wantErr %v", err, test.wantErr)
+		return
+	}
+	if !reflect.DeepEqual(got, test.want) {
+		t.Errorf("Get() got = %v, want %v", got, test.want)
 	}
 }
 
@@ -125,6 +124,7 @@ func TestNewSource(t *testing.T) {
 		},
 		wantErr: true,
 	}
+
 	got, err := NewSource(test.args.ctx, test.args.logger, test.args.projectID, test.args.datasetName, test.args.datasetTTL)
 	if (err != nil) != test.wantErr {
 		t.Errorf("NewSource() error = %v, wantErr %v", err, test.wantErr)
@@ -163,21 +163,17 @@ func Test_depsDevSource_IsSupported(t *testing.T) {
 			want:      false,
 		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			c := &depsDevSource{
-				logger:     tt.fields.logger,
-				dependents: tt.fields.dependents,
+				logger:     test.fields.logger,
+				dependents: test.fields.dependents,
 			}
 			ctrl := gomock.NewController(t)
 			defer ctrl.Finish()
 
-			r := mocks.NewMockRepo(ctrl)
-
-			r.EXPECT().URL().Return(&url.URL{Host: tt.rHostName}).AnyTimes()
-
-			if got := c.IsSupported(r); got != tt.want {
-				t.Errorf("IsSupported() = %v, want %v", got, tt.want)
+			if got := c.IsSupported(mockRepo(test.rHostName)); got != test.want {
+				t.Errorf("IsSupported() = %v, want %v", got, test.want)
 			}
 		})
 	}
