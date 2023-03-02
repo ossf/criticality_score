@@ -16,6 +16,7 @@ package depsdev
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
@@ -28,8 +29,7 @@ import (
 )
 
 const (
-	defaultLocation    = "US"
-	DefaultDatasetName = "depsdev_analysis"
+	defaultLocation = "US"
 )
 
 type depsDevSet struct {
@@ -63,7 +63,7 @@ func (c *depsDevSource) Get(ctx context.Context, r projectrepo.Repo, jobID strin
 	c.logger.With(zap.String("url", r.URL().String())).Debug("Fetching deps.dev dependent count")
 	deps, found, err := c.dependents.Count(ctx, n, t, jobID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to fetch deps.dev dependent count: %w", err)
 	}
 	if found {
 		s.DependentCount.Set(deps)
@@ -82,14 +82,14 @@ func NewSource(ctx context.Context, logger *zap.Logger, projectID, datasetName s
 	}
 	gcpClient, err := bigquery.NewClient(ctx, projectID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create bigquery client: %w", err)
 	}
 	// Set the location
 	gcpClient.Location = defaultLocation
 
 	dependents, err := NewDependents(ctx, gcpClient, logger, datasetName, datasetTTL)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("failed to create deps.dev dependents: %w", err)
 	}
 
 	return &depsDevSource{

@@ -10,14 +10,17 @@ permissions: read-all
 
 jobs:
   run-tests:
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
     steps:
     - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
     - uses: actions/setup-go@6edd4406fa81c3da01a34fa6f6343087c207a568
       with:
         go-version: 1.19
     - name: Run tests
-      run: make test
+      run: make test/unit
       env:
         GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
   run-linter:
@@ -28,4 +31,12 @@ jobs:
       with:
         go-version: 1.19
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@07db5389c99593f11ad7b44463c2d4233066a9b1
+      uses: golangci/golangci-lint-action@08e2f20817b15149a52b5b3ebe7de50aff2ba8c5
+  check-scorecard-version:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@ac593985615ec2ede58e132d2e21d2b1cbd6127c
+    - name: Run tests
+      run: make test/scorecard-version
+      env:
+        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

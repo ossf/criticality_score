@@ -16,9 +16,6 @@ package algorithm
 
 import "fmt"
 
-// GlobalRegistry is the global, application wide, registry for all algorithms.
-var GlobalRegistry = NewRegistry()
-
 // Registry is used to map a name to a Factory that creates Algorithm instances
 // for the given name.
 type Registry struct {
@@ -54,14 +51,4 @@ func (r *Registry) NewAlgorithm(name string, inputs []*Input) (Algorithm, error)
 		return nil, fmt.Errorf("unknown algorithm %s", name)
 	}
 	return f(inputs)
-}
-
-// Register calls Register on the GlobalRegistry.
-func Register(name string, f Factory) {
-	GlobalRegistry.Register(name, f)
-}
-
-// NewAlgorithm calls NewAlgorithm on the GlobalRegsitry.
-func NewAlgorithm(name string, inputs []*Input) (Algorithm, error) {
-	return GlobalRegistry.NewAlgorithm(name, inputs)
 }
