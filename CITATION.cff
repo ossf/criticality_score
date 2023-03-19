@@ -2,13 +2,13 @@ type: software
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
-- name: "The Open Source Security Foundation" 
 - family-names: "Arya"
   given-names: "Abhishek"
 - family-names: "Brown"
   given-names: "Caleb"
 - family-names: "Pike"
   given-names: "Rob"
+- name: "The Open Source Security Foundation" 
 title: "Open Source Project Criticality Score"
 date-released: 2020-12-09
 url: "https://github.com/ossf/criticality_score"
