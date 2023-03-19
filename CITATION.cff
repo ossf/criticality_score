@@ -11,6 +11,6 @@ authors:
   given-names: "Rob"
 title: "Open Source Project Criticality Score"
 date-released: 2020-12-09
-url: "https://github.com/millecodex/criticality_score"
+url: "https://github.com/ossf/criticality_score"
 license: Apache-2.0
 version: "2.0.2"
