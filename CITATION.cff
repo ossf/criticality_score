@@ -3,7 +3,7 @@ cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
 authors:
 - name: "The Open Source Security Foundation" 
-- family-names: Arya""
+- family-names: "Arya"
   given-names: "Abhishek"
 - family-names: "Brown"
   given-names: "Caleb"
