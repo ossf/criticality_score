@@ -10,7 +10,7 @@ authors:
   given-names: "Rob"
 - name: "The Open Source Security Foundation" 
 title: "Open Source Project Criticality Score"
-date-released: 2020-12-09
+date-released: 2023-03-01
 url: "https://github.com/ossf/criticality_score"
 license: Apache-2.0
 version: "2.0.2"
