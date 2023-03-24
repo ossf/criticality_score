@@ -23,8 +23,10 @@ import (
 
 const Name = "weighted_arithmetic_mean"
 
-// WeightedArithmeticMean is an implementation of the Weighted Arithmetic.
 // "Weighted Arithmetic Mean" is also known as "Weighted Average".
+
+// WeightedArithmeticMean is an implementation of the Weighted Arithmetic Mean.
+// https://en.wikipedia.org/wiki/Weighted_arithmetic_mean
 type WeightedArithmeticMean struct {
 	inputs []*algorithm.Input
 }
@@ -38,13 +40,13 @@ func New(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
 }
 
 func (p *WeightedArithmeticMean) Score(record map[string]float64) float64 {
-	var totalCount float64
-	var totalWeight float64
+	var itemSum float64
+	var itemCount float64
 	for _, i := range p.inputs {
 		if v, ok := i.Value(record); ok {
-			totalCount += i.Weight
-			totalWeight += i.Weight * v
+			itemCount += i.Weight
+			itemSum += i.Weight * v
 		}
 	}
-	return totalWeight / totalCount
+	return itemSum / itemCount
 }
