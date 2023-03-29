@@ -23,26 +23,30 @@ import (
 
 const Name = "weighted_arithmetic_mean"
 
-type WeighetedArithmeticMean struct {
+// "Weighted Arithmetic Mean" is also known as "Weighted Average".
+
+// WeightedArithmeticMean is an implementation of the Weighted Arithmetic Mean.
+// https://en.wikipedia.org/wiki/Weighted_arithmetic_mean
+type WeightedArithmeticMean struct {
 	inputs []*algorithm.Input
 }
 
 // New returns a new instance of the Weighted Arithmetic Mean algorithm, which
 // is used by the Pike algorithm.
 func New(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
-	return &WeighetedArithmeticMean{
+	return &WeightedArithmeticMean{
 		inputs: inputs,
 	}, nil
 }
 
-func (p *WeighetedArithmeticMean) Score(record map[string]float64) float64 {
-	var totalWeight float64
-	var s float64
+func (p *WeightedArithmeticMean) Score(record map[string]float64) float64 {
+	var itemSum float64
+	var itemCount float64
 	for _, i := range p.inputs {
 		if v, ok := i.Value(record); ok {
-			totalWeight += i.Weight
-			s += i.Weight * v
+			itemCount += i.Weight
+			itemSum += i.Weight * v
 		}
 	}
-	return s / totalWeight
+	return itemSum / itemCount
 }
