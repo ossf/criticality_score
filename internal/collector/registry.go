@@ -53,9 +53,11 @@ func (r *registry) containsSource(s signal.Source) bool {
 func (r *registry) Register(s signal.Source) {
 	validateSource(s)
 	if r.containsSource(s) {
+		// TODO: return error instead of panic
 		panic(fmt.Sprintf("source %s has already been registered", s.EmptySet().Namespace()))
 	}
 	if err := signal.ValidateSet(s.EmptySet()); err != nil {
+		// TODO: return error instead of panic
 		panic(err)
 	}
 	r.ss = append(r.ss, s)
@@ -72,6 +74,7 @@ func (r *registry) sourcesForRepository(repo projectrepo.Repo) []signal.Source {
 		}
 		if _, ok := exists[s.EmptySet().Namespace()]; ok {
 			// This key'd source already exists for this repo.
+			// TODO: return error instead of panic
 			panic("")
 		}
 		// Record that we have seen this key
@@ -105,7 +108,7 @@ func (r *registry) EmptySets() []signal.Set {
 
 // Collect will collect all the signals for the given repo.
 //
-// An optinal jobID can be specified which is used by some sources for managing
+// An optional jobID can be specified which is used by some sources for managing
 // caches.
 func (r *registry) Collect(ctx context.Context, repo projectrepo.Repo, jobID string) ([]signal.Set, error) {
 	cs := r.sourcesForRepository(repo)

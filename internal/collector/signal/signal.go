@@ -121,10 +121,6 @@ func Val[T SupportedType](v T) Field[T] {
 	return f
 }
 
-type Set interface {
-	Namespace() Namespace
-}
-
 type fieldConfig struct {
 	name   string
 	legacy bool
