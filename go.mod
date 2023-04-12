@@ -16,7 +16,7 @@ require (
 	gocloud.dev v0.26.0
 	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
 	golang.org/x/sys v0.7.0
-	google.golang.org/api v0.114.0
+	google.golang.org/api v0.117.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -66,10 +66,11 @@ require (
 	github.com/google/go-github/v38 v38.1.0 // indirect
 	github.com/google/go-github/v45 v45.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
+	github.com/google/s2a-go v0.1.0 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
-	github.com/googleapis/gax-go/v2 v2.7.1 // indirect
+	github.com/googleapis/gax-go/v2 v2.8.0 // indirect
 	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/jszwec/csvutil v1.7.1 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
@@ -86,14 +87,14 @@ require (
 	go.uber.org/multierr v1.8.0 // indirect
 	golang.org/x/crypto v0.1.0 // indirect
 	golang.org/x/mod v0.8.0 // indirect
-	golang.org/x/net v0.8.0 // indirect
-	golang.org/x/oauth2 v0.6.0 // indirect
+	golang.org/x/net v0.9.0 // indirect
+	golang.org/x/oauth2 v0.7.0 // indirect
 	golang.org/x/sync v0.1.0 // indirect
-	golang.org/x/text v0.8.0 // indirect
+	golang.org/x/text v0.9.0 // indirect
 	golang.org/x/tools v0.6.0 // indirect
 	golang.org/x/xerrors v0.0.0-20220907171357-04be3eba64a2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
-	google.golang.org/genproto v0.0.0-20230330154414-c0448cd141ea // indirect
+	google.golang.org/genproto v0.0.0-20230403163135-c38d8f061ccd // indirect
 	google.golang.org/grpc v1.54.0 // indirect
 	google.golang.org/protobuf v1.30.0 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
