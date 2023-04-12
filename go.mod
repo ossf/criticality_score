@@ -11,7 +11,7 @@ require (
 	github.com/iancoleman/strcase v0.2.0
 	github.com/ossf/scorecard/v4 v4.8.1-0.20221116210408-a78b27d14e74
 	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
-	go.opencensus.io v0.23.0
+	go.opencensus.io v0.24.0
 	go.uber.org/zap v1.24.0
 	gocloud.dev v0.26.0
 	golang.org/x/exp v0.0.0-20220909182711-5c715a9e8561
