@@ -25,72 +25,45 @@
 # between the controller and worker, or the shard file structure, may change in
 # ways that break Criticality Score if the versions are not kept in sync.
 
-# Get the path to the GitHub CLI. THis should be available in the GitHub Action Images.
-GH_BIN=$(which gh)
-if [ "$GH_BIN" = "" ]; then
-    echo "Failed to find GitHub CLI."
+# Get the path to a Go binary. This should be available in the GitHub Action images.
+GO_BIN=$(which go)
+if [ "$GO_BIN" = "" ]; then
+    echo "Failed to find GO binary."
     exit 1
 fi
 
 # The location of the kustomization file with the Scorecard image tags.
 KUSTOMIZATION_FILE=infra/envs/base/kustomization.yaml
 
-# The location of the go.mod file with the ossf/scorecard dependency.
-GO_MOD=go.mod
-
 KUSTOMIZATION_KEY="newTag:"
 SCORECARD_REPO="ossf/scorecard"
-SCORECARD_PATTERN="github.com/$SCORECARD_REPO"
+SCORECARD_IMPORT="github.com/$SCORECARD_REPO/v4"
 
 # Get image tags from the kustomization file
 IMAGE_TAGS=$(grep "$KUSTOMIZATION_KEY" "$KUSTOMIZATION_FILE" | sort | uniq | sed "s/^\s*$KUSTOMIZATION_KEY\s*//")
 
-# Get the version from the go.mod file
-SCORECARD_VERSION=$(grep "$SCORECARD_PATTERN" "$GO_MOD" | cut -d' ' -f2)
+# Get the scorecard version
+SCORECARD_VERSION=$($GO_BIN list -m -f '{{ .Version }}' $SCORECARD_IMPORT)
 if [ "$SCORECARD_VERSION" = "" ]; then
-    echo "Scorecard dependency missing from $GO_MOD."
+    echo "Scorecard dependency missing."
     exit 1
 fi
 
-# Test 1: Ensure the same tag is used for each image.
+# Test 1: Ensure the same tag is used for each kubernetes image.
 TAG_COUNT=$(echo "$IMAGE_TAGS" | wc -l)
 if [ "$TAG_COUNT" != "1" ]; then
     echo "$KUSTOMIZATION_FILE: Scorecard image tags found: $TAG_COUNT. Want: 1"
     exit 1
 fi
 
-# Test 2: Treat the Go version as a pre-release version.
-SHORT_SHA=$(echo "$SCORECARD_VERSION" | sed -n 's|^.*-\([a-zA-Z0-9]*\)$|\1|p')
-if [ "$SHORT_SHA" = "" ]; then
-    echo "Scorecard version does not contain a SHORT_SHA"
-else
-    # Find the full commit sha from GitHub using the GitHub CLI
-    COMMIT_SHA=$($GH_BIN api "repos/$SCORECARD_REPO/commits/$SHORT_SHA" -q .sha)
-    if [ "$?" != "0" ]; then 
-        : # Ignore error. Treat it like a tag.
-    elif [ "$COMMIT_SHA" = "$IMAGE_TAGS" ]; then
-        exit 0
-    elif [ "$COMMIT_SHA" != "" ]; then
-        echo "$GO_MOD $COMMIT_SHA does not match $KUSTOMIZATION_FILE $IMAGE_TAGS"
-        exit 1
-    fi
-    # If we reach here, then $COMMIT_SHA is empty. So it is possible that the
-    # $SCORECARD_VERSION is a tag.
-fi
-
-# Test 3: Treat the Go version as a Git tag - turn it into a commit ID.
-TAG_URL=$($GH_BIN api "repos/$SCORECARD_REPO/git/ref/tags/$SCORECARD_VERSION" -q .object.url)
-if [ "$?" != "0" ]; then
-    echo "Failed to get data for $GO_MOD version $SCORECARD_VERSION"
+# Test 2: Extract the origin hash from the module.
+COMMIT_SHA=$($GO_BIN list -m -f '{{ .Origin.Hash }}' "$SCORECARD_IMPORT@$SCORECARD_VERSION")
+if [ "$?" != "0" ]; then 
+    echo "Go go.mod $COMMIT_SHA does not match $KUSTOMIZATION_FILE $IMAGE_TAGS"
     exit 1
-fi
-COMMIT_SHA=$($GH_BIN api "$TAG_URL" -q .object.sha)
-if [ "$COMMIT_SHA" = "$IMAGE_TAGS" ]; then
+elif [ "$COMMIT_SHA" = "$IMAGE_TAGS" ]; then
     exit 0
 elif [ "$COMMIT_SHA" != "" ]; then
-    echo "$GO_MOD $COMMIT_SHA does not match $KUSTOMIZATION_FILE $IMAGE_TAGS"
-    exit 1
-else
-    echo "No SHA found for $GO_MOD $SCORECARD_PATTERN @ $SCORECARD_VERSION"
+    echo "Go go.mod $COMMIT_SHA does not match $KUSTOMIZATION_FILE $IMAGE_TAGS"
     exit 1
 fi
