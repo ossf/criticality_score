@@ -31,13 +31,13 @@ commonLabels:
 images:
 - name: scorecard-batch-controller
   newName: gcr.io/openssf/scorecard-batch-controller
-  newTag: a78b27d14e741ac1f541ce12bb71a7c60426cb6a
+  newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
 - name: scorecard-github-server
   newName: gcr.io/openssf/scorecard-github-server
-  newTag: a78b27d14e741ac1f541ce12bb71a7c60426cb6a
+  newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
 - name: scorecard-bq-transfer
   newName: gcr.io/openssf/scorecard-bq-transfer
-  newTag: a78b27d14e741ac1f541ce12bb71a7c60426cb6a
+  newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
 
 vars:
 - name: GITHUB_AUTH_SERVER
