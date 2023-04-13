@@ -16,7 +16,7 @@ require (
 	gocloud.dev v0.29.0
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 	golang.org/x/sys v0.7.0
-	google.golang.org/api v0.117.0
+	google.golang.org/api v0.118.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -98,6 +98,7 @@ require (
 	github.com/package-url/packageurl-go v0.1.1-0.20220428063043-89078438f170 // indirect
 	github.com/pierrec/lz4/v4 v4.1.15 // indirect
 	github.com/pjbgf/sha1cd v0.2.3 // indirect
+	github.com/prometheus/prometheus v0.42.0 // indirect
 	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sergi/go-diff v1.1.0 // indirect
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
