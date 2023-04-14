@@ -15,9 +15,13 @@
 package signalio_test
 
 import (
+	"bytes"
 	"errors"
+	"math"
+	"reflect"
 	"testing"
 
+	"github.com/ossf/criticality_score/internal/collector/signal"
 	"github.com/ossf/criticality_score/internal/signalio"
 )
 
@@ -52,6 +56,7 @@ func TestTypeMarshalText(t *testing.T) {
 	}{
 		{name: "csv", writerType: signalio.WriterTypeCSV, want: "csv"},
 		{name: "json", writerType: signalio.WriterTypeJSON, want: "json"},
+		{name: "text", writerType: signalio.WriterTypeText, want: "text"},
 		{name: "unknown", writerType: signalio.WriterType(10), want: "", err: signalio.ErrorUnknownWriterType},
 	}
 	for _, test := range tests {
@@ -81,6 +86,7 @@ func TestTypeUnmarshalText(t *testing.T) {
 	}{
 		{input: "csv", want: signalio.WriterTypeCSV},
 		{input: "json", want: signalio.WriterTypeJSON},
+		{input: "text", want: signalio.WriterTypeText},
 		{input: "", want: 0, err: signalio.ErrorUnknownWriterType},
 		{input: "unknown", want: 0, err: signalio.ErrorUnknownWriterType},
 	}
@@ -98,6 +104,66 @@ func TestTypeUnmarshalText(t *testing.T) {
 				if got != test.want {
 					t.Fatalf("UnmarshalText() parsed %d, want %d", int(got), int(test.want))
 				}
+			}
+		})
+	}
+}
+
+func TestWriterType_New(t *testing.T) {
+	type args struct {
+		emptySets []signal.Set
+		extra     []string
+	}
+	tests := []struct { //nolint:govet
+		name string
+		t    signalio.WriterType
+		args args
+		want any
+	}{
+		{
+			name: "csv",
+			t:    signalio.WriterTypeCSV,
+			args: args{
+				emptySets: []signal.Set{},
+				extra:     []string{},
+			},
+			want: signalio.CSVWriter(&bytes.Buffer{}, []signal.Set{}, ""),
+		},
+		{
+			name: "json",
+			t:    signalio.WriterTypeJSON,
+			args: args{
+				emptySets: []signal.Set{},
+				extra:     []string{},
+			},
+			want: signalio.JSONWriter(&bytes.Buffer{}),
+		},
+		{
+			name: "text",
+			t:    signalio.WriterTypeText,
+			args: args{
+				emptySets: []signal.Set{},
+				extra:     []string{},
+			},
+			want: signalio.TextWriter(&bytes.Buffer{}, []signal.Set{}, ""),
+		},
+		{
+			name: "unknown",
+			t:    signalio.WriterType(math.MaxInt),
+			args: args{
+				emptySets: []signal.Set{},
+				extra:     []string{},
+			},
+			want: nil,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			w := &bytes.Buffer{}
+			got := test.t.New(w, test.args.emptySets, test.args.extra...)
+
+			if reflect.TypeOf(got) != reflect.TypeOf(test.want) {
+				t.Fatalf("New() == %v, want %v", reflect.TypeOf(got), reflect.TypeOf(test.want))
 			}
 		})
 	}

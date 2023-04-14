@@ -9,11 +9,12 @@ The input of this tool could by the output of the `enumerate_github` tool.
 
 ```shell
 $ export GITHUB_TOKEN=ghp_x  # Personal Access Token Goes Here
-$ gcloud login --update-adc  # Sign-in to GCP
+$ gcloud auth login --update-adc  # Sign-in to GCP
 $ criticality_score \
     -workers=1 \
     -out=signals.csv \
     -format=csv \
+    -gcp-project-id=x \
     github_projects.txt
 ```
 
@@ -60,6 +61,9 @@ $ export GITHUB_TOKEN=ghp_abc,ghp_123
 ```
 
 #### GCP Authentication
+
+Google Cloud Platform authentication is required to collect dependent counts
+using deps.dev data. This can be skipped if `-depsdev-disable` is passed in.
 
 BigQuery access requires the "BigQuery User" (`roles/bigquery.user`) role added
 to the account used, or be an "Owner".
@@ -121,7 +125,9 @@ fail.
 
 #### Google Cloud Platform flags
 
-- `-gcp-project-id string` the Google Cloud Project ID to use. Auto-detects by default.
+- `-gcp-project-id string` the Google Cloud Project ID to use. Auto-detects by
+  default. If auto-detect fails an error containing the message "unable to
+  detect projectID" will be shown, and this flag will need to be set.
 
 #### deps.dev Collection Flags
 

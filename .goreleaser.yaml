@@ -1,0 +1,58 @@
+project_name: criticality_score
+
+before:
+  hooks:
+    - go mod tidy
+
+builds:
+  - main: ./cmd/criticality_score
+    id: "criticality_score"
+    binary: criticality_score
+    flags:
+      - -buildvcs
+    env:
+      - CGO_ENABLED=0
+
+  - main: ./cmd/enumerate_github
+    id: "enumerate_github"
+    binary: enumerate_github
+    env:
+      - CGO_ENABLED=0
+
+  - main: ./cmd/scorer
+    id: "scorer"
+    binary: scorer
+    env:
+      - CGO_ENABLED=0
+
+archives:
+  - id: tarballs
+    format: tar.gz
+    format_overrides:
+    - goos: windows
+      format: zip
+    files:
+      - LICENSE
+      - README.md
+      - src: cmd/criticality_score/README.md
+        dst: README_criticality_score.md
+      - src: cmd/enumerate_github/README.md
+        dst: README_enumerate_github.md
+      - src: cmd/scorer/README.md
+        dst: README_scorer.md
+    rlcp: true
+
+checksum:
+  name_template: '{{ .ProjectName }}_{{ .Version }}_checksums.txt'
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  skip: true
+
+release:
+  draft: false
+
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj

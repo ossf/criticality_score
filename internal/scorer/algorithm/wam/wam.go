@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// The package wam implements the Weighted Arithmetic Mean, which forms the
+// Package wam implements the Weighted Arithmetic Mean, which forms the
 // basis of Rob Pike's criticality score algorithm as documented in
 // Quantifying_criticality_algorithm.pdf.
 package wam
@@ -21,32 +21,32 @@ import (
 	"github.com/ossf/criticality_score/internal/scorer/algorithm"
 )
 
-type WeighetedArithmeticMean struct {
+const Name = "weighted_arithmetic_mean"
+
+// "Weighted Arithmetic Mean" is also known as "Weighted Average".
+
+// WeightedArithmeticMean is an implementation of the Weighted Arithmetic Mean.
+// https://en.wikipedia.org/wiki/Weighted_arithmetic_mean
+type WeightedArithmeticMean struct {
 	inputs []*algorithm.Input
 }
 
 // New returns a new instance of the Weighted Arithmetic Mean algorithm, which
 // is used by the Pike algorithm.
 func New(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
-	return &WeighetedArithmeticMean{
+	return &WeightedArithmeticMean{
 		inputs: inputs,
 	}, nil
 }
 
-func (p *WeighetedArithmeticMean) Score(record map[string]float64) float64 {
-	var totalWeight float64
-	var s float64
+func (p *WeightedArithmeticMean) Score(record map[string]float64) float64 {
+	var itemSum float64
+	var itemCount float64
 	for _, i := range p.inputs {
-		v, ok := i.Value(record)
-		if !ok {
-			continue
+		if v, ok := i.Value(record); ok {
+			itemCount += i.Weight
+			itemSum += i.Weight * v
 		}
-		totalWeight += i.Weight
-		s += i.Weight * v
 	}
-	return s / totalWeight
-}
-
-func init() {
-	algorithm.Register("weighted_arithmetic_mean", New)
+	return itemSum / itemCount
 }

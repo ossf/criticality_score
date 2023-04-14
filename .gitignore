@@ -1,11 +1,5 @@
-# Byte-compiled / optimized / DLL files
-__pycache__/
-
 # Rope project settings
 .ropeproject
-
-# Installing the package locally for development
-*.egg-info
 
 # This is for IDEs/Editors
 .idea
@@ -16,3 +10,5 @@ __pycache__/
 
 # Test output
 unit-coverage.out
+
+dist/

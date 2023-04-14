@@ -78,7 +78,7 @@ func NewWriter(ctx context.Context, rawURL string) (io.WriteCloser, error) {
 
 	b, err := blob.OpenBucket(ctx, bucket)
 	if err != nil {
-		return nil, fmt.Errorf("failed to opening %s: %w", bucket, err)
+		return nil, fmt.Errorf("failed opening %s: %w", bucket, err)
 	}
 	w, err := b.NewWriter(ctx, prefix, nil)
 	if err != nil {
