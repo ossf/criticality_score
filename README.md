@@ -47,12 +47,13 @@ open source project:
 
 ## Usage
 
-The program only requires one argument to run, the name of the repo:
-
 ```shell
 $ go install github.com/ossf/criticality_score/cmd/criticality_score@latest
 
-$ criticality_score github.com/kubernetes/kubernetes
+$ export GITHUB_TOKEN=...         # requires a GitHub token to work
+$ gcloud auth login --update-adc  # optional, add -depsdev-disable to skip
+
+$ criticality_score -gcp-project-id=[your projectID] github.com/kubernetes/kubernetes
 repo.name: kubernetes
 repo.url: https://github.com/kubernetes/kubernetes
 repo.language: Go
