@@ -3,7 +3,7 @@ module github.com/ossf/criticality_score
 go 1.19
 
 require (
-	cloud.google.com/go/bigquery v1.50.0
+	cloud.google.com/go/bigquery v1.51.0
 	github.com/blendle/zapdriver v1.3.1
 	github.com/go-logr/zapr v1.2.3
 	github.com/google/go-cmp v0.5.9
