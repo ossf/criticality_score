@@ -25,3 +25,7 @@ configMapGenerator:
   behavior: replace
   files:
   - config.yaml
+
+# Patches customize the base configurations for the prod environment.
+patchesStrategicMerge:
+- github_auth.yaml

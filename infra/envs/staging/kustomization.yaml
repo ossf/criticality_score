@@ -29,7 +29,7 @@ configMapGenerator:
 
 # Patches customize the base configurations for the staging environment.
 patchesStrategicMerge:
-- auth_secret_key.yaml
+- github_auth.yaml
 - worker_replicas.yaml
 - controller_schedule.yaml
 - csv_transfer_schedule.yaml

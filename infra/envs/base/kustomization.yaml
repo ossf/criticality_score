@@ -13,7 +13,6 @@
 # limitations under the License.
 
 resources:
-- auth.yaml
 - bq_transfer.yaml
 - controller.yaml
 - csv_transfer.yaml
@@ -38,10 +37,3 @@ images:
 - name: scorecard-bq-transfer
   newName: gcr.io/openssf/scorecard-bq-transfer
   newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
-
-vars:
-- name: GITHUB_AUTH_SERVER
-  objref:
-    kind: Service
-    name: criticality-score-github-auth
-    apiVersion: v1
