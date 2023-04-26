@@ -14,6 +14,7 @@ package signalio
 
 import (
 	"fmt"
+	"time"
 
 	"github.com/ossf/criticality_score/internal/collector/signal"
 )
@@ -51,4 +52,17 @@ func marshalToMap(signals []signal.Set, extra ...Field) (map[string]string, erro
 		}
 	}
 	return values, nil
+}
+
+func marshalValue(value any) (string, error) {
+	switch v := value.(type) {
+	case bool, int, int16, int32, int64, uint, uint16, uint32, uint64, byte, float32, float64, string:
+		return fmt.Sprintf("%v", value), nil
+	case time.Time:
+		return v.Format(time.RFC3339), nil
+	case nil:
+		return "", nil
+	default:
+		return "", fmt.Errorf("%w: %T", ErrorMarshalFailure, value)
+	}
 }
