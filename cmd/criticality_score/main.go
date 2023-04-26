@@ -49,6 +49,7 @@ var (
 	scoringConfigFlag     = flag.String("scoring-config", "", "path to a YAML file for configuring the scoring algorithm.")
 	scoringColumnNameFlag = flag.String("scoring-column", "", "manually specify the name for the column used to hold the score.")
 	workersFlag           = flag.Int("workers", 1, "the total number of concurrent workers to use.")
+	versionFlag           = flag.Bool("version", false, "display the version of this command.")
 	logLevel              = defaultLogLevel
 	logEnv                log.Env
 	formatType            signalio.WriterType
@@ -72,6 +73,12 @@ func initFlags() {
 		flag.PrintDefaults()
 	}
 	flag.Parse()
+
+	// Handle the version flag immediately. It's similar to -help.
+	if *versionFlag {
+		printVersion()
+		os.Exit(0)
+	}
 }
 
 // getScorer prepares a Scorer based on the flags passed to the command.
