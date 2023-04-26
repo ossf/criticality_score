@@ -36,6 +36,7 @@ import (
 	"github.com/ossf/criticality_score/cmd/enumerate_github/marker"
 	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
 	"github.com/ossf/criticality_score/internal/envflag"
+	"github.com/ossf/criticality_score/internal/githubapi"
 	log "github.com/ossf/criticality_score/internal/log"
 	"github.com/ossf/criticality_score/internal/outfile"
 	"github.com/ossf/criticality_score/internal/workerpool"
@@ -198,8 +199,20 @@ func main() {
 		os.Exit(2)
 	}
 
+	// We need a context to support a bunch of operations.
+	ctx := context.Background()
+
+	// Prepare a client for communicating with GitHub's GraphQL API.
+	// Do this before opening the output file to avoid creating an empty file
+	// if we fail to authenticate, or connect to the authentication server.
+	rt := githubapi.NewRetryRoundTripper(roundtripper.NewTransport(ctx, scLogger), logger)
+	httpClient := &http.Client{
+		Transport: rt,
+	}
+	client := githubv4.NewClient(httpClient)
+
 	// Open the output file
-	out, err := outfile.Open(context.Background())
+	out, err := outfile.Open(ctx)
 	if err != nil {
 		// File failed to open
 		logger.Error("Failed to open output file", zap.Error(err))
@@ -218,14 +231,6 @@ func main() {
 
 	// Track how long it takes to enumerate the repositories
 	startTime := time.Now()
-	ctx := context.Background()
-
-	// Prepare a client for communicating with GitHub's GraphQL API
-	rt := roundtripper.NewTransport(ctx, scLogger)
-	httpClient := &http.Client{
-		Transport: rt,
-	}
-	client := githubv4.NewClient(httpClient)
 
 	baseQuery := *queryFlag
 	queries := make(chan string)
