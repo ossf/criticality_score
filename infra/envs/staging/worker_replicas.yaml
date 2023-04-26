@@ -17,4 +17,4 @@ kind: Deployment
 metadata:
   name: criticality-score-batch-worker
 spec:
-  replicas: 4
+  replicas: 1

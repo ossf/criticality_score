@@ -17,7 +17,7 @@ kind: Deployment
 metadata:
   name: criticality-score-batch-worker
 spec:
-  replicas: 10
+  replicas: 2
   selector:
     matchLabels:
       app.kubernetes.io/name: worker
@@ -31,9 +31,6 @@ spec:
           image: collect-signals
           args: ["--config=/etc/criticality_score/config.yaml"]
           imagePullPolicy: Always
-          env:
-            - name: GITHUB_AUTH_SERVER
-              value: "$(GITHUB_AUTH_SERVER):80"
           resources:
             requests:
               memory: 5Gi

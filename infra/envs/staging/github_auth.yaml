@@ -12,46 +12,18 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: v1
-kind: Service
-metadata:
-  name: criticality-score-github-auth
-spec:
-  selector:
-    app.kubernetes.io/name: github-auth-server
-  type: ClusterIP
-  ports:
-  - protocol: TCP
-    port: 80
-    targetPort: 8080
----
-
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: criticality-score-github-auth
+  name: criticality-score-batch-worker
 spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: github-auth-server
   template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: github-auth-server
     spec:
       containers:
-      - name: github-auth-server
-        image: scorecard-github-server
-        imagePullPolicy: Always
+      - name: worker
         env:
         - name: GITHUB_AUTH_TOKEN
           valueFrom:
             secretKeyRef:
-              name: github
+              name: github-staging
               key: token
-  strategy:
-    type: "RollingUpdate"
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 0

@@ -15,15 +15,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: criticality-score-github-auth
+  name: criticality-score-batch-worker
 spec:
   template:
     spec:
       containers:
-      - name: github-auth-server
+      - name: worker
         env:
-        - name: GITHUB_AUTH_TOKEN
+        - name: GITHUB_APP_KEY_PATH
+          value: /etc/github/app_key
+        - name: GITHUB_APP_ID
           valueFrom:
             secretKeyRef:
-              name: github-staging
-              key: token
+              name: github
+              key: app_id
+        - name: GITHUB_APP_INSTALLATION_ID
+          valueFrom:
+            secretKeyRef:
+              name: github
+              key: installation_id
+        volumeMounts:
+        - name: github-app-key
+          mountPath: "/etc/github/"
+          readOnly: true
+      volumes:
+      - name: github-app-key
+        secret:
+          secretName: github
