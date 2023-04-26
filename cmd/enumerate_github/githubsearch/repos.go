@@ -96,7 +96,11 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 		"query":   githubv4.String(q),
 		"perPage": githubv4.Int(re.perPage),
 	}
-	return pagination.Query(re.ctx, re.client, &repoQuery{}, vars)
+	c, err := pagination.Query(re.ctx, re.client, &repoQuery{}, vars)
+	if err != nil {
+		return nil, fmt.Errorf("repo search query '%s' failed: %w", q, err)
+	}
+	return c, nil
 }
 
 // ReposByStars will call emitter once for each repository returned when searching for baseQuery
