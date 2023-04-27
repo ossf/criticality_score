@@ -57,7 +57,6 @@ func (s *Scorer) Score(signals []signal.Set) float64 {
 	for _, s := range signals {
 		// Get all the signal data from the set change it to a float.
 		for k, v := range signal.SetAsMap(s, true) {
-			fmt.Println(k, v)
 			switch r := v.(type) {
 			case float64:
 				record[k] = r
