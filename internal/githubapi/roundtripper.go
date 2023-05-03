@@ -69,16 +69,17 @@ func (s *strategies) ServerError(r *http.Response) (retry.RetryStrategy, error) 
 	if r.StatusCode < 500 || 600 <= r.StatusCode {
 		return retry.NoRetry, nil
 	}
-	s.logger.With(zap.String("status", r.Status)).Warn("5xx: detected")
+	logger := s.logger.With(zap.Stringer("url", r.Request.URL))
+	logger.With(zap.String("status", r.Status)).Warn("5xx: detected")
 	path := strings.Trim(r.Request.URL.Path, "/")
 	if issuesRe.MatchString(path) {
-		s.logger.Warn("Ignoring /repos/X/Y/issues url.")
+		logger.Warn("Ignoring /repos/X/Y/issues url.")
 		// If the req url was /repos/[owner]/[name]/issues pass the
 		// error through as it is likely a GitHub bug.
 		return retry.NoRetry, nil
 	}
 	if issueCommentsRe.MatchString(path) {
-		s.logger.Warn("Ignoring /repos/X/Y/issues/comments url.")
+		logger.Warn("Ignoring /repos/X/Y/issues/comments url.")
 		// If the req url was /repos/[owner]/[name]/issues/comments pass the
 		// error through as it is likely a GitHub bug.
 		return retry.NoRetry, nil
@@ -91,13 +92,14 @@ func (s *strategies) ServerError400(r *http.Response) (retry.RetryStrategy, erro
 	if r.StatusCode != http.StatusBadRequest {
 		return retry.NoRetry, nil
 	}
-	s.logger.Warn("400: bad request detected")
+	logger := s.logger.With(zap.Stringer("url", r.Request.URL))
+	logger.Warn("400: bad request detected")
 	if r.Header.Get("Content-Type") != "text/html" {
 		return retry.NoRetry, nil
 	}
-	s.logger.Debug("It's a text/html doc")
+	logger.Debug("It's a text/html doc")
 	if isError, err := respBodyContains(r, githubErrorIDSearch); isError {
-		s.logger.Debug("Found target string - assuming 500.")
+		logger.Debug("Found target string - assuming 500.")
 		return retry.RetryImmediate, nil
 	} else {
 		return retry.NoRetry, err
@@ -109,16 +111,17 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	if r.StatusCode != http.StatusForbidden {
 		return retry.NoRetry, nil
 	}
-	s.logger.Warn("403: forbidden detected")
+	logger := s.logger.With(zap.Stringer("url", r.Request.URL))
+	logger.Warn("403: forbidden detected")
 	errorResponse := &github.ErrorResponse{Response: r}
 	data, err := io.ReadAll(r.Body)
 	r.Body.Close()
 	r.Body = io.NopCloser(bytes.NewBuffer(data))
 	if err != nil || data == nil {
-		s.logger.With(
+		logger.With(
 			zap.Error(err),
 			zap.Bool("data_nil", data == nil),
-		).Warn("ReadAll failed.")
+		).Warn("ReadAll failed")
 		return retry.NoRetry, err
 	}
 	// Don't error check the unmarshall - if there is an error and the parsing
@@ -127,16 +130,16 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 	// will cause the response to be processed again by go-github with an error
 	// being generated there.
 	json.Unmarshal(data, errorResponse)
-	s.logger.With(
-		zap.String("url", errorResponse.DocumentationURL),
+	logger.With(
+		zap.String("doc_url", errorResponse.DocumentationURL),
 		zap.String("message", errorResponse.Message),
 	).Warn("Error response data")
 	if strings.HasSuffix(errorResponse.DocumentationURL, "#abuse-rate-limits") ||
 		strings.HasSuffix(errorResponse.DocumentationURL, "#secondary-rate-limits") {
-		s.logger.Warn("Secondary rate limit hit.")
+		logger.Warn("Secondary rate limit hit")
 		return retry.RetryWithInitialDelay, nil
 	}
-	s.logger.Warn("Not an abuse rate limit error.")
+	logger.Warn("Not an abuse rate limit error")
 	return retry.NoRetry, nil
 }
 
