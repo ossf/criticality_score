@@ -141,7 +141,9 @@ func TestServerError_StatusCodes(t *testing.T) {
 }
 
 func TestServerError400(t *testing.T) {
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
 		Body:       io.NopCloser(strings.NewReader(`<html><body>This is <span id="error_500">an error</span></body></html>`)),
@@ -156,7 +158,9 @@ func TestServerError400(t *testing.T) {
 }
 
 func TestServerError400_NoMatchingString(t *testing.T) {
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
 		Body:       io.NopCloser(strings.NewReader(`<html><body>Web Page</body></html`)),
@@ -172,7 +176,9 @@ func TestServerError400_NoMatchingString(t *testing.T) {
 
 func TestServerError400_BodyError(t *testing.T) {
 	want := errors.New("test error")
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 		StatusCode: http.StatusBadRequest,
 		Body: io.NopCloser(readerFn(func(b []byte) (int, error) {
@@ -189,7 +195,9 @@ func TestServerError400_BodyError(t *testing.T) {
 }
 
 func TestServerError400_NotHTML(t *testing.T) {
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/plain"}},
 		StatusCode: http.StatusBadRequest,
 		Body:       io.NopCloser(strings.NewReader(`text doc`)),
@@ -224,7 +232,9 @@ func TestServerError400_StatusCodes(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("status %d", test.statusCode), func(t *testing.T) {
+			u, _ := url.Parse("https://api.github.com/repos/example/example")
 			r := &http.Response{
+				Request:    &http.Request{URL: u},
 				Header:     http.Header{http.CanonicalHeaderKey("Content-Type"): {"text/html"}},
 				StatusCode: test.statusCode,
 				Body:       io.NopCloser(strings.NewReader(`<html><body>This is <span id="error_500">an error</span></body></html>`)),
@@ -241,7 +251,9 @@ func TestServerError400_StatusCodes(t *testing.T) {
 }
 
 func TestSecondaryRateLimit(t *testing.T) {
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		StatusCode: http.StatusForbidden,
 		Body: io.NopCloser(strings.NewReader(
 			fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL))),
@@ -256,7 +268,9 @@ func TestSecondaryRateLimit(t *testing.T) {
 }
 
 func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		StatusCode: http.StatusForbidden,
 		Body: io.NopCloser(strings.NewReader(
 			fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testAbuseRateLimitDocURL))),
@@ -271,7 +285,9 @@ func TestSecondaryRateLimit_AbuseUrl(t *testing.T) {
 }
 
 func TestSecondaryRateLimit_OtherUrl(t *testing.T) {
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		StatusCode: http.StatusForbidden,
 		Body:       io.NopCloser(strings.NewReader(`{"message": "test", "documentation_url": "https://example.org/"}`)),
 	}
@@ -286,7 +302,9 @@ func TestSecondaryRateLimit_OtherUrl(t *testing.T) {
 
 func TestSecondaryRateLimit_BodyError(t *testing.T) {
 	want := errors.New("test error")
+	u, _ := url.Parse("https://api.github.com/repos/example/example")
 	r := &http.Response{
+		Request:    &http.Request{URL: u},
 		StatusCode: http.StatusForbidden,
 		Body: io.NopCloser(readerFn(func(b []byte) (int, error) {
 			return 0, want
@@ -323,7 +341,9 @@ func TestSecondaryRateLimit_StatusCodes(t *testing.T) {
 	}
 	for _, test := range tests {
 		t.Run(fmt.Sprintf("status %d", test.statusCode), func(t *testing.T) {
+			u, _ := url.Parse("https://api.github.com/repos/example/example")
 			r := &http.Response{
+				Request:    &http.Request{URL: u},
 				StatusCode: test.statusCode,
 				Body: io.NopCloser(strings.NewReader(
 					fmt.Sprintf(`{"message": "test", "documentation_url": "%s"}`, testSecondaryRateLimitDocURL))),
