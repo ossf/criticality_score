@@ -33,10 +33,10 @@ spec:
           imagePullPolicy: Always
           resources:
             requests:
-              memory: 5Gi
+              memory: 2Gi
               ephemeral-storage: 100Gi
             limits:
-              memory: 12Gi
+              memory: 5Gi
               ephemeral-storage: 500Gi
           volumeMounts:
             - name: config-volume
