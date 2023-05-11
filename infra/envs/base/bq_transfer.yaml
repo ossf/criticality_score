@@ -29,11 +29,6 @@ spec:
               image: scorecard-bq-transfer
               args: ["--config=/etc/criticality_score/config.yaml"]
               imagePullPolicy: Always
-              resources:
-                limits:
-                  memory: 1Gi
-                requests:
-                  memory: 1Gi
               volumeMounts:
                 - name: config-volume
                   mountPath: /etc/criticality_score
