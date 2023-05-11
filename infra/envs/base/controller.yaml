@@ -33,11 +33,6 @@ spec:
               env:
                 - name: GOMEMLIMIT
                   value: "950MiB"
-              resources:
-                limits:
-                  memory: 1Gi
-                requests:
-                  memory: 1Gi
               volumeMounts:
                 - name: config-volume
                   mountPath: /etc/criticality_score
