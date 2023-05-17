@@ -45,7 +45,7 @@ spec:
             - name: CRITICALITY_SCORE_MARKER_TYPE
               value: "dir"
             - name: CRITICALITY_SCORE_STARS_MIN
-              value: "55"
+              value: "75"
             - name: CRITICALITY_SCORE_START_DATE
               value: "2008-01-01"
             - name: CRITICALITY_SCORE_FORMAT
