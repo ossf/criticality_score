@@ -16,7 +16,7 @@ require (
 	gocloud.dev v0.29.0
 	golang.org/x/exp v0.0.0-20230224173230-c95f2b4c22f2
 	golang.org/x/sys v0.7.0
-	google.golang.org/api v0.119.0
+	google.golang.org/api v0.123.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
@@ -78,7 +78,7 @@ require (
 	github.com/google/go-github/v45 v45.2.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/google/osv-scanner v1.2.1-0.20230302232134-592acbc2539b // indirect
-	github.com/google/s2a-go v0.1.2 // indirect
+	github.com/google/s2a-go v0.1.3 // indirect
 	github.com/google/uuid v1.3.0 // indirect
 	github.com/google/wire v0.5.0 // indirect
 	github.com/googleapis/enterprise-certificate-proxy v0.2.3 // indirect
