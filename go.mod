@@ -5,7 +5,7 @@ go 1.19
 require (
 	cloud.google.com/go/bigquery v1.51.0
 	github.com/blendle/zapdriver v1.3.1
-	github.com/go-logr/zapr v1.2.3
+	github.com/go-logr/zapr v1.2.4
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v47 v47.1.0
 	github.com/iancoleman/strcase v0.2.0
@@ -67,7 +67,7 @@ require (
 	github.com/go-git/gcfg v1.5.0 // indirect
 	github.com/go-git/go-billy/v5 v5.4.1 // indirect
 	github.com/go-git/go-git/v5 v5.5.2 // indirect
-	github.com/go-logr/logr v1.2.3 // indirect
+	github.com/go-logr/logr v1.2.4 // indirect
 	github.com/goccy/go-json v0.9.11 // indirect
 	github.com/golang-jwt/jwt/v4 v4.4.3 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
