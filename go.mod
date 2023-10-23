@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/bigquery v1.51.0
 	github.com/blendle/zapdriver v1.3.1
 	github.com/go-logr/zapr v1.2.3
-	github.com/google/go-cmp v0.5.9
+	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v47 v47.1.0
 	github.com/iancoleman/strcase v0.2.0
 	github.com/ossf/scorecard/v4 v4.10.5
