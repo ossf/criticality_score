@@ -12,11 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+# The original set of weights defined for the criticality score project using
+# Rob Pike's algorithm as implemented in the original Python project.
 algorithm: weighted_arithmetic_mean
 
 inputs:
   - field: legacy.created_since
-    weight: 2
+    weight: 1
     bounds:
       upper: 120
       # NOTE: added
@@ -25,7 +27,7 @@ inputs:
 
   - field: legacy.updated_since
     #weight: 1
-    weight: 5
+    weight: 2
     bounds:
       upper: 120
       smaller_is_better: yes
@@ -45,62 +47,41 @@ inputs:
 
   - field: legacy.commit_frequency
     #weight: 1
-    weight: 9
+    weight: 5
     bounds:
       upper: 1000
     distribution: zipfian
 
   - field: legacy.recent_release_count
-    #weight: 0.5
-    weight: 2
+    weight: 0.5
+    #weight: 2
     bounds:
       upper: 26
     distribution: zipfian
 
   - field: legacy.updated_issues_count
-    #weight: 0.5
-    weight: 1
+    weight: 0.5
+    #weight: 1
     bounds:
       upper: 5000
     distribution: zipfian
 
   - field: legacy.closed_issues_count
-    #weight: 0.5
-    weight: 1
+    weight: 0.5
+    #weight: 1
     bounds:
       upper: 5000
     distribution: zipfian
 
   - field: legacy.issue_comment_frequency
-    #weight: 1
-    weight: 2
+    weight: 1
+    #weight: 2
     bounds:
       upper: 15
     distribution: zipfian
 
-  # If deps.dev dependenct count doesn't exist we use this configuration
-  # for the GitHub search mention count.
   - field: legacy.github_mention_count
     weight: 2
     bounds:
       upper: 500000
-    condition:
-      not:
-        field_exists: "depsdev.dependent_count"
-    distribution: zipfian
-
-  # If deps.dev dependent count *does* exist we lower the importance of
-  # the GitHub search mention count.
-  - field: legacy.github_mention_count
-    weight: 1
-    bounds:
-      upper: 500000
-    condition:
-      field_exists: "depsdev.dependent_count"
-    distribution: zipfian
-
-  - field: depsdev.dependent_count
-    weight: 4
-    bounds:
-      upper: 200000
     distribution: zipfian

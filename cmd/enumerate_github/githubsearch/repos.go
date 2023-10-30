@@ -30,6 +30,7 @@ import (
 type repo struct {
 	URL            string
 	StargazerCount int
+	Description    string
 }
 
 // repoQuery is a GraphQL query for iterating over repositories in GitHub.
@@ -142,6 +143,7 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars, overlap int, emitte
 			repo := obj.(repo)
 			seen++
 			stars = repo.StargazerCount
+// 			var description := repo.Description
 			if _, ok := repos[repo.URL]; !ok {
 				repos[repo.URL] = empty{}
 				emitter(repo.URL)
@@ -154,6 +156,7 @@ func (re *Searcher) ReposByStars(baseQuery string, minStars, overlap int, emitte
 			zap.Int("total_remaining", remaining),
 			zap.Int("unique_repos", len(repos)),
 			zap.Int("last_stars", stars),
+// 			zap.Int("description", description),
 			zap.String("query", q),
 		).Debug("Finished iterating through results")
 		newMaxStars := stars + overlap
