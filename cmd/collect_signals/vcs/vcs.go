@@ -12,22 +12,23 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package main
+package vcs
 
 import (
 	"runtime/debug"
 )
 
-const commitIDKey = "vcs.revision"
+const (
+	MissingCommitID = "-missing-"
+	commitIDKey     = "vcs.revision"
+)
 
-var commitID = getCommitID()
+var commitID string
 
-// getCommitID returns the vcs commit ID embedded in the binary when the
-// -buildvcs flag is set while building.
-func getCommitID() string {
+func fetchCommitID() string {
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
-		return ""
+		return MissingCommitID
 	}
 
 	for _, setting := range info.Settings {
@@ -36,5 +37,14 @@ func getCommitID() string {
 		}
 	}
 
-	return ""
+	return MissingCommitID
+}
+
+// CommitID returns the vcs commit ID embedded in the binary when the
+// -buildvcs flag is set while building.
+func CommitID() string {
+	if commitID == "" {
+		commitID = fetchCommitID()
+	}
+	return commitID
 }

@@ -16,6 +16,7 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.uber.org/zap"
 
+	"github.com/ossf/criticality_score/cmd/collect_signals/vcs"
 	"github.com/ossf/criticality_score/internal/collector"
 	"github.com/ossf/criticality_score/internal/scorer"
 	"github.com/ossf/criticality_score/internal/signalio"
@@ -55,7 +56,7 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 		extras = append(extras, w.scoreColumnName)
 	}
 	extras = append(extras, collectionDateColumnName)
-	if commitID != "" {
+	if commitID := vcs.CommitID(); commitID != vcs.MissingCommitID {
 		extras = append(extras, commitIDColumnName)
 	}
 
@@ -111,7 +112,7 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 
 		// Ensure the commit ID is included with each record for helping
 		// identify which Git commit is associated with this record.
-		if commitID != "" {
+		if commitID := vcs.CommitID(); commitID != vcs.MissingCommitID {
 			extras = append(extras, signalio.Field{
 				Key:   commitIDColumnName,
 				Value: commitID,
