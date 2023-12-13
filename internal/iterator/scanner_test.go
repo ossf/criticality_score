@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"errors"
 	"io"
-	"slices"
 	"strings"
 	"testing"
 	"testing/iotest"
+
+	"golang.org/x/exp/slices"
 
 	"github.com/ossf/criticality_score/internal/iterator"
 )
