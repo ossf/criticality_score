@@ -92,8 +92,8 @@ func TestBatchIter_MultiLineMultiBatch(t *testing.T) {
 	if got := i.Item(); !slices.Equal(got, want2) {
 		t.Errorf("Item()#2 = %v; want %v", got, want2)
 	}
-	if got := i.Next(); !got {
-		t.Errorf("Next()#3 = %v; want true", got)
+	if got := i.Next(); got {
+		t.Errorf("Next()#3 = %v; want false", got)
 	}
 	if err := i.Err(); err != nil {
 		t.Errorf("Err()#3 = %v; want no error", err)
