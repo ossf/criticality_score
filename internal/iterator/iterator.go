@@ -12,10 +12,9 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package inputiter
+package iterator
 
 import (
-	"bufio"
 	"io"
 )
 
@@ -44,52 +43,4 @@ type Iter[T any] interface {
 type IterCloser[T any] interface {
 	Iter[T]
 	io.Closer
-}
-
-// scannerIter implements Iter[string] using a bufio.Scanner to iterate through
-// lines in a file.
-type scannerIter struct {
-	c       io.Closer
-	scanner *bufio.Scanner
-}
-
-func (i *scannerIter) Item() string {
-	return i.scanner.Text()
-}
-
-func (i *scannerIter) Next() bool {
-	return i.scanner.Scan()
-}
-
-func (i *scannerIter) Err() error {
-	return i.scanner.Err()
-}
-
-func (i *scannerIter) Close() error {
-	return i.c.Close()
-}
-
-// sliceIter implements iter using a slice for iterating.
-type sliceIter[T any] struct {
-	values []T
-	next   int
-}
-
-func (i *sliceIter[T]) Item() T {
-	return i.values[i.next-1]
-}
-
-func (i *sliceIter[T]) Next() bool {
-	if i.next <= len(i.values) {
-		i.next++
-	}
-	return i.next <= len(i.values)
-}
-
-func (i *sliceIter[T]) Err() error {
-	return nil
-}
-
-func (i *sliceIter[T]) Close() error {
-	return nil
 }

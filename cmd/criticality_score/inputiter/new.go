@@ -15,13 +15,13 @@
 package inputiter
 
 import (
-	"bufio"
 	"context"
 	"errors"
 	"net/url"
 	"os"
 
 	"github.com/ossf/criticality_score/internal/infile"
+	"github.com/ossf/criticality_score/internal/iterator"
 )
 
 // osErrorWithFilename is an os-specific helper for determining if a particular
@@ -53,7 +53,7 @@ func errWithFilename(err error) bool {
 //
 // TODO: support the ability to force args to be interpreted as either a file,
 // or a list of repos.
-func New(args []string) (IterCloser[string], error) {
+func New(args []string) (iterator.IterCloser[string], error) {
 	if len(args) == 1 {
 		// If there is 1 arg, attempt to open it as a file.
 		fileOrRepo := args[0]
@@ -65,10 +65,7 @@ func New(args []string) (IterCloser[string], error) {
 		// Open the in-file for reading
 		r, err := infile.Open(context.Background(), fileOrRepo)
 		if err == nil {
-			return &scannerIter{
-				c:       r,
-				scanner: bufio.NewScanner(r),
-			}, nil
+			return iterator.Lines(r), nil
 		}
 		if urlParseFailed || !errWithFilename(err) {
 			// Only report errors if the file doesn't appear to be a URL, if the
@@ -78,7 +75,5 @@ func New(args []string) (IterCloser[string], error) {
 	}
 	// If file loading failed, or there are 2 or more args, treat args as a list
 	// of repos.
-	return &sliceIter[string]{
-		values: args,
-	}, nil
+	return iterator.Slice(args), nil
 }
