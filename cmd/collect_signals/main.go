@@ -29,6 +29,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/ossf/criticality_score/cmd/collect_signals/vcs"
 	"github.com/ossf/criticality_score/internal/collector"
 	log "github.com/ossf/criticality_score/internal/log"
 )
@@ -93,7 +94,7 @@ func main() {
 	defer logger.Sync()
 
 	// Embed the commitID with all log messages.
-	if commitID != "" {
+	if commitID := vcs.CommitID(); commitID != vcs.MissingCommitID {
 		logger = logger.With(zap.String("commit_id", commitID))
 	}
 
