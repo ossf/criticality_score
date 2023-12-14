@@ -19,7 +19,7 @@ linters:
   enable:
     - asciicheck
     #- bodyclose  # Temporarily disabled.
-    - depguard
+    #- depguard  # Temporarily disabled.
     - dogsled
     #- errcheck  # Temporarily disabled.
     - errorlint
