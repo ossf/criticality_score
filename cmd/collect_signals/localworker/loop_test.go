@@ -135,6 +135,8 @@ func makeTestWorkLoop(t *testing.T, startShard int32) (*WorkLoop, *testWorker) {
 	os.Mkdir(filepath.Join(d, "rawdata"), 0o777)
 
 	// Hack to work around file:// urls for gocloud.dev for Windows absolute URLs.
+	// Absoulte paths for Windows urls (i.e. C:\) need to be prefixed with a "/"
+	// to work with gocloud.dev's blob API.
 	prefix := ""
 	if filepath.IsAbs(d) && d[0] != '/' {
 		prefix = "/"
