@@ -57,7 +57,7 @@ func (s *runState) Save() error {
 		return fmt.Errorf("temp file sync: %w", err)
 	}
 
-	err := tmp.Close()
+	err = tmp.Close()
 	// Clear tmp to prevent the defer func from calling Close.
 	tmp = nil
 	if err != nil {
