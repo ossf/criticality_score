@@ -17,6 +17,7 @@ package main
 import (
 	"context"
 	"flag"
+	"fmt"
 	"net/http"
 	"net/rpc"
 	"os"
@@ -29,6 +30,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
+	"github.com/ossf/criticality_score/cmd/collect_signals/localworker"
 	"github.com/ossf/criticality_score/cmd/collect_signals/vcs"
 	"github.com/ossf/criticality_score/internal/collector"
 	log "github.com/ossf/criticality_score/internal/log"
@@ -38,6 +40,58 @@ const (
 	defaultLogLevel            = zapcore.InfoLevel
 	githubAuthServerMaxAttemps = 10
 )
+
+const (
+	configDataset           = "dataset"
+	configDatasetTTLHours   = "dataset-ttl-hours"
+	configLocal             = "local"
+	configScoring           = "scoring"
+	configScoringConfigFile = "scoring-config"
+	configScoringColumnName = "scoring-column-name"
+)
+
+type runner interface {
+	Run() error
+}
+
+// getWorkLoop chooses between either scorecard's worker.WorkLoop implementation
+// or the internal localworker.WorkLoop implementation. The localworker.WorkLoop
+// is chosen if the "local" criticality config variable is enabled.
+func getWorkLoop(logger *zap.Logger, criticalityConfig map[string]string, w worker.Worker) (runner, error) {
+	local, err := parseBool(criticalityConfig[configLocal], false)
+	if err != nil {
+		return nil, fmt.Errorf("parsing %q config as bool: %w", configLocal, err)
+	}
+	var workLoop runner
+	if local {
+		workLoop, err = localworker.FromConfig(logger, w)
+		if err != nil {
+			return nil, fmt.Errorf("localworker.NewWorkLoop: %w", err)
+		}
+	} else {
+		tmp := worker.NewWorkLoop(w)
+		workLoop = &tmp
+	}
+	return workLoop, nil
+}
+
+// parseBool converts boolStr into a bool value. It supports converting various
+// "truthy" and "falsey" values.
+//
+// If the empty string is encountered emptyVal is returned.
+// If a bool value cannot be determined, an error will be returned.
+func parseBool(boolStr string, emptyVal bool) (bool, error) {
+	switch strings.ToLower(boolStr) {
+	case "":
+		return emptyVal, nil
+	case "yes", "enabled", "enable", "on", "true", "1":
+		return true, nil
+	case "no", "disabled", "disable", "off", "false", "0":
+		return false, nil
+	default:
+		return false, fmt.Errorf("invalid bool string '%s'", boolStr)
+	}
+}
 
 func waitForRPCServer(logger *zap.Logger, rpcServer string, maxAttempts int) {
 	if rpcServer == "" {
@@ -105,13 +159,13 @@ func main() {
 	}
 
 	// Extract the GCP dataset name.
-	gcpDatasetName := criticalityConfig["dataset"]
+	gcpDatasetName := criticalityConfig[configDataset]
 	if gcpDatasetName == "" {
 		gcpDatasetName = collector.DefaultGCPDatasetName
 	}
 
 	// Extract the GCP dataset TTL.
-	gcpDatasetTTLHours := criticalityConfig["dataset-ttl-hours"]
+	gcpDatasetTTLHours := criticalityConfig[configDatasetTTLHours]
 	gcpDatasetTTL := time.Duration(0)
 	if gcpDatasetTTLHours != "" {
 		i, err := strconv.Atoi(gcpDatasetTTLHours)
@@ -122,22 +176,13 @@ func main() {
 	}
 
 	// Determine whether scoring is enabled or disabled.
-	// It supports various "truthy" and "fasley" values. It will default to
-	// enabled.
-	scoringState := strings.ToLower(criticalityConfig["scoring"])
-	scoringEnabled := true // this value is overridden below
-	switch scoringState {
-	case "", "yes", "enabled", "enable", "on", "true", "1":
-		scoringEnabled = true
-	case "no", "disabled", "disable", "off", "false", "0":
-		scoringEnabled = false
-	default:
-		// Fatal exits.
-		logger.Fatal("Unknown 'scoring' setting: " + scoringState)
+	scoringEnabled, err := parseBool(criticalityConfig[configScoring], true)
+	if err != nil {
+		logger.With(zap.Error(err)).Fatal(fmt.Sprintf("Failed parsing %q setting", configScoring))
 	}
 
-	scoringConfigFile := criticalityConfig["scoring-config"]
-	scoringColumnName := criticalityConfig["scoring-column-name"]
+	scoringConfigFile := criticalityConfig[configScoringConfigFile]
+	scoringColumnName := criticalityConfig[configScoringColumnName]
 
 	// Extract the CSV bucket URL. Currently uses the raw result bucket url.
 	// TODO: use a more sensible configuration entry.
@@ -169,7 +214,10 @@ func main() {
 	}
 	defer w.Close()
 
-	loop := worker.NewWorkLoop(w)
+	loop, err := getWorkLoop(logger, criticalityConfig, w)
+	if err != nil {
+		logger.With(zap.Error(err)).Fatal("Failed to create work loop")
+	}
 	if err := loop.Run(); err != nil {
 		// Fatal exits.
 		logger.With(zap.Error(err)).Fatal("Worker run loop failed")
