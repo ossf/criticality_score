@@ -134,6 +134,12 @@ func makeTestWorkLoop(t *testing.T, startShard int32) (*WorkLoop, *testWorker) {
 	os.Mkdir(filepath.Join(d, "data"), 0o777)
 	os.Mkdir(filepath.Join(d, "rawdata"), 0o777)
 
+	// Hack to work around file:// urls for gocloud.dev for Windows absolute URLs.
+	prefix := ""
+	if filepath.IsAbs(d) && d[0] != '/' {
+		prefix = "/"
+	}
+
 	logger := zaptest.NewLogger(t)
 	w := &testWorker{}
 	wl := &WorkLoop{
@@ -141,8 +147,8 @@ func makeTestWorkLoop(t *testing.T, startShard int32) (*WorkLoop, *testWorker) {
 		w:             w,
 		input:         iterator.Slice([]string{"1", "2", "3", "4", "5"}),
 		stateFilename: filepath.Join(d, "statefile"),
-		bucketURL:     "file://" + filepath.ToSlash(filepath.Join(d, "data")),
-		rawBucketURL:  "file://" + filepath.ToSlash(filepath.Join(d, "rawdata")),
+		bucketURL:     "file://" + prefix + filepath.ToSlash(filepath.Join(d, "data")),
+		rawBucketURL:  "file://" + prefix + filepath.ToSlash(filepath.Join(d, "rawdata")),
 		shardSize:     2,
 	}
 
