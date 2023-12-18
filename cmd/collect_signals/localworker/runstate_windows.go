@@ -18,6 +18,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 )
 
 func (s *runState) Save() error {
@@ -25,10 +26,13 @@ func (s *runState) Save() error {
 		return fmt.Errorf("run state cleared")
 	}
 
+	dir := filepath.Dir(s.filename)
+	base := filepath.Base(s.filename)
+
 	// Temporary filename is based on the destination filename to ensure the
 	// temp file is placed on the same volume as the destination file. This
 	// avoids potential errors when calling os.Rename.
-	tmp, err := os.CreateTemp("", fmt.Sprintf("%s-tmp-*", s.filename))
+	tmp, err := os.CreateTemp(dir, fmt.Sprintf("%s-tmp-*", base))
 	if err != nil {
 		return fmt.Errorf("temp file create: %w", err)
 	}
