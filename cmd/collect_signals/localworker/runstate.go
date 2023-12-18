@@ -20,8 +20,6 @@ import (
 	"fmt"
 	"os"
 	"time"
-
-	"github.com/google/renameio/v2"
 )
 
 type runState struct {
@@ -49,28 +47,6 @@ func loadState(filename string) (*runState, error) {
 	}
 	s.filename = filename
 	return s, nil
-}
-
-func (s *runState) Save() error {
-	if s.filename == "" {
-		return fmt.Errorf("run state cleared")
-	}
-
-	pf, err := renameio.NewPendingFile(s.filename)
-	if err != nil {
-		return fmt.Errorf("pending file: %w", err)
-	}
-	defer pf.Cleanup()
-
-	e := json.NewEncoder(pf)
-	if err := e.Encode(s); err != nil {
-		return fmt.Errorf("encoding json: %w", err)
-	}
-
-	if err := pf.CloseAtomicallyReplace(); err != nil {
-		return fmt.Errorf("atomic close: %w", err)
-	}
-	return nil
 }
 
 func (s *runState) Clear() error {
