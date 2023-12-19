@@ -102,6 +102,8 @@ func FromConfig(logger *zap.Logger, w worker.Worker) (*WorkLoop, error) {
 	if inFile == "" {
 		return nil, fmt.Errorf("%q config not set", configLocalURLDataFile)
 	}
+	// This file is eventually closed when the wrapping iterator has its Close
+	// method called.
 	f, err := os.Open(inFile)
 	if err != nil {
 		return nil, fmt.Errorf("os.Open %s: %w", inFile, err)
@@ -215,6 +217,10 @@ func (l *WorkLoop) Run() error {
 
 	if err := shards.Err(); err != nil {
 		return fmt.Errorf("iterator: %w", err)
+	}
+	// Closing the iterator releases all the resources held by it.
+	if err := shards.Close(); err != nil {
+		return fmt.Errorf("close: %w", err)
 	}
 
 	// Write out the metadata
