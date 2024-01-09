@@ -19,6 +19,7 @@ import (
 	"errors"
 	"fmt"
 	"net/url"
+	"strings"
 
 	"go.uber.org/zap"
 
@@ -29,6 +30,7 @@ import (
 type factory struct {
 	client *githubapi.Client
 	logger *zap.Logger
+	query  Query // this is used for testing purposes
 }
 
 func NewRepoFactory(client *githubapi.Client, logger *zap.Logger) projectrepo.Factory {
@@ -44,7 +46,11 @@ func (f *factory) New(ctx context.Context, u *url.URL) (projectrepo.Repo, error)
 		origURL: u,
 		logger:  f.logger.With(zap.String("url", u.String())),
 	}
-	if err := r.init(ctx); err != nil {
+	// this will be used for testing purposes
+	if f.query == nil {
+		f.query = NewQuery()
+	}
+	if err := r.init(ctx, f.query); err != nil {
 		if errors.Is(err, githubapi.ErrGraphQLNotFound) {
 			return nil, fmt.Errorf("%w: %s", projectrepo.ErrNoRepoFound, u)
 		} else {
@@ -55,5 +61,5 @@ func (f *factory) New(ctx context.Context, u *url.URL) (projectrepo.Repo, error)
 }
 
 func (f *factory) Match(u *url.URL) bool {
-	return u.Hostname() == "github.com"
+	return strings.ToLower(u.Hostname()) == "github.com"
 }

@@ -31,7 +31,7 @@ type repo struct {
 	origURL *url.URL
 	logger  *zap.Logger
 
-	BasicData *basicRepoData
+	BasicData *BasicRepoData
 	realURL   *url.URL
 	created   time.Time
 }
@@ -41,13 +41,9 @@ func (r *repo) URL() *url.URL {
 	return r.realURL
 }
 
-func (r *repo) init(ctx context.Context) error {
-	if r.BasicData != nil {
-		// Already finished. Don't init() more than once.
-		return nil
-	}
+func (r *repo) init(ctx context.Context, q Query) error {
 	r.logger.Debug("Fetching basic data from GitHub")
-	data, err := queryBasicRepoData(ctx, r.client.GraphQL(), r.origURL)
+	data, err := q.QueryBasicRepoData(ctx, r.client.GraphQL(), r.origURL)
 	if err != nil {
 		return err
 	}
