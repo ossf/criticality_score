@@ -16,7 +16,7 @@ require (
 	go.uber.org/zap v1.26.0
 	gocloud.dev v0.36.0
 	golang.org/x/exp v0.0.0-20231006140011-7918f672742d
-	golang.org/x/sys v0.15.0
+	golang.org/x/sys v0.16.0
 	google.golang.org/api v0.151.0
 	google.golang.org/protobuf v1.31.0
 	gopkg.in/yaml.v3 v3.0.1
