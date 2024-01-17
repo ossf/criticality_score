@@ -62,17 +62,15 @@ func getWorkLoop(logger *zap.Logger, criticalityConfig map[string]string, w work
 	if err != nil {
 		return nil, fmt.Errorf("parsing %q config as bool: %w", configLocal, err)
 	}
-	var workLoop runner
-	if local {
-		workLoop, err = localworker.FromConfig(logger, w)
-		if err != nil {
-			return nil, fmt.Errorf("localworker.NewWorkLoop: %w", err)
-		}
-	} else {
-		tmp := worker.NewWorkLoop(w)
-		workLoop = &tmp
+	if !local {
+		wl := worker.NewWorkLoop(w)
+		return &wl, nil
 	}
-	return workLoop, nil
+	wl, err := localworker.FromConfig(logger, w)
+	if err != nil {
+		return nil, fmt.Errorf("localworker.NewWorkLoop: %w", err)
+	}
+	return wl, nil
 }
 
 // parseBool converts boolStr into a bool value. It supports converting various

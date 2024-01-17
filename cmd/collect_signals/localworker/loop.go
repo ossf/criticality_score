@@ -135,6 +135,7 @@ func (l *WorkLoop) process(ctx context.Context, req *data.ScorecardBatchRequest,
 
 	// Sanity check - make sure we are not re-processing an already processed request.
 	if exists {
+		l.logger.With(zap.Int32("shard", req.GetShardNum())).Info("Shard already exists. Skipping.")
 		return nil
 	}
 
