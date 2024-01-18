@@ -48,7 +48,7 @@ for file in `gsutil ls "$BUCKET_URL"/"$LATEST_PREFIX"`; do
 done
 
 # Ensure the file contains only one entry per repo, and shuffle it.
-cat "$TMP_OUTPUT_FILE_1" | sort | uniq | shuf > "$TMP_OUTPUT_FILE_2"
+sort "$TMP_OUTPUT_FILE_1" | uniq | shuf > "$TMP_OUTPUT_FILE_2"
 rm "$TMP_OUTPUT_FILE_1"
 
 # Move the final tmp file to the output file to ensure the change is atomic.
