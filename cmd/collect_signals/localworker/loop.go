@@ -46,20 +46,20 @@ type WorkLoop struct {
 	w      worker.Worker
 	input  iterator.IterCloser[string]
 
-	// StateFilename points to the file used to store progress to allow for
+	// stateFilename points to the file used to store progress to allow for
 	// recovery if the worker is terminated for any reason. The name should not
 	// change for a given input.
 	stateFilename string
 
-	// BucketURL is a gocloud.dev URL pointing to the data bucket where data
+	// bucketURL is a gocloud.dev URL pointing to the data bucket where data
 	// will be written.
 	bucketURL string
 
-	// RawBucketURL is a gocloud.dev URL pointing to the raw data bucket where
+	// rawBucketURL is a gocloud.dev URL pointing to the raw data bucket where
 	// raw data will be written.
 	rawBucketURL string
 
-	// ShardSize defines the size of each shard passed to the worker for
+	// shardSize defines the size of each shard passed to the worker for
 	// processing.
 	shardSize int
 }
