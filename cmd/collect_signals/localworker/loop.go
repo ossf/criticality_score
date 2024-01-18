@@ -127,6 +127,34 @@ func FromConfig(logger *zap.Logger, w worker.Worker) (*WorkLoop, error) {
 	}, nil
 }
 
+func (l *WorkLoop) restore(shards iterator.IterCloser[[]string], currenShard int32) error {
+	if currenShard <= 0 {
+		// No recovery needed if we're at the start.
+		return nil
+	}
+
+	// If we are restoring, fast forward to the position we were at prior to starting.
+
+	l.logger.With(zap.Int32("shard", currenShard)).Info("Restoring previous position")
+	lastFinishedShard := currenShard - 1
+
+	shard := int32(0)
+	for shards.Next() {
+		shards.Item()
+		if shard >= lastFinishedShard {
+			break
+		}
+		shard++
+	}
+	if err := shards.Err(); err != nil {
+		return fmt.Errorf("restore state iterator: %w", err)
+	}
+	if shard < lastFinishedShard {
+		return fmt.Errorf("restore state shard mismatch: got = %d; want = %d", shard, lastFinishedShard)
+	}
+	return nil
+}
+
 func (l *WorkLoop) process(ctx context.Context, req *data.ScorecardBatchRequest, bucketURL string) error {
 	exists, err := resultExists(ctx, req, bucketURL)
 	if err != nil {
@@ -158,25 +186,9 @@ func (l *WorkLoop) Run() error {
 	// Create the shard iterator
 	shards := iterator.Batch(l.input, l.shardSize)
 
-	// If we are recovering, fast forward to the position we were at prior to starting.
-	if s.Shard > 0 {
-		l.logger.With(zap.Int32("shard", s.Shard)).Info("Restoring previous position")
-		lastFinishedShard := s.Shard - 1
-
-		shard := int32(0)
-		for shards.Next() {
-			shards.Item()
-			if shard >= lastFinishedShard {
-				break
-			}
-			shard++
-		}
-		if err := shards.Err(); err != nil {
-			return fmt.Errorf("restore state iterator: %w", err)
-		}
-		if shard < lastFinishedShard {
-			return fmt.Errorf("restore state shard mismatch: got = %d; want = %d", shard, lastFinishedShard)
-		}
+	// Restore the shard iterator position based on the current shard number.
+	if err := l.restore(shards, s.Shard); err != nil {
+		return fmt.Errorf("recovering state: %w", err)
 	}
 
 	l.logger.Info("Starting worker loop")
