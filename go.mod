@@ -3,7 +3,7 @@ module github.com/ossf/criticality_score
 go 1.19
 
 require (
-	cloud.google.com/go/bigquery v1.57.1
+	cloud.google.com/go/bigquery v1.58.0
 	github.com/blendle/zapdriver v1.3.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.6.0
@@ -29,7 +29,7 @@ require (
 	cloud.google.com/go/iam v1.1.5 // indirect
 	cloud.google.com/go/monitoring v1.16.3 // indirect
 	cloud.google.com/go/pubsub v1.33.0 // indirect
-	cloud.google.com/go/storage v1.35.1 // indirect
+	cloud.google.com/go/storage v1.36.0 // indirect
 	cloud.google.com/go/trace v1.10.4 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14 // indirect
 	dario.cat/mergo v1.0.0 // indirect
@@ -39,7 +39,7 @@ require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20230627203149-c72ef8859ca9 // indirect
 	github.com/andybalholm/brotli v1.0.4 // indirect
-	github.com/apache/arrow/go/v12 v12.0.0 // indirect
+	github.com/apache/arrow/go/v12 v12.0.1 // indirect
 	github.com/apache/thrift v0.16.0 // indirect
 	github.com/aws/aws-sdk-go v1.49.0 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.24.0 // indirect
@@ -134,7 +134,7 @@ require (
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
 	google.golang.org/appengine v1.6.8 // indirect
 	google.golang.org/genproto v0.0.0-20231212172506-995d672761c0 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20231212172506-995d672761c0 // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240102182953-50ed04b92917 // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240102182953-50ed04b92917 // indirect
 	google.golang.org/grpc v1.60.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
