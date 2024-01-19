@@ -15,7 +15,7 @@
 apiVersion: batch/v1
 kind: CronJob
 metadata:
-  name: criticality-score-batch-controller
+  name: criticality-score-batch-worker
 spec:
   # At 0:30UTC, or 10:30AEST each weekday.
   schedule: "30 0 * * 1-5"

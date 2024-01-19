@@ -14,7 +14,6 @@
 
 resources:
 - bq_transfer.yaml
-- controller.yaml
 - csv_transfer.yaml
 - worker.yaml
 
@@ -28,9 +27,6 @@ commonLabels:
 
 # Hardcode versions to match go.mod for github.com/ossf/scorecard.
 images:
-- name: scorecard-batch-controller
-  newName: gcr.io/openssf/scorecard-batch-controller
-  newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
 - name: scorecard-github-server
   newName: gcr.io/openssf/scorecard-github-server
   newTag: 27cfe92ed356fdb5a398c919ad480817ea907808

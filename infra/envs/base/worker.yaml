@@ -12,40 +12,54 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: CronJob
 metadata:
   name: criticality-score-batch-worker
 spec:
-  replicas: 2
-  selector:
-    matchLabels:
-      app.kubernetes.io/name: worker
-  template:
-    metadata:
-      labels:
-        app.kubernetes.io/name: worker
+  # At 23:00UTC on Sunday, or 9:00AEST on Monday.
+  schedule: "0 23 * * 0"
+  concurrencyPolicy: "Forbid"
+
+  jobTemplate:
     spec:
-      containers:
-        - name: worker
-          image: collect-signals
-          args: ["--config=/etc/criticality_score/config.yaml"]
-          imagePullPolicy: Always
-          resources:
-            requests:
-              ephemeral-storage: 100Gi
-            limits:
-              ephemeral-storage: 500Gi
-          volumeMounts:
+      template:
+        metadata:
+          labels:
+            app.kubernetes.io/name: worker
+        spec:
+          restartPolicy: OnFailure
+          initContainers:
+            - name: aggregate-repos
+              image: init-collect-signals
+              command: ['/bin/init.sh', '/etc/criticality_score/config.yaml']
+              imagePullPolicy: Always
+              volumeMounts:
+                - name: config-volume
+                  mountPath: /etc/criticality_score
+                  readOnly: true
+                - name: shared-storage
+                  mountPath: /shared
+          containers:
+            - name: worker
+              image: collect-signals
+              args: ["--config=/etc/criticality_score/config.yaml"]
+              imagePullPolicy: Always
+              resources:
+                requests:
+                  ephemeral-storage: 100Gi
+                limits:
+                  ephemeral-storage: 500Gi
+              volumeMounts:
+                - name: config-volume
+                  mountPath: /etc/criticality_score
+                  readOnly: true
+                - name: shared-storage
+                  mountPath: /shared
+          volumes:
             - name: config-volume
-              mountPath: /etc/criticality_score
-              readOnly: true
-      volumes:
-        - name: config-volume
-          configMap:
-            name: criticality-score-config
-  strategy:
-    type: "RollingUpdate"
-    rollingUpdate:
-      maxUnavailable: 1
-      maxSurge: 1
+              configMap:
+                name: criticality-score-config
+            - name: shared-storage
+              emptyDir:
+                sizeLimit: 500Mi

@@ -12,18 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: CronJob
 metadata:
   name: criticality-score-batch-worker
 spec:
-  template:
+  jobTemplate:
     spec:
-      containers:
-      - name: worker
-        env:
-        - name: GITHUB_AUTH_TOKEN
-          valueFrom:
-            secretKeyRef:
-              name: github-staging
-              key: token
+      template:
+        spec:
+          containers:
+          - name: worker
+            env:
+            - name: GITHUB_AUTH_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: github-staging
+                  key: token

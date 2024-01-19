@@ -18,6 +18,10 @@ steps:
 - name: 'gcr.io/cloud-builders/docker'
   args: ['pull', 'gcr.io/openssf/criticality-score-collect-signals:$COMMIT_SHA']
 
+# Ensure criticality-score-init-collect-signals docker image already exists.
+- name: 'gcr.io/cloud-builders/docker'
+  args: ['pull', 'gcr.io/openssf/criticality-score-init-collect-signals:$COMMIT_SHA']
+
 # Ensure criticality-score-csv-transfer docker image already exists.
 - name: 'gcr.io/cloud-builders/docker'
   args: ['pull', 'gcr.io/openssf/criticality-score-csv-transfer:$COMMIT_SHA']
@@ -34,5 +38,5 @@ steps:
       "--region", "us-central1",
       "--annotations", "commitId=${REVISION_ID}",
       "--skaffold-file=./infra/skaffold.yaml",
-      "--images", "collect-signals=gcr.io/openssf/criticality-score-collect-signals:$COMMIT_SHA,csv-transfer=gcr.io/openssf/criticality-score-csv-transfer:$COMMIT_SHA"
+      "--images", "collect-signals=gcr.io/openssf/criticality-score-collect-signals:$COMMIT_SHA,init-collect-signals=gcr.io/openssf/criticality-score-init-collect-signals:$COMMIT_SHA,csv-transfer=gcr.io/openssf/criticality-score-csv-transfer:$COMMIT_SHA"
     ]

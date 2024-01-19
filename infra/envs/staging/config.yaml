@@ -39,6 +39,9 @@ additional-params:
     scoring-column-name: default_score
     csv-transfer-bucket-url: gs://ossf-criticality-score-staging
     csv-transfer-filename: all.csv
+    local: enabled
+    local-url-data-file: /shared/repos.txt
+    local-state-file: /shared/state.json
 
   scorecard:
     # Use the raw-result-data-bucket-url in place of a better option.
