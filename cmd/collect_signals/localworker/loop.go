@@ -237,10 +237,10 @@ func (l *WorkLoop) Run() error {
 	}
 
 	// Write out the metadata
-	if err := writeMetadata(ctx, l.bucketURL, s.Shard, s.JobTime); err != nil {
+	if err := writeMetadata(ctx, l.bucketURL, s.Shard-1, s.JobTime); err != nil {
 		return fmt.Errorf("writing metadata: %w", err)
 	}
-	if err := writeMetadata(ctx, l.rawBucketURL, s.Shard, s.JobTime); err != nil {
+	if err := writeMetadata(ctx, l.rawBucketURL, s.Shard-1, s.JobTime); err != nil {
 		return fmt.Errorf("writing metdata to raw: %w", err)
 	}
 
