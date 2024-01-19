@@ -30,7 +30,6 @@ configMapGenerator:
 # Patches customize the base configurations for the staging environment.
 patchesStrategicMerge:
 - github_auth.yaml
-- worker_replicas.yaml
 - controller_schedule.yaml
 - csv_transfer_schedule.yaml
 - bq_transfer_schedule.yaml

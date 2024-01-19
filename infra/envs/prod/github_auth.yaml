@@ -12,33 +12,35 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: CronJob
 metadata:
   name: criticality-score-batch-worker
 spec:
-  template:
+  jobTemplate:
     spec:
-      containers:
-      - name: worker
-        env:
-        - name: GITHUB_APP_KEY_PATH
-          value: /etc/github/app_key
-        - name: GITHUB_APP_ID
-          valueFrom:
-            secretKeyRef:
-              name: github
-              key: app_id
-        - name: GITHUB_APP_INSTALLATION_ID
-          valueFrom:
-            secretKeyRef:
-              name: github
-              key: installation_id
-        volumeMounts:
-        - name: github-app-key
-          mountPath: "/etc/github/"
-          readOnly: true
-      volumes:
-      - name: github-app-key
-        secret:
-          secretName: github
+      template:
+        spec:
+          containers:
+          - name: worker
+            env:
+            - name: GITHUB_APP_KEY_PATH
+              value: /etc/github/app_key
+            - name: GITHUB_APP_ID
+              valueFrom:
+                secretKeyRef:
+                  name: github
+                  key: app_id
+            - name: GITHUB_APP_INSTALLATION_ID
+              valueFrom:
+                secretKeyRef:
+                  name: github
+                  key: installation_id
+            volumeMounts:
+            - name: github-app-key
+              mountPath: "/etc/github/"
+              readOnly: true
+          volumes:
+          - name: github-app-key
+            secret:
+              secretName: github
