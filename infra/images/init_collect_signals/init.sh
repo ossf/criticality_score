@@ -32,6 +32,14 @@ echo "bucket url = $BUCKET_URL"
 echo "bucket prefix file = $BUCKET_PREFIX_FILE"
 echo "url data file = $OUTPUT_FILE"
 
+# Exit early if $OUTPUT_FILE already exists. This ensures $OUTPUT_FILE remains
+# stable across any restart. Since the file is created atomically we can be
+# confident that the file won't be corrupt or truncated.
+if [ -f "$OUTPUT_FILE" ]; then
+    echo "Exiting early. $OUTPUT_FILE already exists."
+    exit 0
+fi
+
 LATEST_PREFIX=`gsutil cat "$BUCKET_URL"/"$BUCKET_PREFIX_FILE"`
 echo "latest prefix = $LATEST_PREFIX"
 
