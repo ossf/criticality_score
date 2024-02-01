@@ -71,9 +71,9 @@ func TestGraphQLErrors_Error(t *testing.T) {
 		{
 			name: "one error",
 			errors: []GraphQLError{
-				{Message: "one"},
+				{Message: "one", Type: "A_TYPE"},
 			},
-			want: "one",
+			want: "one (type: A_TYPE)",
 		},
 		{
 			name: "more than one error",
