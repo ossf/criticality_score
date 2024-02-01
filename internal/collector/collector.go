@@ -32,20 +32,12 @@ import (
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 
-// ErrUncollectableRepo is the base error returned when there is a problem with
+// ErrUncollectableRepo is the  error returned when there is a problem with
 // the repo url passed in to be collected.
 //
 // For example, the URL may point to an invalid repository host, or the URL
 // may point to a repo that is inaccessible or missing.
 var ErrUncollectableRepo = errors.New("repo failed")
-
-// ErrRepoNotFound wraps ErrUncollectableRepo and is used when a repo cannot be
-// found for collection.
-var ErrRepoNotFound = fmt.Errorf("%w: not found", ErrUncollectableRepo)
-
-// ErrUnsupportedURL wraps ErrUncollectableRepo and is used when a repo url
-// does not match any of the supported hosts.
-var ErrUnsupportedURL = fmt.Errorf("%w: unsupported url", ErrUncollectableRepo)
 
 type Collector struct {
 	config   *config
@@ -109,9 +101,11 @@ func (c *Collector) Collect(ctx context.Context, u *url.URL, jobID string) ([]si
 	if err != nil {
 		switch {
 		case errors.Is(err, projectrepo.ErrNoFactoryFound):
-			return nil, fmt.Errorf("%w: %s", ErrUnsupportedURL, u)
+			fallthrough
 		case errors.Is(err, projectrepo.ErrNoRepoFound):
-			return nil, fmt.Errorf("%w: %s", ErrRepoNotFound, u)
+			fallthrough
+		case errors.Is(err, projectrepo.ErrRepoInaccessible):
+			return nil, fmt.Errorf("%w (%s): %w", ErrUncollectableRepo, u, err)
 		default:
 			return nil, fmt.Errorf("resolving project: %w", err)
 		}

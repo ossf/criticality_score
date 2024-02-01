@@ -46,7 +46,9 @@ func (f *factory) New(ctx context.Context, u *url.URL) (projectrepo.Repo, error)
 	}
 	if err := r.init(ctx); err != nil {
 		if errors.Is(err, githubapi.ErrGraphQLNotFound) {
-			return nil, fmt.Errorf("%w: %s", projectrepo.ErrNoRepoFound, u)
+			return nil, fmt.Errorf("%w (%s): %w", projectrepo.ErrNoRepoFound, u, err)
+		} else if errors.Is(err, githubapi.ErrGraphQLForbidden) {
+			return nil, fmt.Errorf("%w (%s): %w", projectrepo.ErrRepoInaccessible, u, err)
 		} else {
 			return nil, err
 		}
