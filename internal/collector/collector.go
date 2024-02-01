@@ -32,7 +32,7 @@ import (
 	"github.com/ossf/criticality_score/internal/githubapi"
 )
 
-// ErrUncollectableRepo is the  error returned when there is a problem with
+// ErrUncollectableRepo is the error returned when there is a problem with
 // the repo url passed in to be collected.
 //
 // For example, the URL may point to an invalid repository host, or the URL
@@ -105,7 +105,8 @@ func (c *Collector) Collect(ctx context.Context, u *url.URL, jobID string) ([]si
 		case errors.Is(err, projectrepo.ErrNoRepoFound):
 			fallthrough
 		case errors.Is(err, projectrepo.ErrRepoInaccessible):
-			return nil, fmt.Errorf("%w (%s): %w", ErrUncollectableRepo, u, err)
+			// TODO: replace %v with %w after upgrading Go from 1.19 to 1.21
+			return nil, fmt.Errorf("%w (%s): %v", ErrUncollectableRepo, u, err)
 		default:
 			return nil, fmt.Errorf("resolving project: %w", err)
 		}
