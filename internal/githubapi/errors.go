@@ -72,7 +72,7 @@ func (e *GraphQLErrors) Error() string {
 	case 0:
 		panic("no errors found")
 	case 1:
-		return e.errors[0].Message
+		return fmt.Sprintf("%s (type: %s)", e.errors[0].Message, e.errors[0].Type)
 	default:
 		return fmt.Sprintf("%d GraphQL errors", len(e.errors))
 	}
