@@ -1,6 +1,6 @@
 module github.com/ossf/criticality_score/tools
 
-go 1.19
+go 1.21
 
 require (
 	github.com/golangci/golangci-lint v1.55.2

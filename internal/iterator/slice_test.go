@@ -1,9 +1,8 @@
 package iterator_test
 
 import (
+	"slices"
 	"testing"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/ossf/criticality_score/internal/iterator"
 )
