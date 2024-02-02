@@ -179,6 +179,22 @@ func TestGraphQLErrors_Is(t *testing.T) {
 			want:   false,
 		},
 		{
+			name: "target equals ErrGraphQLForbidden and returns true",
+			errors: []GraphQLError{
+				{Message: "one", Type: "FORBIDDEN"},
+			},
+			target: ErrGraphQLForbidden,
+			want:   true,
+		},
+		{
+			name: "target equals ErrGraphQLForbidden and returns false",
+			errors: []GraphQLError{
+				{Message: "one"},
+			},
+			target: ErrGraphQLForbidden,
+			want:   false,
+		},
+		{
 			name: "regular testcase",
 			errors: []GraphQLError{
 				{Message: "one"},
@@ -194,6 +210,16 @@ func TestGraphQLErrors_Is(t *testing.T) {
 				{Message: "three"},
 			},
 			target: ErrGraphQLNotFound,
+			want:   false,
+		},
+		{
+			name: "multiple errors with only one having the error type as 'FORBIDDEN'",
+			errors: []GraphQLError{
+				{Message: "one"},
+				{Message: "two", Type: "FORBIDDEN"},
+				{Message: "three"},
+			},
+			target: ErrGraphQLForbidden,
 			want:   false,
 		},
 	}

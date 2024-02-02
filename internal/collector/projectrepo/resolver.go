@@ -23,11 +23,15 @@ import (
 
 // ErrNoFactoryFound is returned when there is no factory that can be used for
 // a given URL.
-var ErrNoFactoryFound = errors.New("factory not found")
+var ErrNoFactoryFound = errors.New("factory not found for url")
 
 // ErrNoRepoFound is returned when a factory cannot create a Repo for a given
 // URL.
 var ErrNoRepoFound = errors.New("repo not found")
+
+// ErrRepoInaccessible is returned when a the Repo may exist, but is unable to
+// access the repository for some reason.
+var ErrRepoInaccessible = errors.New("repo inaccessible")
 
 // Resolver is used to resolve a Repo url against a set of Factory instances
 // registered with the resolver.
