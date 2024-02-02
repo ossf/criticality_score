@@ -38,18 +38,35 @@ func ErrorResponseStatusCode(err error) int {
 	return e.Response.StatusCode
 }
 
-// ErrGraphQLNotFound is an error used to test when GitHub GraphQL query
-// returns a single error with the type "NOT_FOUND".
-//
-// It should be used with errors.Is.
-var ErrGraphQLNotFound = errors.New("GraphQL resource not found")
+var (
+	// ErrGraphQLNotFound is an error used to test when GitHub GraphQL query
+	// returns a single error with the type "NOT_FOUND".
+	//
+	// It should be used with errors.Is.
+	ErrGraphQLNotFound = errors.New("GraphQL resource not found")
 
-// gitHubGraphQLNotFoundType matches the NOT_FOUND type field returned
-// in GitHub's GraphQL errors.
-//
-// GraphQL errors are required to have a Message, and optional Path and
-// Locations. Type is a non-standard field available on GitHub's API.
-const gitHubGraphQLNotFoundType = "NOT_FOUND"
+	// ErrGraphQLForbidden is an error used to test when GitHub GraphQL query
+	// returns a single error with the type "FORBIDDEN".
+	//
+	// It should be used with errors.Is.
+	ErrGraphQLForbidden = errors.New("GraphQL access forbidden")
+)
+
+const (
+	// gitHubGraphQLNotFoundType matches the NOT_FOUND type field returned
+	// in GitHub's GraphQL errors.
+	//
+	// GraphQL errors are required to have a Message, and optional Path and
+	// Locations. Type is a non-standard field available on GitHub's API.
+	gitHubGraphQLNotFoundType = "NOT_FOUND"
+
+	// gitHubGraphQLForbiddenType matches the FORBIDDEN type field returned
+	// in GitHub's GraphQL errors.
+	//
+	// This error type is used when the authorization token has been blocked
+	// from accessing the repository. Usually due to an IP address block.
+	gitHubGraphQLForbiddenType = "FORBIDDEN"
+)
 
 // GraphQLError stores the error result from a GitHub GraphQL query.
 type GraphQLError struct {
@@ -97,6 +114,9 @@ func (e *GraphQLErrors) Errors() []GraphQLError {
 func (e *GraphQLErrors) Is(target error) bool {
 	if target == ErrGraphQLNotFound {
 		return len(e.errors) == 1 && e.HasType(gitHubGraphQLNotFoundType)
+	}
+	if target == ErrGraphQLForbidden {
+		return len(e.errors) == 1 && e.HasType(gitHubGraphQLForbiddenType)
 	}
 	return false
 }
