@@ -31,7 +31,7 @@ jobs:
       with:
         go-version: 1.19
     - name: golangci-lint
-      uses: golangci/golangci-lint-action@3a919529898de77ec3da873e3063ca4b10e7f5cc
+      uses: golangci/golangci-lint-action@3cfe3a4abbb849e10058ce4af15d205b6da42804
   check-scorecard-version:
     runs-on: ubuntu-latest
     steps:
