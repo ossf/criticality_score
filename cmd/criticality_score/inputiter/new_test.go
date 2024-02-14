@@ -18,9 +18,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
-
-	"golang.org/x/exp/slices"
 
 	"github.com/ossf/criticality_score/cmd/criticality_score/inputiter"
 )

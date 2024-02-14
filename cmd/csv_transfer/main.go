@@ -20,13 +20,13 @@ import (
 	"encoding/csv"
 	"flag"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/ossf/scorecard/v4/cron/config"
 	"github.com/ossf/scorecard/v4/cron/data"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
-	"golang.org/x/exp/slices"
 
 	"github.com/ossf/criticality_score/internal/log"
 )

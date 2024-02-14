@@ -18,6 +18,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"slices"
 	"testing"
 	"time"
 
@@ -25,7 +26,6 @@ import (
 	"go.uber.org/zap/zaptest"
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/fileblob"
-	"golang.org/x/exp/slices"
 
 	"github.com/ossf/criticality_score/internal/iterator"
 )
