@@ -20,7 +20,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/shurcooL/githubv4"
+	"github.com/hasura/go-graphql-client"
+
+	"github.com/ossf/criticality_score/internal/githubapi"
 )
 
 const (
@@ -66,7 +68,7 @@ type basicRepoData struct {
 	} `graphql:"refs(refPrefix:\"refs/tags/\")"`
 }
 
-func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL) (*basicRepoData, error) {
+func queryBasicRepoData(ctx context.Context, client *graphql.Client, u *url.URL) (*basicRepoData, error) {
 	// Search based on owner and repo name becaues the `repository` query
 	// better handles changes in ownership and repository name than the
 	// `resource` query.
@@ -79,9 +81,9 @@ func queryBasicRepoData(ctx context.Context, client *githubv4.Client, u *url.URL
 	}{}
 	now := time.Now().UTC()
 	vars := map[string]any{
-		"repositoryOwner":      githubv4.String(owner),
-		"repositoryName":       githubv4.String(name),
-		"legacyCommitLookback": githubv4.GitTimestamp{Time: now.Add(-legacyCommitLookback)},
+		"repositoryOwner":      graphql.String(owner),
+		"repositoryName":       graphql.String(name),
+		"legacyCommitLookback": githubapi.GitTimestamp{Time: now.Add(-legacyCommitLookback)},
 	}
 	if err := client.Query(ctx, s, vars); err != nil {
 		return nil, err

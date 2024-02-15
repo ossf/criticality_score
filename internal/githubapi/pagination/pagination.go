@@ -18,7 +18,7 @@ import (
 	"context"
 	"io"
 
-	"github.com/shurcooL/githubv4"
+	"github.com/hasura/go-graphql-client"
 )
 
 // PagedQuery implementors go from being regular query struct passed to githubv4.Query()
@@ -27,19 +27,20 @@ type PagedQuery interface {
 	Total() int
 	Length() int
 	Get(int) any
+	Reset()
 	HasNextPage() bool
 	NextPageVars() map[string]any
 }
 
 type Cursor struct {
 	ctx    context.Context
-	client *githubv4.Client
+	client *graphql.Client
 	query  PagedQuery
 	vars   map[string]any
 	cur    int
 }
 
-func Query(ctx context.Context, client *githubv4.Client, query PagedQuery, vars map[string]any) (*Cursor, error) {
+func Query(ctx context.Context, client *graphql.Client, query PagedQuery, vars map[string]any) (*Cursor, error) {
 	c := &Cursor{
 		ctx:    ctx,
 		client: client,
@@ -60,6 +61,8 @@ func (c *Cursor) queryNextPage() error {
 	}
 	// Reset the current position
 	c.cur = 0
+	// ZERO the query...
+	c.query.Reset()
 	// Execute the query
 	return c.client.Query(c.ctx, c.query, c.vars)
 }

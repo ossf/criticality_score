@@ -131,7 +131,7 @@ func (w *collectWorker) Process(ctx context.Context, req *data.ScorecardBatchReq
 	// Write to the csv bucket if it is set.
 	if w.csvBucketURL != "" {
 		if err := data.WriteToBlobStore(ctx, w.csvBucketURL, filename, csvOutput.Bytes()); err != nil {
-			return fmt.Errorf("error writing csv to blob store")
+			return fmt.Errorf("error writing csv to blob store: %w", err)
 		}
 	}
 

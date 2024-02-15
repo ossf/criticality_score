@@ -18,7 +18,8 @@ import (
 	"context"
 	"errors"
 
-	"github.com/shurcooL/githubv4"
+	"github.com/hasura/go-graphql-client"
+
 	"go.uber.org/zap"
 )
 
@@ -29,7 +30,7 @@ var ErrorUnableToListAllResult = errors.New("unable to list all results")
 
 type Searcher struct {
 	ctx     context.Context
-	client  *githubv4.Client
+	client  *graphql.Client
 	logger  *zap.Logger
 	perPage int
 }
@@ -48,7 +49,7 @@ func PerPage(perPage int) Option {
 	return option(func(s *Searcher) { s.perPage = perPage })
 }
 
-func NewSearcher(ctx context.Context, client *githubv4.Client, logger *zap.Logger, options ...Option) *Searcher {
+func NewSearcher(ctx context.Context, client *graphql.Client, logger *zap.Logger, options ...Option) *Searcher {
 	s := &Searcher{
 		ctx:     ctx,
 		client:  client,

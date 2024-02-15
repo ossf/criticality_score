@@ -20,7 +20,7 @@ import (
 	"io"
 	"time"
 
-	"github.com/shurcooL/githubv4"
+	"github.com/hasura/go-graphql-client"
 
 	"github.com/ossf/criticality_score/internal/githubapi"
 	"github.com/ossf/criticality_score/internal/githubapi/pagination"
@@ -41,6 +41,11 @@ type repoReleasesQuery struct {
 			TotalCount int
 		} `graphql:"releases(orderBy:{direction:DESC, field:CREATED_AT}, first: $perPage, after: $endCursor)"`
 	} `graphql:"repository(owner: $repositoryOwner, name: $repositoryName)"`
+}
+
+// Reset implements the pagination.PagedQuery interface.
+func (r *repoReleasesQuery) Reset() {
+	r.Repository.Releases.Nodes = nil
 }
 
 // Total implements the pagination.PagedQuery interface.
@@ -67,11 +72,11 @@ func (r *repoReleasesQuery) HasNextPage() bool {
 func (r *repoReleasesQuery) NextPageVars() map[string]any {
 	if r.Repository.Releases.PageInfo.EndCursor == "" {
 		return map[string]any{
-			"endCursor": (*githubv4.String)(nil),
+			"endCursor": (*graphql.String)(nil),
 		}
 	} else {
 		return map[string]any{
-			"endCursor": githubv4.String(r.Repository.Releases.PageInfo.EndCursor),
+			"endCursor": graphql.String(r.Repository.Releases.PageInfo.EndCursor),
 		}
 	}
 }
@@ -79,10 +84,10 @@ func (r *repoReleasesQuery) NextPageVars() map[string]any {
 func FetchReleaseCount(ctx context.Context, c *githubapi.Client, owner, name string, lookback time.Duration) (int, error) {
 	s := &repoReleasesQuery{}
 	vars := map[string]any{
-		"perPage":         githubv4.Int(releasesPerPage),
-		"endCursor":       githubv4.String(owner),
-		"repositoryOwner": githubv4.String(owner),
-		"repositoryName":  githubv4.String(name),
+		"perPage":         graphql.Int(releasesPerPage),
+		"endCursor":       graphql.String(owner),
+		"repositoryOwner": graphql.String(owner),
+		"repositoryName":  graphql.String(name),
 	}
 	cursor, err := pagination.Query(ctx, c.GraphQL(), s, vars)
 	if err != nil {

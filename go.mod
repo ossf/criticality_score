@@ -9,9 +9,9 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v47 v47.1.0
 	github.com/google/renameio/v2 v2.0.0
+	github.com/hasura/go-graphql-client v0.11.0
 	github.com/iancoleman/strcase v0.3.0
 	github.com/ossf/scorecard/v4 v4.10.5
-	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2
 	go.opencensus.io v0.24.0
 	go.uber.org/zap v1.26.0
 	gocloud.dev v0.36.0
@@ -96,7 +96,7 @@ require (
 	github.com/jszwec/csvutil v1.8.0 // indirect
 	github.com/kevinburke/ssh_config v1.2.0 // indirect
 	github.com/klauspost/asmfmt v1.3.2 // indirect
-	github.com/klauspost/compress v1.17.1 // indirect
+	github.com/klauspost/compress v1.17.4 // indirect
 	github.com/klauspost/cpuid/v2 v2.0.9 // indirect
 	github.com/mattn/go-runewidth v0.0.15 // indirect
 	github.com/minio/asm2plan9s v0.0.0-20200509001527-cdd76441f9d8 // indirect
@@ -108,6 +108,7 @@ require (
 	github.com/prometheus/prometheus v0.48.0 // indirect
 	github.com/rivo/uniseg v0.4.4 // indirect
 	github.com/sergi/go-diff v1.3.1 // indirect
+	github.com/shurcooL/githubv4 v0.0.0-20220115235240-a14260e6f8a2 // indirect
 	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a // indirect
 	github.com/sirupsen/logrus v1.9.3 // indirect
 	github.com/skeema/knownhosts v1.2.1 // indirect
@@ -139,4 +140,5 @@ require (
 	google.golang.org/grpc v1.60.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
+	nhooyr.io/websocket v1.8.10 // indirect
 )

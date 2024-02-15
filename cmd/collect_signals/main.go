@@ -19,6 +19,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"net/rpc"
 	"os"
 	"strconv"
@@ -126,6 +127,10 @@ func waitForRPCServer(logger *zap.Logger, rpcServer string, maxAttempts int) {
 }
 
 func main() {
+	go func() {
+		http.ListenAndServe(":8080", nil)
+	}()
+
 	flag.Parse()
 
 	if err := config.ReadConfig(); err != nil {
