@@ -93,7 +93,7 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		// We didn't add any users.
 		return 0, err
 	}
-	r, err := githubapi.BatchQuery[struct{ Company string }](ctx, c, userQueries, map[string]any{})
+	r, err := githubapi.BatchQuery[struct{ Company string }](ctx, c, userQueries)
 	if err != nil {
 		return 0, err
 	}

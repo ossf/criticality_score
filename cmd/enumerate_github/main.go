@@ -26,9 +26,9 @@ import (
 	"time"
 
 	"github.com/go-logr/zapr"
+	"github.com/hasura/go-graphql-client"
 	"github.com/ossf/scorecard/v4/clients/githubrepo/roundtripper"
 	sclog "github.com/ossf/scorecard/v4/log"
-	"github.com/shurcooL/githubv4"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
@@ -209,7 +209,7 @@ func main() {
 	httpClient := &http.Client{
 		Transport: rt,
 	}
-	client := githubv4.NewClient(httpClient)
+	client := graphql.NewClient(githubapi.DefaultGraphQLEndpoint, httpClient).WithDebug(true)
 
 	// Open the output file
 	out, err := outfile.Open(ctx)

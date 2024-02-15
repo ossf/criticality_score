@@ -19,7 +19,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/shurcooL/githubv4"
+	"github.com/hasura/go-graphql-client"
 	"go.uber.org/zap"
 
 	"github.com/ossf/criticality_score/internal/githubapi/pagination"
@@ -61,6 +61,11 @@ func (q *repoQuery) Get(i int) any {
 	return q.Search.Nodes[i].Repository
 }
 
+// Reset implements the pagination.PagedQuery interface.
+func (q *repoQuery) Reset() {
+	q.Search.Nodes = nil
+}
+
 // HasNextPage implements the pagination.PagedQuery interface.
 func (q *repoQuery) HasNextPage() bool {
 	return q.Search.PageInfo.HasNextPage
@@ -70,11 +75,11 @@ func (q *repoQuery) HasNextPage() bool {
 func (q *repoQuery) NextPageVars() map[string]any {
 	if q.Search.PageInfo.EndCursor == "" {
 		return map[string]any{
-			"endCursor": (*githubv4.String)(nil),
+			"endCursor": (*graphql.String)(nil),
 		}
 	} else {
 		return map[string]any{
-			"endCursor": githubv4.String(q.Search.PageInfo.EndCursor),
+			"endCursor": graphql.String(q.Search.PageInfo.EndCursor),
 		}
 	}
 }
@@ -93,8 +98,8 @@ func (re *Searcher) runRepoQuery(q string) (*pagination.Cursor, error) {
 		zap.String("query", q),
 	).Debug("Searching GitHub")
 	vars := map[string]any{
-		"query":   githubv4.String(q),
-		"perPage": githubv4.Int(re.perPage),
+		"query":   graphql.String(q),
+		"perPage": graphql.Int(re.perPage),
 	}
 	c, err := pagination.Query(re.ctx, re.client, &repoQuery{}, vars)
 	if err != nil {

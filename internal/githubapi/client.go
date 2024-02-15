@@ -18,13 +18,13 @@ import (
 	"net/http"
 
 	"github.com/google/go-github/v47/github"
-	"github.com/shurcooL/githubv4"
+	"github.com/hasura/go-graphql-client"
 )
 
 // Client provides simple access to GitHub's REST and GraphQL APIs.
 type Client struct {
 	restClient  *github.Client
-	graphClient *githubv4.Client
+	graphClient *graphql.Client
 }
 
 // NewClient creates a new instances of Client.
@@ -35,7 +35,7 @@ func NewClient(client *http.Client) *Client {
 
 	return &Client{
 		restClient:  github.NewClient(client),
-		graphClient: githubv4.NewClient(&graphClient),
+		graphClient: graphql.NewClient(DefaultGraphQLEndpoint, &graphClient),
 	}
 }
 
@@ -45,6 +45,6 @@ func (c *Client) Rest() *github.Client {
 }
 
 // GraphQL returns a client for communicating with GitHub's GraphQL API.
-func (c *Client) GraphQL() *githubv4.Client {
+func (c *Client) GraphQL() *graphql.Client {
 	return c.graphClient
 }
