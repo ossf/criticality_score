@@ -13,7 +13,7 @@ require (
 	github.com/iancoleman/strcase v0.3.0
 	github.com/ossf/scorecard/v4 v4.10.5
 	go.opencensus.io v0.24.0
-	go.uber.org/zap v1.26.0
+	go.uber.org/zap v1.27.0
 	gocloud.dev v0.36.0
 	golang.org/x/sys v0.17.0
 	google.golang.org/api v0.156.0
