@@ -17,8 +17,8 @@ kind: CronJob
 metadata:
   name: criticality-score-batch-worker
 spec:
-  # At 23:00UTC on Sunday, or 9:00AEST on Monday.
-  schedule: "0 23 * * 0"
+  # The 1st and 15th of every month at 23:00UTC, or 9:00AEST.
+  schedule: "0 23 1,15 * *"
   concurrencyPolicy: "Forbid"
 
   jobTemplate:
