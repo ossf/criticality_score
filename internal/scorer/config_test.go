@@ -21,7 +21,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/ossf/criticality_score/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
 )
 
 func TestInput_ToAlgorithmInput(t *testing.T) {

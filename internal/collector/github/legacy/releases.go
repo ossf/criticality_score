@@ -22,8 +22,8 @@ import (
 
 	"github.com/hasura/go-graphql-client"
 
-	"github.com/ossf/criticality_score/internal/githubapi"
-	"github.com/ossf/criticality_score/internal/githubapi/pagination"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/githubapi/pagination"
 )
 
 type repoReleasesQuery struct {

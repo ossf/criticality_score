@@ -1,4 +1,4 @@
-module github.com/ossf/criticality_score
+module github.com/ossf/criticality_score/v2
 
 go 1.21
 

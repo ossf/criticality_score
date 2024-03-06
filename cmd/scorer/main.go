@@ -45,10 +45,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/internal/infile"
-	log "github.com/ossf/criticality_score/internal/log"
-	"github.com/ossf/criticality_score/internal/outfile"
-	"github.com/ossf/criticality_score/internal/scorer"
+	"github.com/ossf/criticality_score/v2/internal/infile"
+	log "github.com/ossf/criticality_score/v2/internal/log"
+	"github.com/ossf/criticality_score/v2/internal/outfile"
+	"github.com/ossf/criticality_score/v2/internal/scorer"
 )
 
 const defaultLogLevel = zapcore.InfoLevel

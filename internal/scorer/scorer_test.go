@@ -17,8 +17,8 @@ package scorer
 import (
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/collector/signal"
-	"github.com/ossf/criticality_score/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
 )
 
 type testAlgo struct {

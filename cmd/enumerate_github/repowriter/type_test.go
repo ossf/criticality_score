@@ -4,7 +4,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
+	"github.com/ossf/criticality_score/v2/cmd/enumerate_github/repowriter"
 )
 
 func TestTypeString(t *testing.T) {

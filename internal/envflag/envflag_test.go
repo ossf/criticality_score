@@ -18,7 +18,7 @@ import (
 	"flag"
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/envflag"
+	"github.com/ossf/criticality_score/v2/internal/envflag"
 )
 
 func TestEnvVarSet(t *testing.T) {

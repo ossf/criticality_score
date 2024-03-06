@@ -27,7 +27,7 @@ import (
 	"github.com/google/go-github/v47/github"
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/internal/retry"
+	"github.com/ossf/criticality_score/v2/internal/retry"
 )
 
 const (

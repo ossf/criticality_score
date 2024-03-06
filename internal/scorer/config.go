@@ -21,8 +21,8 @@ import (
 
 	"gopkg.in/yaml.v3"
 
-	"github.com/ossf/criticality_score/internal/scorer/algorithm"
-	"github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm/wam"
 )
 
 type Condition struct {
