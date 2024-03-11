@@ -215,7 +215,7 @@ func (l *WorkLoop) Run() error {
 				// attempts to the end of the queue to add a delay. Additionally,
 				// if different requests fail consecutively then returning an
 				// error here may be better.
-				logger.With(zap.Error(err), zap.Int("attempt", s.Attempt)).Info("Error processing request")
+				logger.With(zap.Error(err), zap.Int("attempt", s.Attempt)).Error("Error processing request")
 				continue
 			}
 
