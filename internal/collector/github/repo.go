@@ -21,8 +21,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/internal/collector/github/legacy"
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/collector/github/legacy"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
 // repo implements the projectrepo.Repo interface for a GitHub repository.

@@ -25,7 +25,7 @@ import (
 	sclog "github.com/ossf/scorecard/v4/log"
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
 // DefaultGCPDatasetName is the default name to use for GCP BigQuery Datasets.

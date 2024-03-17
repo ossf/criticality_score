@@ -26,7 +26,7 @@ import (
 	"google.golang.org/protobuf/proto"
 	"google.golang.org/protobuf/types/known/timestamppb"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/vcs"
+	"github.com/ossf/criticality_score/v2/cmd/collect_signals/vcs"
 )
 
 var headSHA = clients.HeadSHA

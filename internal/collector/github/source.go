@@ -19,9 +19,9 @@ import (
 	"errors"
 	"time"
 
-	"github.com/ossf/criticality_score/internal/collector/github/legacy"
-	"github.com/ossf/criticality_score/internal/collector/projectrepo"
-	"github.com/ossf/criticality_score/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/collector/github/legacy"
+	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
 )
 
 type RepoSource struct{}

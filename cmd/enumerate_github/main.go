@@ -32,14 +32,14 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/enumerate_github/githubsearch"
-	"github.com/ossf/criticality_score/cmd/enumerate_github/marker"
-	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
-	"github.com/ossf/criticality_score/internal/envflag"
-	"github.com/ossf/criticality_score/internal/githubapi"
-	log "github.com/ossf/criticality_score/internal/log"
-	"github.com/ossf/criticality_score/internal/outfile"
-	"github.com/ossf/criticality_score/internal/workerpool"
+	"github.com/ossf/criticality_score/v2/cmd/enumerate_github/githubsearch"
+	"github.com/ossf/criticality_score/v2/cmd/enumerate_github/marker"
+	"github.com/ossf/criticality_score/v2/cmd/enumerate_github/repowriter"
+	"github.com/ossf/criticality_score/v2/internal/envflag"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
+	log "github.com/ossf/criticality_score/v2/internal/log"
+	"github.com/ossf/criticality_score/v2/internal/outfile"
+	"github.com/ossf/criticality_score/v2/internal/workerpool"
 )
 
 const (

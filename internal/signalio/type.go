@@ -19,7 +19,7 @@ import (
 	"errors"
 	"io"
 
-	"github.com/ossf/criticality_score/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
 )
 
 type WriterType int

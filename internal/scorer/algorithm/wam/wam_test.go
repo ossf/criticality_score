@@ -19,7 +19,7 @@ import (
 	"math"
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
 )
 
 func TestWeighetedArithmeticMean_Score(t *testing.T) {

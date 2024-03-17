@@ -17,7 +17,7 @@ $ scorer \
 ## Install
 
 ```shell
-$ go install github.com/ossf/criticality_score/cmd/scorer
+$ go install github.com/ossf/criticality_score/v2/cmd/scorer
 ```
 
 ## Usage

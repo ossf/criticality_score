@@ -22,7 +22,7 @@ import (
 
 	"github.com/hasura/go-graphql-client"
 
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
 const (

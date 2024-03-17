@@ -20,8 +20,8 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/ossf/criticality_score/internal/infile"
-	"github.com/ossf/criticality_score/internal/iterator"
+	"github.com/ossf/criticality_score/v2/internal/infile"
+	"github.com/ossf/criticality_score/v2/internal/iterator"
 )
 
 // osErrorWithFilename is an os-specific helper for determining if a particular

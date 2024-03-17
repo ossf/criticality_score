@@ -22,9 +22,9 @@ import (
 	"strings"
 	"unicode"
 
-	"github.com/ossf/criticality_score/internal/collector/signal"
-	"github.com/ossf/criticality_score/internal/scorer/algorithm"
-	_ "github.com/ossf/criticality_score/internal/scorer/algorithm/wam"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
+	_ "github.com/ossf/criticality_score/v2/internal/scorer/algorithm/wam"
 )
 
 var ErrEmptyName = fmt.Errorf("name must be non-empty")

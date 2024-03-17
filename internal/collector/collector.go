@@ -24,12 +24,12 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/internal/collector/depsdev"
-	"github.com/ossf/criticality_score/internal/collector/github"
-	"github.com/ossf/criticality_score/internal/collector/githubmentions"
-	"github.com/ossf/criticality_score/internal/collector/projectrepo"
-	"github.com/ossf/criticality_score/internal/collector/signal"
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/collector/depsdev"
+	"github.com/ossf/criticality_score/v2/internal/collector/github"
+	"github.com/ossf/criticality_score/v2/internal/collector/githubmentions"
+	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
 // ErrUncollectableRepo is the error returned when there is a problem with
