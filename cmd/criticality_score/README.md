@@ -21,7 +21,7 @@ $ criticality_score \
 ## Install
 
 ```shell
-$ go install github.com/ossf/criticality_score/v2/cmd/criticality_score
+$ go install github.com/ossf/criticality_score/cmd/criticality_score@latest
 ```
 
 ## Usage
