@@ -18,7 +18,7 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/workerpool"
+	"github.com/ossf/criticality_score/v2/internal/workerpool"
 )
 
 func TestOneWorker(t *testing.T) {

@@ -16,10 +16,10 @@ import (
 	"go.opencensus.io/stats/view"
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/vcs"
-	"github.com/ossf/criticality_score/internal/collector"
-	"github.com/ossf/criticality_score/internal/scorer"
-	"github.com/ossf/criticality_score/internal/signalio"
+	"github.com/ossf/criticality_score/v2/cmd/collect_signals/vcs"
+	"github.com/ossf/criticality_score/v2/internal/collector"
+	"github.com/ossf/criticality_score/v2/internal/scorer"
+	"github.com/ossf/criticality_score/v2/internal/signalio"
 )
 
 const (

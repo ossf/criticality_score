@@ -6,7 +6,7 @@ import (
 
 	"github.com/google/go-cmp/cmp"
 
-	"github.com/ossf/criticality_score/cmd/enumerate_github/repowriter"
+	"github.com/ossf/criticality_score/v2/cmd/enumerate_github/repowriter"
 )
 
 func TestScorecardRepoWriter(t *testing.T) {

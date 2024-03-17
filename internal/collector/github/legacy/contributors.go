@@ -22,7 +22,7 @@ import (
 
 	"github.com/google/go-github/v47/github"
 
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
 // FetchTotalContributors returns the total number of contributors for the given repository.

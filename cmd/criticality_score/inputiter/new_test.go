@@ -21,7 +21,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ossf/criticality_score/cmd/criticality_score/inputiter"
+	"github.com/ossf/criticality_score/v2/cmd/criticality_score/inputiter"
 )
 
 func TestNew_SingleURL(t *testing.T) {

@@ -18,7 +18,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ossf/criticality_score/internal/cloudstorage"
+	"github.com/ossf/criticality_score/v2/internal/cloudstorage"
 )
 
 func Write(ctx context.Context, t Type, markerFile, outFile string) (err error) {

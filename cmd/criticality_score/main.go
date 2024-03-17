@@ -29,13 +29,13 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/criticality_score/inputiter"
-	"github.com/ossf/criticality_score/internal/collector"
-	log "github.com/ossf/criticality_score/internal/log"
-	"github.com/ossf/criticality_score/internal/outfile"
-	"github.com/ossf/criticality_score/internal/scorer"
-	"github.com/ossf/criticality_score/internal/signalio"
-	"github.com/ossf/criticality_score/internal/workerpool"
+	"github.com/ossf/criticality_score/v2/cmd/criticality_score/inputiter"
+	"github.com/ossf/criticality_score/v2/internal/collector"
+	log "github.com/ossf/criticality_score/v2/internal/log"
+	"github.com/ossf/criticality_score/v2/internal/outfile"
+	"github.com/ossf/criticality_score/v2/internal/scorer"
+	"github.com/ossf/criticality_score/v2/internal/signalio"
+	"github.com/ossf/criticality_score/v2/internal/workerpool"
 )
 
 const defaultLogLevel = zapcore.InfoLevel

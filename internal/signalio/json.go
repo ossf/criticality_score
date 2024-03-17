@@ -20,7 +20,7 @@ import (
 	"io"
 	"sync"
 
-	"github.com/ossf/criticality_score/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
 )
 
 type jsonWriter struct {

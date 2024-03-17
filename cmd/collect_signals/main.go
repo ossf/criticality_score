@@ -30,10 +30,10 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/cmd/collect_signals/localworker"
-	"github.com/ossf/criticality_score/cmd/collect_signals/vcs"
-	"github.com/ossf/criticality_score/internal/collector"
-	log "github.com/ossf/criticality_score/internal/log"
+	"github.com/ossf/criticality_score/v2/cmd/collect_signals/localworker"
+	"github.com/ossf/criticality_score/v2/cmd/collect_signals/vcs"
+	"github.com/ossf/criticality_score/v2/internal/collector"
+	log "github.com/ossf/criticality_score/v2/internal/log"
 )
 
 const (

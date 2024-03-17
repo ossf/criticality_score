@@ -19,7 +19,7 @@ $ enumerate_github \
 ## Install
 
 ```shell
-$ go install github.com/ossf/criticality_score/cmd/enumerate_github
+$ go install github.com/ossf/criticality_score/v2/cmd/enumerate_github
 ```
 
 ## Usage

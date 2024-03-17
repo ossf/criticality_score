@@ -28,7 +28,7 @@ import (
 	"go.uber.org/zap"
 	"go.uber.org/zap/zapcore"
 
-	"github.com/ossf/criticality_score/internal/log"
+	"github.com/ossf/criticality_score/v2/internal/log"
 )
 
 const defaultLogLevel = zapcore.InfoLevel

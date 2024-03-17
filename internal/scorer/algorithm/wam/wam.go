@@ -18,7 +18,7 @@
 package wam
 
 import (
-	"github.com/ossf/criticality_score/internal/scorer/algorithm"
+	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
 )
 
 const Name = "weighted_arithmetic_mean"

@@ -25,7 +25,7 @@ import (
 	"github.com/ossf/scorecard/v4/cron/worker"
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/internal/iterator"
+	"github.com/ossf/criticality_score/v2/internal/iterator"
 )
 
 // maxAttempts is the maximum number of times a batch will be attempted before

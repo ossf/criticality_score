@@ -17,7 +17,7 @@ package signal
 import (
 	"context"
 
-	"github.com/ossf/criticality_score/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
 )
 
 // A Source is used to get a set of signals for a given project repository.
