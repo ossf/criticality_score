@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v47 v47.1.0
 	github.com/google/renameio/v2 v2.0.0
-	github.com/hasura/go-graphql-client v0.12.0
+	github.com/hasura/go-graphql-client v0.12.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/ossf/scorecard/v4 v4.10.5
 	go.opencensus.io v0.24.0
