@@ -9,7 +9,7 @@ This Charter sets forth the responsibilities and procedures for technical contri
 
 
 ## 1. Mission and Scope of the Project
-a. The mission of the Project is to determine a project's criticality score to the influence and importance of a project.
+a. The mission of the Project is to generate criticality scores for open source projects, in order to identify critical projects the open source community depends on so these projects can be proactively secured.
 
 b. The scope of the Project includes collaborative development under the Project License (as defined herein) supporting the mission, including documentation, testing, integration and the creation of other artifacts that aid the development, deployment, operation or adoption of the open source project.
 
