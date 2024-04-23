@@ -21,8 +21,8 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/collector/signal"
-	"github.com/ossf/criticality_score/internal/signalio"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/signalio"
 )
 
 func TestTypeString(t *testing.T) {

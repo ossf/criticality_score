@@ -22,8 +22,8 @@ import (
 
 	"go.uber.org/zap"
 
-	"github.com/ossf/criticality_score/internal/collector/projectrepo"
-	"github.com/ossf/criticality_score/internal/githubapi"
+	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
 type factory struct {

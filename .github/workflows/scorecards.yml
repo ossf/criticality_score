@@ -19,7 +19,7 @@ jobs:
       id-token: write
     steps:
       - name: "Checkout code"
-        uses: actions/checkout@b4ffde65f46336ab88eb53be808477a3936bae11
+        uses: actions/checkout@9bb56186c3b09b4f86b1c65136769dd318469633
       - name: "Run analysis"
         uses: ossf/scorecard-action@0864cf19026789058feabb7e87baa5f140aac736 # v2.0.0-alpha.2
         with:
@@ -34,12 +34,12 @@ jobs:
       # https://docs.github.com/en/actions/advanced-guides/storing-workflow-data-as-artifacts
       # Optional.
       - name: "Upload artifact"
-        uses: actions/upload-artifact@5d5d22a31266ced268874388b861e4b58bb5c2f3 # v2
+        uses: actions/upload-artifact@1746f4ab65b179e0ea60a494b83293b640dd5bba # v2
         with:
           name: SARIF file
           path: results.sarif
           retention-days: 5
       - name: "Upload SARIF results"
-        uses: github/codeql-action/upload-sarif@982d9346add1ff0ac9db3b764aa5d1007496e9f8 # v1
+        uses: github/codeql-action/upload-sarif@82edfe29cebc1a8481d9331c337bcd1e22b9de91 # v1
         with:
           sarif_file: results.sarif

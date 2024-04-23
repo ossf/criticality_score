@@ -23,7 +23,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ossf/criticality_score/cmd/enumerate_github/marker"
+	"github.com/ossf/criticality_score/v2/cmd/enumerate_github/marker"
 )
 
 func TestWrite(t *testing.T) {

@@ -48,7 +48,7 @@ open source project:
 ## Usage
 
 ```shell
-$ go install github.com/ossf/criticality_score/cmd/criticality_score@latest
+$ go install github.com/ossf/criticality_score/v2/cmd/criticality_score@latest
 
 $ export GITHUB_TOKEN=...         # requires a GitHub token to work
 $ gcloud auth login --update-adc  # optional, add -depsdev-disable to skip

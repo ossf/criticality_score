@@ -18,8 +18,8 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/ossf/criticality_score/internal/collector/projectrepo"
-	"github.com/ossf/criticality_score/internal/collector/signal"
+	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
+	"github.com/ossf/criticality_score/v2/internal/collector/signal"
 )
 
 // empty is a convenience wrapper for the empty struct.

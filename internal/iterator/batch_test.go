@@ -9,7 +9,7 @@ import (
 	"testing"
 	"testing/iotest"
 
-	"github.com/ossf/criticality_score/internal/iterator"
+	"github.com/ossf/criticality_score/v2/internal/iterator"
 )
 
 func TestBatchIter_Empty(t *testing.T) {

@@ -4,7 +4,7 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/ossf/criticality_score/internal/iterator"
+	"github.com/ossf/criticality_score/v2/internal/iterator"
 )
 
 func TestSliceIter_Empty(t *testing.T) {

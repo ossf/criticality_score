@@ -27,7 +27,7 @@ import (
 	"gocloud.dev/blob"
 	_ "gocloud.dev/blob/fileblob"
 
-	"github.com/ossf/criticality_score/internal/iterator"
+	"github.com/ossf/criticality_score/v2/internal/iterator"
 )
 
 type testWorker struct {
