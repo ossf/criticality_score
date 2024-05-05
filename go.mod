@@ -17,7 +17,7 @@ require (
 	gocloud.dev v0.37.0
 	golang.org/x/sys v0.19.0
 	google.golang.org/api v0.174.0
-	google.golang.org/protobuf v1.33.0
+	google.golang.org/protobuf v1.34.0
 	gopkg.in/yaml.v3 v3.0.1
 )
 
