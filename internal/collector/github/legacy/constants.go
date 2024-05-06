@@ -21,7 +21,7 @@ import (
 
 const (
 	SinceDuration time.Duration = time.Hour * 24 * 30
-	IssueLookback time.Duration = time.Hour * 24 * 90 * 24
+	IssueLookback time.Duration = time.Hour * 24 * 90
 
 	// TODO: these limits should ultimately be imposed by the score generation, not here.
 	MaxContributorLimit = 5000
