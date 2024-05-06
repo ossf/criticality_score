@@ -3,7 +3,7 @@ module github.com/ossf/criticality_score/v2
 go 1.21
 
 require (
-	cloud.google.com/go/bigquery v1.60.0
+	cloud.google.com/go/bigquery v1.61.0
 	github.com/blendle/zapdriver v1.3.1
 	github.com/go-logr/zapr v1.3.0
 	github.com/google/go-cmp v0.6.0
@@ -27,10 +27,10 @@ require (
 	cloud.google.com/go/auth/oauth2adapt v0.2.2 // indirect
 	cloud.google.com/go/compute/metadata v0.3.0 // indirect
 	cloud.google.com/go/iam v1.1.7 // indirect
-	cloud.google.com/go/monitoring v1.18.0 // indirect
+	cloud.google.com/go/monitoring v1.18.1 // indirect
 	cloud.google.com/go/pubsub v1.37.0 // indirect
-	cloud.google.com/go/storage v1.39.1 // indirect
-	cloud.google.com/go/trace v1.10.5 // indirect
+	cloud.google.com/go/storage v1.40.0 // indirect
+	cloud.google.com/go/trace v1.10.6 // indirect
 	contrib.go.opencensus.io/exporter/stackdriver v0.13.14 // indirect
 	dario.cat/mergo v1.0.0 // indirect
 	github.com/BurntSushi/toml v1.3.2 // indirect
@@ -38,7 +38,7 @@ require (
 	github.com/Microsoft/go-winio v0.6.1 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20230923063757-afb1ddc0824c // indirect
 	github.com/anchore/go-struct-converter v0.0.0-20230627203149-c72ef8859ca9 // indirect
-	github.com/apache/arrow/go/v14 v14.0.2 // indirect
+	github.com/apache/arrow/go/v15 v15.0.2 // indirect
 	github.com/aws/aws-sdk-go v1.50.36 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.25.3 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.6.1 // indirect
@@ -119,17 +119,17 @@ require (
 	go.uber.org/multierr v1.11.0 // indirect
 	golang.org/x/crypto v0.22.0 // indirect
 	golang.org/x/exp v0.0.0-20240119083558-1b970713d09a // indirect
-	golang.org/x/mod v0.14.0 // indirect
+	golang.org/x/mod v0.17.0 // indirect
 	golang.org/x/net v0.24.0 // indirect
 	golang.org/x/oauth2 v0.19.0 // indirect
 	golang.org/x/sync v0.7.0 // indirect
 	golang.org/x/text v0.14.0 // indirect
 	golang.org/x/time v0.5.0 // indirect
-	golang.org/x/tools v0.17.0 // indirect
+	golang.org/x/tools v0.20.0 // indirect
 	golang.org/x/vuln v1.0.1 // indirect
 	golang.org/x/xerrors v0.0.0-20231012003039-104605ab7028 // indirect
-	google.golang.org/genproto v0.0.0-20240311173647-c811ad7063a7 // indirect
-	google.golang.org/genproto/googleapis/api v0.0.0-20240314234333-6e1732d8331c // indirect
+	google.golang.org/genproto v0.0.0-20240401170217-c3f982113cda // indirect
+	google.golang.org/genproto/googleapis/api v0.0.0-20240415180920-8c6c420018be // indirect
 	google.golang.org/genproto/googleapis/rpc v0.0.0-20240429193739-8cf5692501f6 // indirect
 	google.golang.org/grpc v1.63.2 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
