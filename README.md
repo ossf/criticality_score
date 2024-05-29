@@ -41,7 +41,7 @@ open source project:
 
 **NOTE**:
 
-- You can override those defaut values at runtime as described below.
+- You can override those default values at runtime as described below.
 - We are looking for community ideas to improve upon these parameters.
 - There will always be exceptions to the individual reasoning rules.
 
