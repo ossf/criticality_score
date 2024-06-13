@@ -44,9 +44,11 @@ format:  ## Run formatter
 format: $(GOFUMPT)
 	$(GOFUMPT) -w -l .
 
-docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer
+docker-targets = build/docker/enumerate-github build/docker/criticality-score build/docker/collect-signals build/docker/csv-transfer build/docker/scorer
 .PHONY: build/docker $(docker-targets)
 build/docker: $(docker-targets)  ## Build all docker targets
+build/docker/scorer:
+	DOCKER_BUILDKIT=1 docker build . -f cmd/scorer/Dockerfile --tag $(IMAGE_NAME)-scorer
 build/docker/collect-signals:
 	DOCKER_BUILDKIT=1 docker build . -f cmd/collect_signals/Dockerfile --tag $(IMAGE_NAME)-collect-signals
 build/docker/criticality-score:
