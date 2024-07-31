@@ -203,23 +203,30 @@ func main() {
 		for u := range repos {
 			l := innerLogger.With(zap.String("url", u.String()))
 			ss, err := c.Collect(ctx, u, "")
+			extras := []signalio.Field{}
 			if err != nil {
 				if errors.Is(err, collector.ErrUncollectableRepo) {
 					l.With(
 						zap.Error(err),
 					).Warn("Repo cannot be collected")
 					// return
-					continue
+					//continue
+				} else {
+					l.With(
+						zap.Error(err),
+					).Error("Failed to collect signals for repo")
+					// os.Exit(1) // TODO: pass up the error
+					// continue
 				}
-				l.With(
-					zap.Error(err),
-				).Error("Failed to collect signals for repo")
-				// os.Exit(1) // TODO: pass up the error
-				continue
+				repoUrl := signalio.Field{
+					Key:   "repo.url",
+					Value: u.String(),
+				}
+				extras = append(extras, repoUrl)
 			}
 
 			// If scoring is enabled, prepare the extra data to be output.
-			extras := []signalio.Field{}
+			//extras := []signalio.Field{}
 			if s != nil {
 				f := signalio.Field{
 					Key:   scoreColumnName,
