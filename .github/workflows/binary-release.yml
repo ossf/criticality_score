@@ -5,6 +5,10 @@ name: Binary Release
 #    tags:
 #      - 'v*'
 
+on:
+  # Trigger the workflow manually
+  workflow_dispatch: {}
+
 permissions:
   contents: read
 
