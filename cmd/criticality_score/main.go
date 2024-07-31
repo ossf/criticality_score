@@ -76,7 +76,7 @@ func initFlags() {
 
 	// Handle the version flag immediately. It's similar to -help.
 	if *versionFlag {
-		printVersion()
+		// printVersion()
 		os.Exit(0)
 	}
 }
@@ -208,12 +208,14 @@ func main() {
 					l.With(
 						zap.Error(err),
 					).Warn("Repo cannot be collected")
-					return
+					// return
+					continue
 				}
 				l.With(
 					zap.Error(err),
 				).Error("Failed to collect signals for repo")
-				os.Exit(1) // TODO: pass up the error
+				// os.Exit(1) // TODO: pass up the error
+				continue
 			}
 
 			// If scoring is enabled, prepare the extra data to be output.
