@@ -76,7 +76,7 @@ func initFlags() {
 
 	// Handle the version flag immediately. It's similar to -help.
 	if *versionFlag {
-		// printVersion()
+		printVersion()
 		os.Exit(0)
 	}
 }
