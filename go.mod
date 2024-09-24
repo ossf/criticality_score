@@ -9,7 +9,7 @@ require (
 	github.com/google/go-cmp v0.6.0
 	github.com/google/go-github/v47 v47.1.0
 	github.com/google/renameio/v2 v2.0.0
-	github.com/hasura/go-graphql-client v0.12.1
+	github.com/hasura/go-graphql-client v0.13.1
 	github.com/iancoleman/strcase v0.3.0
 	github.com/ossf/scorecard/v4 v4.10.5
 	go.opencensus.io v0.24.0
@@ -63,6 +63,7 @@ require (
 	github.com/bradleyfalzon/ghinstallation/v2 v2.8.0 // indirect
 	github.com/census-instrumentation/opencensus-proto v0.4.1 // indirect
 	github.com/cloudflare/circl v1.3.7 // indirect
+	github.com/coder/websocket v1.8.12 // indirect
 	github.com/cyphar/filepath-securejoin v0.2.4 // indirect
 	github.com/emirpasic/gods v1.18.1 // indirect
 	github.com/felixge/httpsnoop v1.0.4 // indirect
@@ -134,5 +135,4 @@ require (
 	google.golang.org/grpc v1.66.1 // indirect
 	gopkg.in/warnings.v0 v0.1.2 // indirect
 	gopkg.in/yaml.v2 v2.4.0 // indirect
-	nhooyr.io/websocket v1.8.10 // indirect
 )
