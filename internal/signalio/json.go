@@ -16,7 +16,6 @@ package signalio
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"sync"
 
@@ -51,10 +50,9 @@ func (w *jsonWriter) WriteSignals(signals []signal.Set, extra ...Field) error {
 				d = make(map[string]any)
 				data[ns] = d
 			}
-			nsData, ok := d.(map[string]any)
-			if !ok {
-				return fmt.Errorf("failed to get map for namespace: %s", ns)
-			}
+			nsData := d.(map[string]any)
+			// we don't need to check for an error here (the above line) because d is always a map[string]any
+
 			for k, v := range innerM {
 				nsData[k] = v
 			}
@@ -63,6 +61,7 @@ func (w *jsonWriter) WriteSignals(signals []signal.Set, extra ...Field) error {
 	for _, f := range extra {
 		data[f.Key] = f.Value
 	}
+
 	w.mu.Lock()
 	defer w.mu.Unlock()
 	return w.encoder.Encode(data)
