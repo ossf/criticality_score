@@ -36,6 +36,18 @@ const (
 // TODO: prune root dependents that come from the same project.
 // TODO: count "# packages per project" to determine dependent ratio
 
+/*
+The SQL statement below is two different queries that are used to query data from BigQuery.
+The first query, dataQuery, creates a temporary table rawDependentCounts which holds
+information about the name, version, system, and dependent count of dependencies.
+This table is created by joining two other tables, Dependencies and PackageVersions,
+and counting the number of dependencies for each name, version, and system.
+
+The second query, countQuery, selects the DependentCount from a table specified by the ProjectID, DatasetName,
+and TableName placeholders. The table is filtered by the ProjectName and ProjectType parameters,
+which are passed as @projectname and @projecttype respectively.
+*/
+
 const dataQuery = `
 CREATE TEMP TABLE rawDependentCounts(Name STRING, Version STRING, System STRING, DependentCount INT)
 AS
