@@ -40,6 +40,6 @@ jobs:
           path: results.sarif
           retention-days: 5
       - name: "Upload SARIF results"
-        uses: github/codeql-action/upload-sarif@b43ac1c23f7541b1939bccfc4255db76ae3cd3dd # v1
+        uses: github/codeql-action/upload-sarif@0a35e8f6866a39b001e5f7ad1d0daf9836786896 # v1
         with:
           sarif_file: results.sarif
