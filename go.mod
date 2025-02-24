@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/bigquery v1.62.0
 	github.com/blendle/zapdriver v1.3.1
 	github.com/go-logr/zapr v1.3.0
-	github.com/google/go-cmp v0.6.0
+	github.com/google/go-cmp v0.7.0
 	github.com/google/go-github/v47 v47.1.0
 	github.com/google/renameio/v2 v2.0.0
 	github.com/hasura/go-graphql-client v0.12.1
