@@ -1,6 +1,7 @@
 module github.com/ossf/criticality_score/v2
 
 go 1.21
+toolchain go1.24.1
 
 require (
 	cloud.google.com/go/bigquery v1.62.0
@@ -15,7 +16,7 @@ require (
 	go.opencensus.io v0.24.0
 	go.uber.org/zap v1.27.0
 	gocloud.dev v0.37.0
-	golang.org/x/sys v0.29.0
+	golang.org/x/sys v0.32.0
 	google.golang.org/api v0.197.0
 	google.golang.org/protobuf v1.34.2
 	gopkg.in/yaml.v3 v3.0.1
