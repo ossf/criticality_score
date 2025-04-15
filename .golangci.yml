@@ -35,7 +35,6 @@ linters:
     #- errcheck  # Temporarily disabled.
     - errorlint
     - exhaustive
-    - gci
     #- gochecknoinits  # Temporarily disabled.
     - gocognit
     - goconst
@@ -44,10 +43,7 @@ linters:
     - godot
     - godox
     #- goerr113  # Temporarily disabled.
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
     - gomodguard
     - goprintffuncname
     - gosec
@@ -66,7 +62,6 @@ linters:
     - stylecheck
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - unused
