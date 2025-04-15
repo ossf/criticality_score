@@ -135,7 +135,8 @@ func (s *strategies) SecondaryRateLimit(r *http.Response) (retry.RetryStrategy, 
 		zap.String("message", errorResponse.Message),
 	).Warn("Error response data")
 	if strings.HasSuffix(errorResponse.DocumentationURL, "#abuse-rate-limits") ||
-		strings.HasSuffix(errorResponse.DocumentationURL, "#secondary-rate-limits") {
+		strings.HasSuffix(errorResponse.DocumentationURL, "#secondary-rate-limits") ||
+		strings.HasSuffix(errorResponse.DocumentationURL, "#about-secondary-rate-limits") {
 		logger.Warn("Secondary rate limit hit")
 		return retry.RetryWithInitialDelay, nil
 	}

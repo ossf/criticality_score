@@ -34,7 +34,7 @@ import (
 
 const (
 	testAbuseRateLimitDocURL     = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#abuse-rate-limits"
-	testSecondaryRateLimitDocURL = "https://docs.github.com/en/rest/overview/resources-in-the-rest-api#secondary-rate-limits"
+	testSecondaryRateLimitDocURL = "https://docs.github.com/free-pro-team@latest/rest/overview/rate-limits-for-the-rest-api#about-secondary-rate-limits"
 )
 
 func newTestStrategies(t *testing.T) *strategies {
