@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:slim@sha256:3497ad3a1053bda2c99a766e8764dd27756fdaf84191dd1501405779688abf58
+FROM gcr.io/google.com/cloudsdktool/google-cloud-cli:slim@sha256:134f1938136304884f2d3b7365162adb1ca06d0b86c599f15a4fe107b94f7950
 
 # Add "yq" to the image so the YAML config can be read.
 RUN apt-get update -qqy && apt-get install -qqy yq
