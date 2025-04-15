@@ -29,7 +29,7 @@ commonLabels:
 images:
 - name: scorecard-github-server
   newName: gcr.io/openssf/scorecard-github-server
-  newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
+  newTag: 49c0eed3a423f00c872b5c3c9f1bbca9e8aae799
 - name: scorecard-bq-transfer
   newName: gcr.io/openssf/scorecard-bq-transfer
-  newTag: 27cfe92ed356fdb5a398c919ad480817ea907808
+  newTag: 49c0eed3a423f00c872b5c3c9f1bbca9e8aae799

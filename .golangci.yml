@@ -1,7 +1,8 @@
 ---
+version: "2"
 run:
   concurrency: 6
-  deadline: 5m
+  timeout: 5m
 issues:
   # Maximum issues count per one linter.
   # Set to 0 to disable.
@@ -14,18 +15,26 @@ issues:
   # Exclude previously existing issues from the report
   new: true
   new-from-rev: HEAD
+
+formatters:
+  settings:
+    gci:
+      sections:
+        - standard
+        - default
+        - prefix(github.com/ossf/criticality_score)
+
 linters:
-  disable-all: true
+  default: none
   enable:
     - asciicheck
     #- bodyclose  # Temporarily disabled.
     #- depguard  # Temporarily disabled.
+    - copyloopvar
     - dogsled
     #- errcheck  # Temporarily disabled.
     - errorlint
     - exhaustive
-    - exportloopref
-    - gci
     #- gochecknoinits  # Temporarily disabled.
     - gocognit
     - goconst
@@ -34,14 +43,10 @@ linters:
     - godot
     - godox
     #- goerr113  # Temporarily disabled.
-    - gofmt
-    - gofumpt
     - goheader
-    - goimports
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
     #- lll  # Temporarily disabled.
@@ -53,88 +58,81 @@ linters:
     - nolintlint
     - predeclared
     - staticcheck
-    - stylecheck
     - thelper
     - tparallel
-    - typecheck
     - unconvert
     - unparam
     - unused
     - whitespace
     - wrapcheck
-linters-settings:
-  errcheck:
-    check-type-assertions: true
-    check-blank: true
-  exhaustive:
-    # https://golangci-lint.run/usage/linters/#exhaustive
-    default-signifies-exhaustive: true
-  godot:
-    exclude:
-      - "^ -- "
-  govet:
-    enable:
-      - fieldalignment
-  godox:
-    keywords:
-      - BUG
-      - FIXME
-      - HACK
-  gci:
-    sections:
-      - standard
-      - default
-      - prefix(github.com/ossf/criticality_score)
-  gocritic:
-    enabled-checks:
-      # Diagnostic
-      - appendAssign
-      - badCond
-      - caseOrder
-      - codegenComment
-      - commentedOutCode
-      - deprecatedComment
-      - dupBranchBody
-      - dupCase
-      - dupSubExpr
-      #- exitAfterDefer  # Temporarily disabled
-      - flagName
-      - nilValReturn
-      - weakCond
-      - octalLiteral
+  settings:
+    errcheck:
+      check-type-assertions: true
+      check-blank: true
+    exhaustive:
+      # https://golangci-lint.run/usage/linters/#exhaustive
+      default-signifies-exhaustive: true
+    godot:
+      exclude:
+        - "^ -- "
+    govet:
+      enable:
+        - fieldalignment
+    godox:
+      keywords:
+        - BUG
+        - FIXME
+        - HACK
+    gocritic:
+      enabled-checks:
+        # Diagnostic
+        - appendAssign
+        - badCond
+        - caseOrder
+        - codegenComment
+        - commentedOutCode
+        - deprecatedComment
+        - dupBranchBody
+        - dupCase
+        - dupSubExpr
+        #- exitAfterDefer  # Temporarily disabled
+        - flagName
+        - nilValReturn
+        - weakCond
+        - octalLiteral
 
-      # Performance
-      - appendCombine
-      #- hugeParam  # Crashing.
-      - rangeExprCopy
-      - rangeValCopy
+        # Performance
+        - appendCombine
+        #- hugeParam  # Crashing.
+        - rangeExprCopy
+        - rangeValCopy
 
-      # Style
-      - boolExprSimplify
-      - captLocal
-      - commentFormatting
-      - commentedOutImport
-      - defaultCaseOrder
-      - docStub
-      - elseif
-      - emptyFallthrough
-      - hexLiteral
-      - ifElseChain
-      - methodExprCall
-      - singleCaseSwitch
-      - typeAssertChain
-      - typeSwitchVar
-      - underef
-      - unlabelStmt
-      - unlambda
+        # Style
+        - boolExprSimplify
+        - captLocal
+        - commentFormatting
+        - commentedOutImport
+        - defaultCaseOrder
+        - docStub
+        - elseif
+        - emptyFallthrough
+        - hexLiteral
+        - ifElseChain
+        - methodExprCall
+        - singleCaseSwitch
+        - typeAssertChain
+        - typeSwitchVar
+        - underef
+        - unlabelStmt
+        - unlambda
 
-      # Opinionated
-      - builtinShadow
-      - importShadow
-      - initClause
-      - nestingReduce
-      - paramTypeCombine
-      - ptrToRefParam
-      - typeUnparen
-      - unnecessaryBlock
+        # Opinionated
+        - builtinShadow
+        - importShadow
+        - initClause
+        - nestingReduce
+        - paramTypeCombine
+        - ptrToRefParam
+        - typeUnparen
+        - unnecessaryBlock
 

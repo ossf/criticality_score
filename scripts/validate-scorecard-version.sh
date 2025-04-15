@@ -40,7 +40,7 @@ SCORECARD_REPO="ossf/scorecard"
 SCORECARD_IMPORT="github.com/$SCORECARD_REPO/v4"
 
 # Get image tags from the kustomization file
-IMAGE_TAGS=$(grep "$KUSTOMIZATION_KEY" "$KUSTOMIZATION_FILE" | sort | uniq | sed "s/^\s*$KUSTOMIZATION_KEY\s*//")
+IMAGE_TAGS=$(grep "$KUSTOMIZATION_KEY" "$KUSTOMIZATION_FILE" | sort | uniq | sed "s/^[[:space:]]*$KUSTOMIZATION_KEY[[:space:]]*//")
 
 # Get the scorecard version
 SCORECARD_VERSION=$($GO_BIN list -m -f '{{ .Version }}' $SCORECARD_IMPORT)
@@ -51,7 +51,7 @@ fi
 
 # Test 1: Ensure the same tag is used for each kubernetes image.
 TAG_COUNT=$(echo "$IMAGE_TAGS" | wc -l)
-if [ "$TAG_COUNT" != "1" ]; then
+if [ $TAG_COUNT -ne 1 ]; then
     echo "$KUSTOMIZATION_FILE: Scorecard image tags found: $TAG_COUNT. Want: 1"
     exit 1
 fi

@@ -16,6 +16,6 @@ package main
 
 // This set of imports is used to ensure `go mod tidy` does not remove them.
 import (
-	_ "github.com/golangci/golangci-lint/cmd/golangci-lint"
+	_ "github.com/golangci/golangci-lint/v2/cmd/golangci-lint"
 	_ "mvdan.cc/gofumpt"
 )
