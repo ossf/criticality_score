@@ -47,7 +47,6 @@ linters:
     - gomodguard
     - goprintffuncname
     - gosec
-    - gosimple
     - govet
     - ineffassign
     #- lll  # Temporarily disabled.
@@ -59,7 +58,6 @@ linters:
     - nolintlint
     - predeclared
     - staticcheck
-    - stylecheck
     - thelper
     - tparallel
     - unconvert
