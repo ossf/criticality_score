@@ -25,7 +25,7 @@ ARG TARGETARCH
 RUN CGO_ENABLED=0 go build ./cmd/criticality_score
 RUN chmod -R 0775 /src/config/scorer/*
 
-FROM gcr.io/distroless/base:nonroot@sha256:533c15ef2acb1d3b1cd4e58d8aa2740900cae8f579243a53c53a6e28bcac0684
+FROM gcr.io/distroless/base:nonroot@sha256:fa5f94fa433728f8df3f63363ffc8dec4adcfb57e4d8c18b44bceccfea095ebc
 COPY --from=criticality_score /src/criticality_score ./criticality_score
 COPY --from=criticality_score /src/config/scorer/* ./config/scorer/
 ENTRYPOINT ["./criticality_score"]
