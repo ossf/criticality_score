@@ -84,7 +84,7 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		if login == "" {
 			continue
 		}
-		if strings.HasSuffix(login, "[bot]") {
+		if contributor.GetType() == "Bot" {
 			continue
 		}
 		userQueries[fmt.Sprint(i)] = fmt.Sprintf("user(login:\"%s\")", login)
