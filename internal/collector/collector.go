@@ -105,8 +105,7 @@ func (c *Collector) Collect(ctx context.Context, u *url.URL, jobID string) ([]si
 		case errors.Is(err, projectrepo.ErrNoRepoFound):
 			fallthrough
 		case errors.Is(err, projectrepo.ErrRepoInaccessible):
-			// TODO: replace %v with %w after upgrading Go from 1.19 to 1.21
-			return nil, fmt.Errorf("%w (%s): %v", ErrUncollectableRepo, u, err)
+			return nil, fmt.Errorf("%w (%s): %w", ErrUncollectableRepo, u, err)
 		default:
 			return nil, fmt.Errorf("resolving project: %w", err)
 		}
