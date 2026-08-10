@@ -43,6 +43,11 @@ func FetchTotalContributors(ctx context.Context, c *githubapi.Client, owner, nam
 	if resp.NextPage == 0 {
 		return len(cs), nil
 	}
+	if resp.LastPage == 0 {
+		// See ErrorNoPageCount: a "next" link without a "last" link means the
+		// page count is unavailable, not that there are no contributors.
+		return 0, ErrorNoPageCount
+	}
 	total := resp.LastPage
 	if total > MaxContributorLimit {
 		return MaxContributorLimit, nil

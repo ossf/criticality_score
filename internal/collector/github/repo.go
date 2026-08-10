@@ -75,9 +75,19 @@ func (r *repo) name() string {
 }
 
 func (r *repo) updatedAt() time.Time {
-	return r.BasicData.DefaultBranchRef.Target.Commit.AuthoredDate
+	return r.BasicData.DefaultBranchRef.Target.Commit.CommittedDate
 }
 
 func (r *repo) createdAt() time.Time {
 	return r.created
+}
+
+// issuesEnabled reports whether this repository uses GitHub's issue tracker.
+//
+// Many long established projects host their code on GitHub but track bugs
+// somewhere else, on a mailing list or a separate bug tracker, and turn the
+// GitHub tracker off. For those repositories no issue derived signal can be
+// measured, which is different from measuring that nothing happens.
+func (r *repo) issuesEnabled() bool {
+	return r.BasicData.HasIssuesEnabled
 }
