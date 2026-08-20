@@ -87,6 +87,17 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		if strings.HasSuffix(login, "[bot]") {
 			continue
 		}
+		// GitHub App actors (e.g. "Copilot") appear in the REST
+		// contributors list with type "Bot" but without the "[bot]" login
+		// suffix. Their logins cannot be resolved via user(login:), and one
+		// unresolvable login makes the whole GraphQL batch fail with
+		// NOT_FOUND, aborting signal collection for the entire repository.
+		// An App login that happens to collide case-insensitively with an
+		// unrelated user account resolves instead, silently counting that
+		// stranger's company in org_count. Only query User-type actors.
+		if contributor.GetType() != "User" {
+			continue
+		}
 		userQueries[fmt.Sprint(i)] = fmt.Sprintf("user(login:\"%s\")", login)
 	}
 	if len(userQueries) == 0 {
