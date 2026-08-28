@@ -28,7 +28,12 @@ import (
 const (
 	legacyReleaseLookbackDays = 365
 	legacyReleaseLookback     = legacyReleaseLookbackDays * 24 * time.Hour
-	legacyCommitLookback      = 365 * 24 * time.Hour
+	legacyCommitLookbackDays  = 365
+	legacyCommitLookback      = legacyCommitLookbackDays * 24 * time.Hour
+
+	// legacyCommitLookbackWeeks converts the commit lookback into the weeks
+	// that commit_frequency is expressed in. A year is 52.14 weeks, not 52.
+	legacyCommitLookbackWeeks = legacyCommitLookbackDays / 7.0
 )
 
 type basicRepoData struct {
@@ -46,7 +51,17 @@ type basicRepoData struct {
 	DefaultBranchRef struct {
 		Target struct {
 			Commit struct { // this is the last commit
-				AuthoredDate  time.Time
+				// CommittedDate, not AuthoredDate. The author date records
+				// when a patch was originally written and is preserved across
+				// rebases and mail-based patch workflows, so it can trail the
+				// commit landing here by weeks or months.
+				//
+				// The commit date is the best available timestamp on the head
+				// commit, not proof of when it reached GitHub: both dates are
+				// supplied by the committer's machine and neither is
+				// validated. pushedAt is server assigned, but covers pushes to
+				// any branch rather than this one.
+				CommittedDate time.Time
 				RecentCommits struct {
 					TotalCount int
 				} `graphql:"recentcommits:history(since:$legacyCommitLookback)"`

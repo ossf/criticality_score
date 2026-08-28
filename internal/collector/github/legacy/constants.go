@@ -25,13 +25,21 @@ const (
 
 	// TODO: these limits should ultimately be imposed by the score generation, not here.
 	MaxContributorLimit = 5000
-	MaxIssuesLimit      = 5000
 	MaxTopContributors  = 15
 
 	TooManyContributorsOrgCount = 10
-	TooManyCommentsFrequency    = 2.0
 
 	releasesPerPage = 100
 )
 
 var ErrorTooManyResults = errors.New("too many results")
+
+// ErrorNoPageCount is returned when a REST response has a "next" page link but
+// no "last" page link.
+//
+// Several signals are derived by requesting one result per page and reading the
+// total from the "last" link. Endpoints that move to cursor based pagination
+// stop sending that link, and the page count silently reads as zero. Returning
+// this error keeps a migrated endpoint from being mistaken for an empty
+// repository.
+var ErrorNoPageCount = errors.New("response has no last page link")

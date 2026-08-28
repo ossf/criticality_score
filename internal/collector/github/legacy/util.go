@@ -22,14 +22,19 @@ import (
 // empty is a convenience wrapper for the empty struct.
 type empty struct{}
 
+// TimeDelta returns how many whole units u have elapsed from b to a.
+//
+// If b is after a the result is 0. Timestamps that come from Git are not
+// trustworthy: they are written by the committer's machine, are not validated
+// by GitHub, and are trivially forged. Taking the absolute difference here
+// would turn a timestamp far in the future into a large positive age, so a
+// repository could claim to be a decade old, or to have been updated a decade
+// ago, by pushing one commit with a bad clock.
 func TimeDelta(a, b time.Time, u time.Duration) int {
-	var d time.Duration
 	if a.Before(b) {
-		d = b.Sub(a)
-	} else {
-		d = a.Sub(b)
+		return 0
 	}
-	return int(d / u)
+	return int(a.Sub(b) / u)
 }
 
 // Round will return v approximately rounded to a precision of p decimal places.

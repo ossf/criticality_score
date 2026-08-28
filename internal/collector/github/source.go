@@ -19,6 +19,8 @@ import (
 	"errors"
 	"time"
 
+	"go.uber.org/zap"
+
 	"github.com/ossf/criticality_score/v2/internal/collector/github/legacy"
 	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
 	"github.com/ossf/criticality_score/v2/internal/collector/signal"
@@ -47,7 +49,8 @@ func (rc *RepoSource) Get(ctx context.Context, r projectrepo.Repo, _ string) (si
 		UpdatedAt:    signal.Val(ghr.updatedAt()),
 		UpdatedSince: signal.Val(legacy.TimeDelta(now, ghr.updatedAt(), legacy.SinceDuration)),
 		// Note: the /stats/commit-activity REST endpoint used in the legacy Python codebase is stale.
-		CommitFrequency: signal.Val(legacy.Round(float64(ghr.BasicData.DefaultBranchRef.Target.Commit.RecentCommits.TotalCount)/52, 2)),
+		CommitFrequency: signal.Val(legacy.Round(
+			float64(ghr.BasicData.DefaultBranchRef.Target.Commit.RecentCommits.TotalCount)/legacyCommitLookbackWeeks, 2)),
 	}
 	ghr.logger.Debug("Fetching contributors")
 	if contributors, err := legacy.FetchTotalContributors(ctx, ghr.client, ghr.owner(), ghr.name()); err != nil {
@@ -98,39 +101,62 @@ func (ic *IssuesSource) Get(ctx context.Context, r projectrepo.Repo, _ string) (
 	}
 	s := &signal.IssuesSet{}
 
-	ghr.logger.Debug("Fetching closed issues")
-	closed, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateClosed, legacy.IssueLookback)
-	if err != nil {
-		return nil, err
+	if !ghr.issuesEnabled() {
+		// The project tracks bugs somewhere other than GitHub, so there is
+		// nothing here to count. Returning zeros would assert that nobody
+		// reports issues against the project, which is a very different claim
+		// and one that penalises a project for where it keeps its bug
+		// tracker. Leave every field unset so scoring skips them.
+		ghr.logger.Debug("Skipping issue signals: issue tracker is disabled")
+		return s, nil
 	}
-	s.ClosedCount.Set(closed)
 
 	// TODO: the calculation of the frequency should be moved into the legacy
 	// package. Ideally this would be behind an struct/interface that allows
 	// caching and also removes the need to pass client, owner and name to each
 	// function call.
-	ghr.logger.Debug("Fetching updated issues")
-	up, err := legacy.FetchIssueCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueStateAll, legacy.IssueLookback)
+	// One cutoff for the issue counts and the comment count, so every part of
+	// comment frequency covers the same window.
+	since := time.Now().UTC().Add(-legacy.IssueLookback)
+
+	ghr.logger.Debug("Fetching issue counts")
+	counts, err := legacy.FetchIssueCounts(ctx, ghr.client, ghr.owner(), ghr.name(), since)
 	if err != nil {
 		return nil, err
 	}
-	s.UpdatedCount.Set(up)
+	s.UpdatedCount.Set(counts.Updated)
+	s.ClosedCount.Set(counts.Closed)
 
-	if up == 0 {
-		s.CommentFrequency.Set(0)
+	if counts.Updated == 0 {
+		// Comment frequency is comments per updated issue. With no updated
+		// issues the ratio is undefined, so leave it unset rather than
+		// recording a zero that reads as "nobody comments here".
 		return s, nil
 	}
 
 	ghr.logger.Debug("Fetching comment frequency")
-	comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), legacy.IssueLookback)
+	comments, err := legacy.FetchIssueCommentCount(ctx, ghr.client, ghr.owner(), ghr.name(), since)
 	switch {
 	case errors.Is(err, legacy.ErrorTooManyResults):
-		ghr.logger.Debug("Comment count failed with too many result")
-		s.CommentFrequency.Set(legacy.TooManyCommentsFrequency)
+		// The comment total is unknown, so record no value and let scoring
+		// skip the field. Substituting a constant here used to place the
+		// busiest repositories, the only ones that can produce this error,
+		// below the typical measured frequency, which inverted the signal for
+		// exactly the projects it was meant to reward.
+		//
+		// This is logged at warning level rather than debug: a signal is
+		// missing from the output, and a run that quietly drops one for many
+		// repositories should be visible without turning on debug logging.
+		ghr.logger.With(zap.Error(err)).Warn("Comment count unavailable")
+	case errors.Is(err, legacy.ErrorNoPageCount):
+		// The endpoint no longer reports a page count, so the comment total is
+		// unknown. Leave the field unset so scoring skips it, rather than
+		// recording a zero that would read as "nobody comments here".
+		ghr.logger.Warn("Comment count unavailable: endpoint no longer returns a page count")
 	case err != nil:
 		return nil, err
 	default:
-		s.CommentFrequency.Set(legacy.Round(float64(comments)/float64(up), 2))
+		s.CommentFrequency.Set(legacy.Round(float64(comments)/float64(counts.Updated), 2))
 	}
 	return s, nil
 }
