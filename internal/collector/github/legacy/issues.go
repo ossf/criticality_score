@@ -16,6 +16,7 @@ package legacy
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/go-github/v47/github"
@@ -36,8 +37,9 @@ const (
 //
 // This count includes both issues and pull requests.
 func FetchIssueCount(ctx context.Context, c *githubapi.Client, owner, name string, state IssueState, lookback time.Duration) (int, error) {
+	since := time.Now().UTC().Add(-lookback)
 	opts := &github.IssueListByRepoOptions{
-		Since:       time.Now().UTC().Add(-lookback),
+		Since:       since,
 		State:       string(state),
 		ListOptions: github.ListOptions{PerPage: 1}, // 1 result per page means LastPage is total number of records.
 	}
@@ -52,7 +54,42 @@ func FetchIssueCount(ctx context.Context, c *githubapi.Client, owner, name strin
 	if resp.NextPage == 0 {
 		return len(is), nil
 	}
-	return resp.LastPage, nil
+	if resp.LastPage > 0 {
+		return resp.LastPage, nil
+	}
+	// GitHub has migrated this endpoint to cursor-based pagination, so the
+	// Link header no longer carries a rel="last" and LastPage is 0. Fall back
+	// to walking the pages and counting the results.
+	return countIssuePages(ctx, c, owner, name, state, since)
+}
+
+// countIssuePages counts issues by paging through the results, for when the
+// total cannot be read directly from the Link header.
+func countIssuePages(ctx context.Context, c *githubapi.Client, owner, name string, state IssueState, since time.Time) (int, error) {
+	opts := &github.IssueListByRepoOptions{
+		Since:       since,
+		State:       string(state),
+		ListOptions: github.ListOptions{PerPage: issuesPerPage, Page: 1},
+	}
+	total := 0
+	for {
+		is, resp, err := c.Rest().Issues.ListByRepo(ctx, owner, name, opts)
+		// The API returns 5xx responses if there are too many issues.
+		if c := githubapi.ErrorResponseStatusCode(err); 500 <= c && c < 600 {
+			return MaxIssuesLimit, nil
+		}
+		if err != nil {
+			return 0, fmt.Errorf("listing issues: %w", err)
+		}
+		total += len(is)
+		if total >= MaxIssuesLimit {
+			return MaxIssuesLimit, nil
+		}
+		if len(is) < issuesPerPage || resp.NextPage == 0 {
+			return total, nil
+		}
+		opts.Page = resp.NextPage
+	}
 }
 
 // FetchIssueCommentCount returns the total number of comments for a given repo

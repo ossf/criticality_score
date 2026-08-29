@@ -32,6 +32,7 @@ const (
 	TooManyCommentsFrequency    = 2.0
 
 	releasesPerPage = 100
+	issuesPerPage   = 100
 )
 
 var ErrorTooManyResults = errors.New("too many results")
