@@ -16,6 +16,7 @@ package legacy
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/google/go-github/v47/github"
@@ -36,23 +37,26 @@ const (
 //
 // This count includes both issues and pull requests.
 func FetchIssueCount(ctx context.Context, c *githubapi.Client, owner, name string, state IssueState, lookback time.Duration) (int, error) {
-	opts := &github.IssueListByRepoOptions{
-		Since:       time.Now().UTC().Add(-lookback),
-		State:       string(state),
-		ListOptions: github.ListOptions{PerPage: 1}, // 1 result per page means LastPage is total number of records.
+	createdTime := time.Now().UTC().Add(-lookback).Format(time.RFC3339)
+	baseQuery := fmt.Sprintf("repo:%s/%s is:issue", owner, name)
+	var searchQuery string
+	if string(state) != "all" {
+		searchQuery = fmt.Sprintf("%s state:%s updated:>=%s", baseQuery, string(state), createdTime)
+	} else {
+		searchQuery = fmt.Sprintf("%s updated:>=%s", baseQuery, createdTime)
 	}
-	is, resp, err := c.Rest().Issues.ListByRepo(ctx, owner, name, opts)
-	// The API returns 5xx responses if there are too many issues.
+	opts := &github.SearchOptions{
+		ListOptions: github.ListOptions{PerPage: 1},
+	}
+
+	is, _, err := c.Rest().Search.Issues(ctx, searchQuery, opts)
 	if c := githubapi.ErrorResponseStatusCode(err); 500 <= c && c < 600 {
 		return MaxIssuesLimit, nil
 	}
 	if err != nil {
 		return 0, err
 	}
-	if resp.NextPage == 0 {
-		return len(is), nil
-	}
-	return resp.LastPage, nil
+	return is.GetTotal(), nil
 }
 
 // FetchIssueCommentCount returns the total number of comments for a given repo
