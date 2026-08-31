@@ -56,8 +56,7 @@ func constructBatchQuery[T any](queries map[string]string) (string, map[string]s
 func BatchQuery[T any](ctx context.Context, c *Client, queries map[string]string) (map[string]T, error) {
 	// TODO: an upper bound should be added
 	if len(queries) == 0 {
-		// TODO: consider just returning an empty result set rather than panicing.
-		panic("no query to run")
+		return map[string]T{}, nil
 	}
 
 	// Generate the query from the type T and the set of queries.
