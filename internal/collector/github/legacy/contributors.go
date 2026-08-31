@@ -84,6 +84,9 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		if login == "" {
 			continue
 		}
+		if login == "Copilot" {
+			continue
+		}
 		if strings.HasSuffix(login, "[bot]") {
 			continue
 		}
