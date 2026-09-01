@@ -24,6 +24,12 @@ import (
 	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
 )
 
+type testAlgo struct{}
+
+func (t testAlgo) Score(record map[string]float64) float64 {
+	return 0
+}
+
 func TestInput_ToAlgorithmInput(t *testing.T) {
 	type fields struct {
 		Bounds       *algorithm.Bounds
@@ -134,10 +140,11 @@ func TestLoadConfig(t *testing.T) {
 	}
 	//nolint:govet
 	tests := []struct {
-		name    string
-		args    args
-		want    *Config
-		wantErr bool
+		name          string
+		args          args
+		want          *Config
+		wantErr       bool
+		wantReaderErr bool
 	}{
 		{
 			name: "valid config",
@@ -163,30 +170,44 @@ func TestLoadConfig(t *testing.T) {
 			want:    &Config{},
 			wantErr: true,
 		},
+		{
+			name: "want reader error",
+			args: args{
+				r: "testdata/invalid_config.yaml",
+			},
+			want:          &Config{},
+			wantErr:       true,
+			wantReaderErr: true,
+		},
 	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
 			// read file
 
-			f, err := os.Open(tt.args.r)
+			f, err := os.Open(test.args.r)
 			if err != nil {
-				t.Errorf("LoadConfig() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("LoadConfig() error = %v, wantErr %v", err, test.wantErr)
 				return
+			}
+
+			if test.wantReaderErr {
+				f.Close()
+				f = nil
 			}
 
 			got, err := LoadConfig(f)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("LoadConfig() error = %v, wantErr %v", err, tt.wantErr)
+			if (err != nil) != test.wantErr {
+				t.Errorf("LoadConfig() error = %v, wantErr %v", err, test.wantErr)
 				return
 			}
 
-			if tt.wantErr {
+			if test.wantErr {
 				return
 			}
 
-			if !cmp.Equal(got.Inputs, tt.want.Inputs) || got.Name != tt.want.Name {
-				t.Log(cmp.Diff(got.Inputs, tt.want.Inputs))
-				t.Errorf("LoadConfig() got = %v, want %v", got, tt.want)
+			if !cmp.Equal(got.Inputs, test.want.Inputs) || got.Name != test.want.Name {
+				t.Log(cmp.Diff(got.Inputs, test.want.Inputs))
+				t.Errorf("LoadConfig() got = %v, want %v", got, test.want)
 			}
 		})
 	}
@@ -200,28 +221,167 @@ func Test_buildCondition(t *testing.T) {
 	tests := []struct {
 		name    string
 		args    args
-		want    algorithm.Condition
+		want    bool
 		wantErr bool
+		input   map[string]float64
 	}{
 		{
 			name: "invalid condition",
 			args: args{
 				c: &Condition{},
 			},
-			want:    nil,
 			wantErr: true,
+		},
+		{
+			name: "c.Not is not nil and returns an error",
+			args: args{
+				c: &Condition{
+					Not: &Condition{},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "c.Not is not nil and c.FieldExists is not empty",
+			args: args{
+				c: &Condition{
+					FieldExists: "test",
+					Not:         &Condition{},
+				},
+			},
+			wantErr: true,
+		},
+		{
+			name: "c.Not is not nil and returns a condition",
+			args: args{
+				c: &Condition{
+					Not: &Condition{
+						FieldExists: "test",
+					},
+				},
+			},
+			input: map[string]float64{"test": 1},
+			want:  false,
+
+			wantErr: false,
+		},
+		{
+			name: "c.Not is not nil and returns a condition",
+			args: args{
+				c: &Condition{
+					Not: &Condition{
+						FieldExists: "foo",
+					},
+				},
+			},
+			input: map[string]float64{"test": 1},
+			want:  true,
+
+			wantErr: false,
 		},
 
 		// Can't test the c.Not condition because algorithm.Condition is a func and can't be compared
 	}
-	test := tests[0]
-	got, err := buildCondition(test.args.c)
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			got, err := buildCondition(test.args.c)
 
-	if (err != nil) != test.wantErr {
-		t.Errorf("buildCondition() error = %v, wantErr %v", err, test.wantErr)
-		return
+			if (err != nil) != test.wantErr {
+				t.Errorf("buildCondition() error = %v, wantErr %v", err, test.wantErr)
+				return
+			}
+			if got == nil && test.wantErr {
+				return
+			}
+			if got(test.input) != test.want {
+				t.Errorf("buildCondition() got = %v, want %v", got, test.want)
+			}
+		})
 	}
-	if !reflect.DeepEqual(got, test.want) {
-		t.Errorf("buildCondition() got = %v, want %v", got, test.want)
+}
+
+func TestConfig_Algorithm(t *testing.T) {
+	type fields struct {
+		Name   string
+		Inputs []*Input
+	}
+	tests := []struct { //nolint:govet
+		name              string
+		fields            fields
+		valuesForRegistry map[string]algorithm.Factory
+		want              algorithm.Algorithm
+		wantErr           bool
+	}{
+		{
+			name: "regular",
+			fields: fields{
+				Name: "test",
+				Inputs: []*Input{
+					{
+						Field:        "test",
+						Distribution: "linear",
+						Weight:       1,
+					},
+					{
+						Field:        "test2",
+						Distribution: "linear",
+						Weight:       3,
+					},
+				},
+			},
+			valuesForRegistry: map[string]algorithm.Factory{
+				"test": func(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
+					return testAlgo{}, nil
+				},
+			},
+			want:    testAlgo{},
+			wantErr: false,
+		},
+		{
+			// This test is for when we call ToAlgorithmInput() and it returns an error.
+			// We get the error from ToAlgorithmInput() because Distribution is not a valid
+			// distribution when calling algorithm.LookupDistribution()
+
+			name: "invalid",
+			fields: fields{
+				Name: "test",
+				Inputs: []*Input{
+					{
+						Field:        "test",
+						Distribution: "invalid",
+						Weight:       1,
+					},
+				},
+			},
+			valuesForRegistry: map[string]algorithm.Factory{
+				"test": func(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
+					return testAlgo{}, nil
+				},
+			},
+			want:    nil,
+			wantErr: true,
+		},
+	}
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			algorithm.GlobalRegistry = algorithm.NewRegistry()
+
+			for name, factory := range test.valuesForRegistry {
+				algorithm.Register(name, factory)
+			}
+
+			c := &Config{
+				Name:   test.fields.Name,
+				Inputs: test.fields.Inputs,
+			}
+			got, err := c.Algorithm()
+			if (err != nil) != test.wantErr {
+				t.Errorf("Algorithm() error = %v, wantErr %v", err, test.wantErr)
+				return
+			}
+			if !reflect.DeepEqual(got, test.want) {
+				t.Errorf("Algorithm() got = %v, want %v", got, test.want)
+			}
+		})
 	}
 }
