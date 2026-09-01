@@ -34,7 +34,7 @@ const (
 	// nameSeparator is used to separate the namespace from the field name.
 	nameSeparator = '.'
 
-	// namespaceLegacy is an internal namespace used for fields that provide
+	// NamespaceLegacy is an internal namespace used for fields that provide
 	// compatibility with the legacy python implementation.
 	NamespaceLegacy Namespace = "legacy"
 
@@ -43,7 +43,7 @@ const (
 	fieldTagName      = "signal"
 	fieldTagIgnore    = "-"
 	fieldTagLegacy    = "legacy"
-	fieldTagSeperator = ","
+	fieldTagSeparator = ","
 )
 
 const (
@@ -138,16 +138,17 @@ func ValidateSet(s Set) error {
 	if ns := string(s.Namespace()); !validName.MatchString(ns) {
 		return fmt.Errorf("namespace '%s' contains invalid characters", ns)
 	}
-	return iterSetFields(s, func(f *fieldConfig, _ any) error {
+	cb := func(f *fieldConfig, _ any) error {
 		if !validName.MatchString(f.name) {
 			return fmt.Errorf("field name '%s' contains invalid character", f.name)
 		}
 		return nil
-	})
+	}
+	return iterSetFields(s, cb)
 }
 
 // parseStructField processes a field sf in a Set to extract the field's
-// congiration from the field's tag.
+// configuration from the field's tag.
 //
 // If the field is not of type Field, or is configured to be ignored, this
 // method will return nil.
@@ -167,7 +168,7 @@ func parseStructField(sf reflect.StructField) *fieldConfig {
 		legacy: false,
 	}
 	if tag != "" {
-		parts := strings.Split(tag, fieldTagSeperator)
+		parts := strings.Split(tag, fieldTagSeparator)
 		for _, p := range parts {
 			switch strings.TrimSpace(p) {
 			case "":
@@ -215,14 +216,15 @@ func SetFields(s Set, namespace bool) []string {
 		prefix = fmt.Sprintf("%s%c", s.Namespace(), nameSeparator)
 		legacyPrefix = fmt.Sprintf("%s%c", NamespaceLegacy, nameSeparator)
 	}
-	_ = iterSetFields(s, func(f *fieldConfig, _ any) error {
+	cb := func(f *fieldConfig, _ any) error {
 		if f.legacy {
 			fs = append(fs, legacyPrefix+f.name)
 		} else {
 			fs = append(fs, prefix+f.name)
 		}
 		return nil
-	})
+	}
+	_ = iterSetFields(s, cb)
 	return fs
 }
 
@@ -232,10 +234,11 @@ func SetFields(s Set, namespace bool) []string {
 // set.
 func SetValues(s Set) []any {
 	var vs []any
-	_ = iterSetFields(s, func(_ *fieldConfig, v any) error {
+	cb := func(_ *fieldConfig, v any) error {
 		vs = append(vs, v)
 		return nil
-	})
+	}
+	_ = iterSetFields(s, cb)
 	return vs
 }
 
@@ -259,7 +262,7 @@ func SetAsMap(s Set, namespace bool) map[string]any {
 // mapped to the value of the field.
 func SetAsMapWithNamespace(s Set) map[string]map[string]any {
 	m := make(map[string]map[string]any)
-	_ = iterSetFields(s, func(f *fieldConfig, v any) error {
+	cb := func(f *fieldConfig, v any) error {
 		// Determine which namespace to use.
 		ns := s.Namespace().String()
 		if f.legacy {
@@ -272,6 +275,7 @@ func SetAsMapWithNamespace(s Set) map[string]map[string]any {
 		}
 		innerM[f.name] = v
 		return nil
-	})
+	}
+	_ = iterSetFields(s, cb)
 	return m
 }
