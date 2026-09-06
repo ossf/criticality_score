@@ -53,6 +53,32 @@ func TestParseBucketAndPrefixS3URL(t *testing.T) {
 	}
 }
 
+func TestParseBucketAndPrefixWindowsVolume(t *testing.T) {
+	// A Windows absolute path such as "C:\path\to\file" must be treated as a
+	// local filesystem path, not a URL with scheme "c". See issue #337.
+	for _, test := range []struct {
+		name       string
+		raw        string
+		wantPath   string
+		wantPrefix string
+	}{
+		{name: "backslash", raw: `C:\path\to\file`, wantPath: "/C:/path/to/", wantPrefix: "file"},
+		{name: "forward slash", raw: `c:/path/to/file`, wantPath: "/c:/path/to/", wantPrefix: "file"},
+		{name: "lower drive letter", raw: `d:\data\out`, wantPath: "/d:/data/", wantPrefix: "out"},
+	} {
+		t.Run(test.name, func(t *testing.T) {
+			b, p, err := parseBucketAndPrefix(test.raw)
+			if err != nil {
+				t.Fatalf("parseBucketAndPrefix() = %v, want no error", err)
+			}
+			assertBucket(t, b, fileScheme, "", test.wantPath, map[string]string{"metadata": "skip"})
+			if p != test.wantPrefix {
+				t.Errorf("Prefix = %q, want %q", p, test.wantPrefix)
+			}
+		})
+	}
+}
+
 func TestNewWriterNoScheme(t *testing.T) {
 	_, _, err := parseBucketAndPrefix("//example.com/path/to/file")
 	if err == nil {

@@ -31,10 +31,39 @@ import (
 
 const fileScheme = "file"
 
+// hasWindowsVolume reports whether p begins with a Windows volume name such as
+// "C:\" or "c:/". These look like a URL with a single-letter scheme to
+// url.Parse, so they need to be detected and handled as local filesystem paths
+// rather than as a cloud storage scheme. The check mirrors the volume detection
+// used by the standard path/filepath package.
+func hasWindowsVolume(p string) bool {
+	if len(p) < 3 {
+		return false
+	}
+	c := p[0]
+	if !('a' <= c && c <= 'z') && !('A' <= c && c <= 'Z') {
+		return false
+	}
+	// The drive letter must be followed by ':' and then a path separator.
+	return p[1] == ':' && (p[2] == '\\' || p[2] == '/')
+}
+
 func parseBucketAndPrefix(rawURL string) (bucket, prefix string, _ error) {
-	u, err := url.Parse(rawURL)
-	if err != nil {
-		return "", "", fmt.Errorf("url parse: %w", err)
+	var u *url.URL
+	if hasWindowsVolume(rawURL) {
+		// A Windows absolute path (e.g. "C:\path\to\file") parses as a URL with
+		// a single-letter scheme, which breaks the path handling below. Treat it
+		// as an absolute local filesystem path. Backslashes are normalised to
+		// forward slashes so path.Split works regardless of the host OS, and the
+		// leading "/" keeps the volume (e.g. "/C:/path/to/file") inside the URL
+		// path rather than the host.
+		u = &url.URL{Path: "/" + strings.ReplaceAll(rawURL, `\`, "/")}
+	} else {
+		var err error
+		u, err = url.Parse(rawURL)
+		if err != nil {
+			return "", "", fmt.Errorf("url parse: %w", err)
+		}
 	}
 
 	// If the URL doesn't have a scheme it is possibly a local file. Use the
