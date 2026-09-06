@@ -84,6 +84,39 @@ func TestWeighetedArithmeticMean_Score(t *testing.T) {
 			want:   1,
 			record: map[string]float64{"1": 1},
 		},
+		{
+			name: "zero weight returns an error",
+			inputs: []*algorithm.Input{
+				{
+					Weight: 0, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("1")),
+				},
+			},
+			record: map[string]float64{"1": 1},
+			err:    errNonPositiveWeight,
+		},
+		{
+			name: "negative weight returns an error",
+			inputs: []*algorithm.Input{
+				{
+					Weight: -1, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("1")),
+				},
+			},
+			record: map[string]float64{"1": 1},
+			err:    errNonPositiveWeight,
+		},
+		{
+			name: "single positive weight is accepted",
+			inputs: []*algorithm.Input{
+				{
+					Weight: 2, Distribution: algorithm.LookupDistribution("linear"),
+					Source: algorithm.Value(algorithm.Field("1")),
+				},
+			},
+			want:   3,
+			record: map[string]float64{"1": 3},
+		},
 	}
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {

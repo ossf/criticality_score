@@ -18,10 +18,17 @@
 package wam
 
 import (
+	"errors"
+	"fmt"
+
 	"github.com/ossf/criticality_score/v2/internal/scorer/algorithm"
 )
 
 const Name = "weighted_arithmetic_mean"
+
+// errNonPositiveWeight is returned by New when an input has a zero or negative
+// weight. A non-positive total weight makes the weighted mean undefined.
+var errNonPositiveWeight = errors.New("input weight must be positive")
 
 // "Weighted Arithmetic Mean" is also known as "Weighted Average".
 
@@ -33,7 +40,17 @@ type WeightedArithmeticMean struct {
 
 // New returns a new instance of the Weighted Arithmetic Mean algorithm, which
 // is used by the Pike algorithm.
+//
+// Each input weight must be positive. A zero or negative weight is rejected:
+// a non-positive total weight makes the mean undefined (it would divide by
+// zero and produce NaN in Score), and a negative weight has no meaningful
+// interpretation in a weighted average.
 func New(inputs []*algorithm.Input) (algorithm.Algorithm, error) {
+	for idx, i := range inputs {
+		if i.Weight <= 0 {
+			return nil, fmt.Errorf("%w: input %d has weight %v", errNonPositiveWeight, idx, i.Weight)
+		}
+	}
 	return &WeightedArithmeticMean{
 		inputs: inputs,
 	}, nil
