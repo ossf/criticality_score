@@ -52,7 +52,42 @@ func FetchIssueCount(ctx context.Context, c *githubapi.Client, owner, name strin
 	if resp.NextPage == 0 {
 		return len(is), nil
 	}
-	return resp.LastPage, nil
+	if resp.LastPage > 0 {
+		return resp.LastPage, nil
+	}
+	// The /issues endpoint has moved to cursor-based pagination and no
+	// longer emits a rel="last" Link header, so resp.LastPage is 0 even
+	// though more results exist. Returning it would silently report zero
+	// issues for every repository with more than one. Walk the pages and
+	// count instead, capped at MaxIssuesLimit.
+	return countIssuesByWalking(ctx, c, owner, name, state, opts.Since)
+}
+
+func countIssuesByWalking(ctx context.Context, c *githubapi.Client, owner, name string, state IssueState, since time.Time) (int, error) {
+	opts := &github.IssueListByRepoOptions{
+		Since:       since,
+		State:       string(state),
+		ListOptions: github.ListOptions{PerPage: 100},
+	}
+	total := 0
+	for {
+		is, resp, err := c.Rest().Issues.ListByRepo(ctx, owner, name, opts)
+		// The API returns 5xx responses if there are too many issues.
+		if c := githubapi.ErrorResponseStatusCode(err); 500 <= c && c < 600 {
+			return MaxIssuesLimit, nil
+		}
+		if err != nil {
+			return 0, err
+		}
+		total += len(is)
+		if total >= MaxIssuesLimit {
+			return MaxIssuesLimit, nil
+		}
+		if resp.NextPage == 0 {
+			return total, nil
+		}
+		opts.ListOptions.Page = resp.NextPage
+	}
 }
 
 // FetchIssueCommentCount returns the total number of comments for a given repo
