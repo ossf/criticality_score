@@ -2,8 +2,14 @@
 
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/ossf/criticality_score/badge)](https://api.securityscorecards.dev/projects/github.com/ossf/criticality_score)
 
-This project is maintained by members of the
-[Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects).
+This repository is maintained by the OpenSSF [Vulnerability Disclosures WG](https://github.com/ossf/wg-vulnerability-disclosures).
+
+> [!IMPORTANT]
+> All Google Cloud infrastructure and data hosted there will
+> no longer be available after 2026-08-29. This includes GCS and
+> BigQuery data. The latest data is available in the
+> [data](https://github.com/ossf/criticality_score/blob/main/data) directory.
+> Read more in [issue #833](https://github.com/ossf/criticality_score/issues/833).
 
 ## Goals
 
@@ -138,42 +144,24 @@ working with criticality score data.
 
 ## Public Data
 
-If you're interested in seeing a list of critical projects with their criticality
-score, we publish them in `csv` format and a BigQuery dataset.
+Please see the [data](https://github.com/ossf/criticality_score/blob/main/data)
+directory for a list of projects with their criticality score that is updated
+infrequently.
 
-This data is generated using a production instance of the criticality score
-project running in GCP. Details for how this is deployed can be found in the
-[infra](https://github.com/ossf/criticality_score/blob/main/infra) directory.
+The data is available in a `csv` file and a `json` file.
 
-**NOTE**: Currently, these lists are derived from **projects hosted on GitHub ONLY**.
-We do plan to expand them in near future to account for projects hosted on other
-source control systems.
+A list of GitHub repositories produced by `enumerate_github` is also available
+for use with `collect_signals` command.
 
-### CSV data
+**NOTE**: Due to various challenges the public infrastructure has not been
+running since May 2026, with the last successful run completing in July 2025.
+Google Cloud Storage and BigQuery datasets are no longer available as of Aug
+2026.
 
-The data is available on Google Cloud Storage and can be downloaded via:
-
-- web browser: [commondatastorage.googleapis.com/ossf-criticality-score/index.html](https://commondatastorage.googleapis.com/ossf-criticality-score/index.html)
-- [`gsutil`](https://cloud.google.com/storage/docs/gsutil_install)
-command-line tool: `gsutil ls gs://ossf-criticality-score/`
-
-### BigQuery Dataset
-
-This data is available in the public [BigQuery dataset](https://console.cloud.google.com/bigquery?d=criticality_score_cron&p=openssf&t=criticality-score-v0-latest&page=table).
-
-With a GCP account you can run queries across the data. For example, here is a query returning the top 100 repos by score:
-
-```sql
-  SELECT repo.url, default_score
-    FROM `openssf.criticality_score_cron.criticality-score-v0-latest`
-ORDER BY default_score DESC
-   LIMIT 100;
-```
+Read more in [issue #833](https://github.com/ossf/criticality_score/issues/833).
 
 ## Contributing
 
-If you want to get involved or have ideas you'd like to chat about, we discuss this project in the [Securing Critical Projects WG](https://github.com/ossf/wg-securing-critical-projects) meetings.
-
-See the [Community Calendar](https://calendar.google.com/calendar?cid=czYzdm9lZmhwNWk5cGZsdGI1cTY3bmdwZXNAZ3JvdXAuY2FsZW5kYXIuZ29vZ2xlLmNvbQ) for the schedule and meeting invitations.
+If you want to get involved or have ideas you'd like to chat about, we discuss this project in the [Vulnerability Disclosures WG](https://github.com/ossf/wg-vulnerability-disclosures) meetings.
 
 See the [Contributing](CONTRIBUTING.md) documentation for guidance on how to contribute.
