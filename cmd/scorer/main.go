@@ -54,7 +54,7 @@ import (
 const defaultLogLevel = zapcore.InfoLevel
 
 var (
-	configFlag     = flag.String("config", "", "the filename of the config (required)")
+	configFlag     = flag.String("config", "", "the filename of the config (defaults to the original configuration)")
 	columnNameFlag = flag.String("column", "", "the name of the output column")
 	logLevel       = defaultLogLevel
 	logEnv         log.Env
@@ -67,10 +67,10 @@ func init() {
 	flag.Usage = func() {
 		cmdName := path.Base(os.Args[0])
 		w := flag.CommandLine.Output()
-		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_CSV OUT_CSV\n\n", cmdName)
+		fmt.Fprintf(w, "Usage:\n  %s [FLAGS]... IN_CSV\n\n", cmdName)
 		fmt.Fprintf(w, "Scores collected signal for record in the IN_CSV.\n")
 		fmt.Fprintf(w, "IN_CSV must be either a csv file or - to read from stdin.\n")
-		fmt.Fprintf(w, "OUT_CSV must be either be a csv file or - to write to stdout.\n")
+		fmt.Fprintf(w, "CSV is written to stdout unless -out specifies an output destination.\n")
 		fmt.Fprintf(w, "\nFlags:\n")
 		flag.PrintDefaults()
 	}

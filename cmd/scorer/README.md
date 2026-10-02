@@ -32,7 +32,8 @@ raw signal data will read from STDIN rather than a file.
 Results are re-written in CSV format to the output in descending score order.
 By default `stdout` is used for output.
 
-The `-config` flag is required. All other `FLAGS` are optional.
+All `FLAGS` are optional. Without `-config`, the original scoring configuration
+is used.
 See below for documentation.
 
 ### Flags
