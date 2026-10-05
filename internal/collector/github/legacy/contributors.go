@@ -17,10 +17,10 @@ package legacy
 import (
 	"context"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/google/go-github/v47/github"
+	"github.com/hasura/go-graphql-client"
 
 	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
@@ -78,29 +78,37 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 	}
 
 	// Doing this over REST would take O(n) requests, using GraphQL takes O(1).
-	userQueries := map[string]string{}
-	for i, contributor := range cs {
+	var userIds []graphql.ID
+	for _, contributor := range cs {
 		login := contributor.GetLogin()
 		if login == "" {
 			continue
 		}
-		if strings.HasSuffix(login, "[bot]") {
+		accountType := contributor.GetType()
+		if accountType == "Bot" {
 			continue
 		}
-		userQueries[fmt.Sprint(i)] = fmt.Sprintf("user(login:\"%s\")", login)
+		userIds = append(userIds, graphql.ID(contributor.GetNodeID()))
 	}
-	if len(userQueries) == 0 {
+	if len(userIds) == 0 {
 		// We didn't add any users.
 		return 0, err
 	}
-	r, err := githubapi.BatchQuery[struct{ Company string }](ctx, c, userQueries)
+	var r struct {
+		Nodes []struct {
+			User struct{ Company string } `graphql:"... on User"`
+		} `graphql:"nodes(ids: $ids)"`
+	}
+	err = c.GraphQL().Query(ctx, &r, map[string]any{
+		"ids": userIds,
+	})
 	if err != nil {
 		return 0, err
 	}
 	// Extract the Company from each returned field and add it to the org set.
 	orgSet := make(map[string]empty)
-	for _, u := range r {
-		org := u.Company
+	for _, u := range r.Nodes {
+		org := u.User.Company
 		if org == "" {
 			continue
 		}
