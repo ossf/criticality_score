@@ -16,12 +16,14 @@ package github
 
 import (
 	"context"
+	"fmt"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/hasura/go-graphql-client"
 
+	"github.com/ossf/criticality_score/v2/internal/collector/projectrepo"
 	"github.com/ossf/criticality_score/v2/internal/githubapi"
 )
 
@@ -74,6 +76,11 @@ func queryBasicRepoData(ctx context.Context, client *graphql.Client, u *url.URL)
 	// `resource` query.
 	// TODO - consider improving support for scp style urls and urls ending in .git
 	parts := strings.Split(strings.Trim(u.Path, "/"), "/")
+	if len(parts) < 2 || parts[0] == "" || parts[1] == "" {
+		// Match() only checks the host, so a URL naming an owner but no
+		// repository reaches this far.
+		return nil, fmt.Errorf("%w: %s does not name a repository", projectrepo.ErrNoRepoFound, u)
+	}
 	owner := parts[0]
 	name := parts[1]
 	s := &struct {
