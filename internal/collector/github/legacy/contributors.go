@@ -84,7 +84,7 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		if login == "" {
 			continue
 		}
-		if strings.HasSuffix(login, "[bot]") {
+		if isBot(contributor) {
 			continue
 		}
 		userQueries[fmt.Sprint(i)] = fmt.Sprintf("user(login:\"%s\")", login)
@@ -108,6 +108,15 @@ func FetchOrgCount(ctx context.Context, c *githubapi.Client, owner, name string)
 		orgSet[org] = empty{}
 	}
 	return len(orgSet), nil
+}
+
+// isBot reports whether a contributor is a bot account. Bot logins usually
+// end in "[bot]" (for example "dependabot[bot]"), but some do not, such as
+// GitHub's "Copilot" agent; their account type identifies them instead. Bots
+// are not GitHub users, so a GraphQL user() query for one fails with
+// NOT_FOUND, which fails the whole batch.
+func isBot(contributor *github.Contributor) bool {
+	return strings.HasSuffix(contributor.GetLogin(), "[bot]") || contributor.GetType() == "Bot"
 }
 
 // errorTooManyContributors returns true if err is a 403 due to too many
